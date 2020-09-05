@@ -1,8 +1,8 @@
 /*=========================================================================================================================================
 
- This is do_rain.cpp: it handles rainfall
+ This is simulate_rain.cpp: it handles rainfall
 
- Copyright (C) 2018 David Favis-Mortlock
+ Copyright (C) 2020 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -33,7 +33,7 @@ void CSimulation::DoRunOnFromOneEdge(int const nEdge)
    if ((nEdge == EDGE_TOP) || (nEdge == EDGE_BOTTOM))
       // Nope, run-on is from the top or bottom edge
       dEdgeLen = m_nXGridMax;
-   
+
    // Calculate the average number of raindrops falling during a timestep of this duration. Note that this assumes that m_dRunOnLen is an extension orthogonal to the run-on edge, and is in mm
    double dRunOnAvgNDrops = m_dTimeStep * m_dRainIntensity * m_dRunOnLen * m_dCellSide * dEdgeLen / (3600 * m_dMeanCellWaterVol);
 
@@ -65,13 +65,13 @@ void CSimulation::DoRunOnFromOneEdge(int const nEdge)
                if (Cell[nX][nY].bIsEdgeCell())
                {
                   // Add the run-on to this edge cell of the Cell array
-                  Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dTmpDpth);      
+                  Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dTmpDpth);
                   break;
                }
             }
          }
       }
-      
+
       else if (nEdge == EDGE_RIGHT)
       {
          // Right edge
@@ -82,13 +82,13 @@ void CSimulation::DoRunOnFromOneEdge(int const nEdge)
                if (Cell[nX][nY].bIsEdgeCell())
                {
                   // Add the run-on to this edge cell of the Cell array
-                  Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dTmpDpth);      
+                  Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dTmpDpth);
                   break;
                }
-            }      
-         }         
+            }
+         }
       }
-      
+
       else if (nEdge == EDGE_BOTTOM)
       {
          // Bottom Edge
@@ -99,13 +99,13 @@ void CSimulation::DoRunOnFromOneEdge(int const nEdge)
                if (Cell[nX][nY].bIsEdgeCell())
                {
                   // Add the run-on to this edge cell of the Cell array
-                  Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dTmpDpth);      
+                  Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dTmpDpth);
                   break;
                }
-            }      
+            }
          }
       }
-      
+
       else if (nEdge == EDGE_LEFT)
       {
          // Left edge
@@ -116,7 +116,7 @@ void CSimulation::DoRunOnFromOneEdge(int const nEdge)
                if (Cell[nX][nY].bIsEdgeCell())
                {
                   // Add the run-on to this edge cell of the Cell array
-                  Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dTmpDpth);      
+                  Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dTmpDpth);
                   break;
                }
             }
@@ -140,7 +140,7 @@ void CSimulation::DoAllRain(void)
    double dStdNDrops = m_dTimeStep * m_dStdRainInt * m_ulNActiveCells * m_dCellSquare / (3600 * m_dMeanCellWaterVol);
 
    // Using ulGetRand0(), calculate the integer number of new raindrops which will fall during this timestep
-   int nDrops = static_cast<int>(dRound(dGetRand0GaussPos(dAvgNDrops, dStdNDrops)));
+   int nDrops = nRound(dGetRand0GaussPos(dAvgNDrops, dStdNDrops));
    m_ldGTotDrops += nDrops;
 
    // If not doing time-varying rain, do the rainfall intensity correction routine, for low intensities only (arbitrarily, less than 10 drops per timestep), corrects for too few drops or too many drops falling per timestep
@@ -152,7 +152,7 @@ void CSimulation::DoAllRain(void)
       if (m_ldGTotDrops < dTargetDrops)
       {
          // Too few, so add some extra drops
-         int nExtraDrops = static_cast<int>(dRound(dTargetDrops - m_ldGTotDrops));
+         int nExtraDrops = nRound(dTargetDrops - m_ldGTotDrops);
          if (nExtraDrops > 0)
          {
             nDrops += nExtraDrops;

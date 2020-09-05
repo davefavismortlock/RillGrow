@@ -2,7 +2,7 @@
 
  This is random_numbers.cpp: the random number routines for RillGrow
 
- Copyright (C) 2018 David Favis-Mortlock
+ Copyright (C) 2020 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -161,13 +161,13 @@ int CSimulation::nGetRand0To(int const nBound)
    // Uses ulGetRand0() to return a random unsigned integer uniformly distributed in the range [0, nBound) i.e. includes 0 but excludes nBound
    int nRtn;
    unsigned long ulScale = 4294967295ul / nBound;                 // nBound must be > 1
-   
+
    do
    {
       nRtn = ulGetRand0() / ulScale;
    }
    while (nRtn >= nBound);
-   
+
    return (nRtn);
 }
 
@@ -177,13 +177,13 @@ int CSimulation::nGetRand1To(int const nBound)
    // As above, but uses ulGetRand1()
    int nRtn;
    unsigned long ulScale = 4294967295ul / nBound;                 // nBound must be > 1
-   
+
    do
    {
       nRtn = ulGetRand1() / ulScale;
    }
    while (nRtn >= nBound);
-   
+
    return (nRtn);
 }
 
@@ -263,15 +263,15 @@ void CSimulation::CheckRand(void) const
    {
       unsigned long n = ulGetRand0();
       if (k > 9990)
-         LogStream << k << "\t" << n << endl;
+         m_ofsLog << k << "\t" << n << endl;
    }
 */
 
 /*
    for (unsigned long k = 0; k < 100000; k++)
    {
-      // This is for tests using ENT, must also change LogStream to open in binary mode (see run.cpp)
-      LogStream << static_cast<unsigned char>(nGetRand0To(256));        // uses ulGetRand0()
+      // This is for tests using ENT, must also change m_ofsLog to open in binary mode (see run.cpp)
+      m_ofsLog << static_cast<unsigned char>(nGetRand0To(256));        // uses ulGetRand0()
    }
    return (RTN_OK);
 */
@@ -280,16 +280,16 @@ void CSimulation::CheckRand(void) const
    for (unsigned long k = 0; k < 65536; k++)          // max number that Excel will read
    {
       static unsigned long sulr = 0;
-      LogStream << sulr << "\t";
+      m_ofsLog << sulr << "\t";
       sulr = ulGetRand0();
-      LogStream << sulr << endl;
+      m_ofsLog << sulr << endl;
 
-//      LogStream << dGetRand0d1() << endl;           // uses GetRand0()
+//      m_ofsLog << dGetRand0d1() << endl;           // uses GetRand0()
 //      int x = nGetRand0To(65535);          // ditto
 //      int y = nGetRand0To(65535);          // ditto
 //      int x = nGetRand0To(150);                     // ditto
 //      int y = nGetRand0To(100);                     // ditto
-//      LogStream << x << '\t' << y << endl;
+//      m_ofsLog << x << '\t' << y << endl;
    }
 */
 }

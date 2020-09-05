@@ -4,7 +4,7 @@
 
  This is cell.h: the declaration of the class used to represent each soil cell object
 
- Copyright (C) 2018 David Favis-Mortlock
+ Copyright (C) 2020 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -30,47 +30,56 @@ class CSimulation;                                 // Forward declaration
 class CCell
 {
 public:
-   static CSimulation* m_pSim; 
-   
+   static CSimulation* m_pSim;
+
 private:
-   int m_nEdgeCell;      
+   bool m_bHasHadHeadcutRetreat;
+   int m_nEdgeCell;
    double
       m_dBasementElevationation,                            // Elevation of bottom of lowest soil layer, in mm
-      m_dInitialSoilSurfaceElevation;                       // Initial elevation of soil surface, in mm
+      m_dInitialSoilSurfaceElevation,                       // Initial elevation of soil surface, in mm
+      m_dStoredRetreat[8];                                  // Stored (i.e. within-cell) headcut retreat along directions 1 to 8
 
-   CSoil m_Soil;   
+   CSoil m_Soil;
    CRainAndRunon m_RainAndRunon;
    CSurfaceWater m_SurfaceWater;
    CSediment m_Sediment;
    CSoilWater m_SoilWater;
-   
+
 public:
    // ============================================================ Constructor ============================================================
    CCell(void);
    ~CCell(void);
 
-   void SetEdgeCell(int const);   
+   void SetEdgeCell(int const);
    int nGetEdge(void) const;
    bool bIsEdgeCell(void) const;
    bool bIsMissingValue(void) const;
    bool bIsMissingOrEdge(void) const;
-   
+
    void SetBasementElevation(double const);
    double dGetBasementElevation(void) const;
-   
+
    void SetInitialSoilSurfaceElevation(double const);
-   double dGetInitialSoilSurfaceElevation(void) const;   
-   
+   double dGetInitialSoilSurfaceElevation(void) const;
+
    double dGetTopElevation(void);
-   
    void SetSoilSurfaceElevation(double const);
-   
+   double dGetSoilSurfaceElevation(void);
+
+   double dGetStoredRetreat(int const);
+   void SetStoredRetreat(int const, double const);
+   void AddToStoredRetreat(int const, double const);
+   bool bIsReadyForHeadcutRetreat(int const, double const);
+   void SetHasHadHeadcutRetreat(void);
+   bool bHasHadHeadcutRetreat(void);
+
    CSoil* pGetSoil(void);
    CRainAndRunon* pGetRainAndRunon(void);
    CSurfaceWater* pGetSurfaceWater(void);
    CSediment* pGetSediment(void);
    CSoilWater* pGetSoilWater(void);
 
-   void InitializeAtStartOfIteration(bool const);   
+   void InitializeAtStartOfIteration(bool const);
 };
 #endif         // __CELL_H__

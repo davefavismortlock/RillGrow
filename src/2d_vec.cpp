@@ -3,7 +3,7 @@
  This is 2d_vec.cpp: implementations of the class used to represent a 2D vector in RillGrow. The class is very much 'cut down' by comparison to a 'real' vector class: only
  those methods which are necessary for RG are implemented
 
- Copyright (C) 2018 David Favis-Mortlock
+ Copyright (C) 2020 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -22,8 +22,8 @@
 
 
 // Default constructor, using initialization list
-C2DVec::C2DVec(void) : 
-   x(0), 
+C2DVec::C2DVec(void) :
+   x(0),
    y(0)
 {
 }
@@ -45,7 +45,7 @@ template<class T> C2DVec::C2DVec(const T& t1, const T& t2) : x(t1), y(t2)
 
 
 // Destructor
-C2DVec::~C2DVec(void) 
+C2DVec::~C2DVec(void)
 {
 }
 
@@ -55,7 +55,7 @@ C2DVec& C2DVec::operator = (const C2DVec& OtherVec)
 {
    x = OtherVec.x;
    y = OtherVec.y;
-   
+
    return (*this);
 }
 
@@ -101,7 +101,7 @@ template<class T> C2DVec& C2DVec::operator *= (const T& tIn)
 {
    x *= tIn;
    y *= tIn;
-   
+
    return (*this);      // so that method can be 'chained': see 'Effective C++'
 }
 
@@ -119,7 +119,7 @@ template<class T> C2DVec& C2DVec::operator /= (const T& tIn)
 {
    x /= tIn;
    y /= tIn;
-   
+
    return (*this);      // so that method can be 'chained': see 'Effective C++'
 }
 

@@ -1,8 +1,8 @@
 /*=========================================================================================================================================
 
-This is cell_sediment.cpp: implementations of the RillGrow class used to represent sediment in a cell's surface water
+This is cell_sediment.cpp: implementations of the RillGrow class used to represent sediment in a cell's overland flow
 
- Copyright (C) 2018 David Favis-Mortlock
+ Copyright (C) 2020 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -25,8 +25,11 @@ CSediment::CSediment(void)
 :
    m_dClaySedimentLoad(0),
    m_dSiltSedimentLoad(0),
-   m_dSandSedimentLoad(0)
-{   
+   m_dSandSedimentLoad(0),
+   m_dCumulClaySedimentLoad(0),
+   m_dCumulSiltSedimentLoad(0),
+   m_dCumulSandSedimentLoad(0)
+   {
    m_pCell = NULL;
 }
 
@@ -43,9 +46,15 @@ void CSediment::SetParent(CCell* const pParent)
 
 void CSediment::InitializeAllSizeSedimentLoad(void)
 {
-   m_dClaySedimentLoad = 
-   m_dSiltSedimentLoad = 
-   m_dSandSedimentLoad = 0;   
+   m_dClaySedimentLoad =
+   m_dSiltSedimentLoad =
+   m_dSandSedimentLoad = 0;
+}
+
+
+double CSediment::dGetCumulAllSizeSedimentLoad(void) const
+{
+   return (m_dCumulClaySedimentLoad + m_dCumulSiltSedimentLoad + m_dCumulSandSedimentLoad);
 }
 
 
@@ -55,13 +64,29 @@ double CSediment::dGetAllSizeSedimentLoad(void) const
 }
 
 
-// Adds to this cell's clay-sized sediment load and returns the updated clay-sized sediment load (the return value is not used if we are adding sediment)
-double CSediment::dChangeClaySedimentLoad(double const dDepth)
+// Adds to this cell's sediment load
+void CSediment::ChangeSedimentLoad(double const dClayDepth, double const dSiltDepth, double const dSandDepth)
 {
-   m_dClaySedimentLoad += dDepth;   
+   m_dClaySedimentLoad += dClayDepth;
+   m_dSiltSedimentLoad += dSiltDepth;
+   m_dSandSedimentLoad += dSandDepth;
+
+   m_dCumulClaySedimentLoad += dClayDepth;
+   m_dCumulSiltSedimentLoad += dSiltDepth;
+   m_dCumulSandSedimentLoad += dSandDepth;
+
+   m_pSim->AddThisIterClaySedimentLoad(dClayDepth);
+   m_pSim->AddThisIterSiltSedimentLoad(dSiltDepth);
+   m_pSim->AddThisIterSandSedimentLoad(dSandDepth);
+}
+
+// Adds to this cell's clay-sized sediment load
+void CSediment::DoChangeClaySedimentLoad(double const dDepth)
+{
+   m_dClaySedimentLoad += dDepth;
+   m_dCumulClaySedimentLoad += dDepth;
+
    m_pSim->AddThisIterClaySedimentLoad(dDepth);
-   
-   return m_dClaySedimentLoad;
 }
 
 double CSediment::dGetClaySedimentLoad(void) const
@@ -72,21 +97,23 @@ double CSediment::dGetClaySedimentLoad(void) const
 // Sets this cell's clay-sized sediment load to zero and returns the (+ve) depth that was subtracted
 double CSediment::dSetClaySedLoadZero(void)
 {
-   double dSedimentLoad = m_dClaySedimentLoad;   
+   double dSedimentLoad = m_dClaySedimentLoad;
    m_dClaySedimentLoad = 0;
+
+   // Note do not change cumulative value
    m_pSim->AddThisIterClaySedimentLoad(-dSedimentLoad);
-   
+
    return dSedimentLoad;
 }
 
 
-// Adds to this cell's silt-sized sediment load and returns the updated silt-sized sediment load (the return value is not used if we are adding sediment)
-double CSediment::dChangeSiltSedimentLoad(double const dDepth)
+// Adds to this cell's silt-sized sediment load
+void CSediment::DoChangeSiltSedimentLoad(double const dDepth)
 {
    m_dSiltSedimentLoad += dDepth;
+   m_dCumulSiltSedimentLoad += dDepth;
+
    m_pSim->AddThisIterSiltSedimentLoad(dDepth);
-   
-   return m_dSiltSedimentLoad;
 }
 
 double CSediment::dGetSiltSedimentLoad(void) const
@@ -97,21 +124,23 @@ double CSediment::dGetSiltSedimentLoad(void) const
 // Sets this cell's silt-sized sediment load to zero and returns the (+ve) depth that was subtracted
 double CSediment::dSetSiltSedLoadZero(void)
 {
-   double dSedimentLoad = m_dSiltSedimentLoad;   
+   double dSedimentLoad = m_dSiltSedimentLoad;
    m_dSiltSedimentLoad = 0;
+
+   // Note do not change cumulative value
    m_pSim->AddThisIterSiltSedimentLoad(-dSedimentLoad);
-   
+
    return dSedimentLoad;
 }
 
 
-// Adds to this cell's sand-sized sediment load and returns the updated sand-sized sediment load (the return value is not used if we are adding sediment)
-double CSediment::dChangeSandSedimentLoad(double const dDepth)
+// Adds to this cell's sand-sized sediment load
+void CSediment::DoChangeSandSedimentLoad(double const dDepth)
 {
    m_dSandSedimentLoad += dDepth;
+   m_dCumulSandSedimentLoad += dDepth;
+
    m_pSim->AddThisIterSandSedimentLoad(dDepth);
-   
-   return m_dSandSedimentLoad;
 }
 
 double CSediment::dGetSandSedimentLoad(void) const
@@ -124,18 +153,20 @@ double CSediment::dSetSandSedimentLoadZero(void)
 {
    double dSedimentLoad = m_dSandSedimentLoad;
    m_dSandSedimentLoad = 0;
+
+   // Note do not change cumulative value
    m_pSim->AddThisIterSandSedimentLoad(-dSedimentLoad);
-   
+
    return dSedimentLoad;
 }
 
-// Returns percentage sediment concentration (all sediment size classes)
+// Returns this-iteration percentage sediment concentration (all sediment size classes)
 double CSediment::dGetAllSizeSedimentConcentration(void)
 {
    double dWaterDepth = m_pCell->pGetSurfaceWater()->dGetSurfaceWater();
-   
+
    if (dWaterDepth == 0)
       return 0;
-   
-   return 100 * (m_dClaySedimentLoad + m_dSiltSedimentLoad + m_dSandSedimentLoad) / dWaterDepth;  
+
+   return 100 * (m_dClaySedimentLoad + m_dSiltSedimentLoad + m_dSandSedimentLoad) / dWaterDepth;
 }

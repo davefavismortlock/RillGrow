@@ -5,7 +5,7 @@
 This is 2d_vec.h: declarations of the class used to represent a 2D vector in RillGrow. The class is very much 'cut down' by comparison to a 'real' vector class: only
 those methods which are necessary for RG are implemented
 
- Copyright (C) 2018 David Favis-Mortlock
+ Copyright (C) 2020 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -30,7 +30,7 @@ public:
    C2DVec(const C2DVec&);
    explicit C2DVec(const C2DVec*);
    template<class T> C2DVec(const T&, const T&);
-   
+
    ~C2DVec(void);
 
    C2DVec& operator = (const C2DVec&);
@@ -43,7 +43,7 @@ public:
    C2DVec operator * (double const);
 
    template<class T> C2DVec& operator /= (const T&);
-   
+
    double dToScalar(void) const;
 };
 

@@ -2,7 +2,7 @@
 
  This is read_input.cpp: it reads the non-GIS input files for RillGrow
 
- Copyright (C) 2018 David Favis-Mortlock
+ Copyright (C) 2020 David Favis-Mortlock
 
  =========================================================================================================================================
 
@@ -29,10 +29,10 @@ bool CSimulation::bReadIni(void)
 {
    m_strRGIni = m_strRGDir;
    m_strRGIni.append(RG_INI);
-   
+
    // The .ini file is assumed to be in the RG executable's directory
    string strFilePathName(m_strRGIni);
-   
+
    // Tell the user what is happening
    cout << READ_FILE_LOCATIONS << strFilePathName << endl;
 
@@ -52,19 +52,19 @@ bool CSimulation::bReadIni(void)
 
    int i = 0;
    string strRec, strErr;
-   
+
    while (getline(InStream, strRec))
    {
       // Trim off leading and trailing whitespace
       strRec = strTrim(&strRec);
-      
+
       // If it is a blank line or a comment then ignore it
       if ((strRec.empty()) || (strRec[0] == QUOTE1) || (strRec[0] == QUOTE2))
          continue;
-      
+
       // It isn't so increment counter
       i++;
-      
+
       // Find the colon: note that lines MUST have a colon separating data from leading description portion
       size_t nPos = strRec.find(':');
       if (nPos == string::npos)
@@ -73,29 +73,29 @@ bool CSimulation::bReadIni(void)
          cerr << ERR << "badly formatted line (no ':') in " << strFilePathName << endl << "'" << strRec << "'" << endl;
          return false;
       }
-      
+
       if (nPos == strRec.size()-1)
       {
          // Error: badly formatted line (colon with nothing following)
          cerr << ERR << "badly formatted line (nothing following ':') in " << strFilePathName << endl << "'" << strRec << "'" << endl;
          return false;
       }
-      
+
       // Strip off leading portion (the bit up to and including the colon)
       string strRH = strRec.substr(nPos+1);
-      
+
       // Remove leading whitespace
       strRH = strTrimLeft(&strRH);
-      
+
       // Look for a trailing comment, if found then terminate string at that point and trim off any trailing whitespace
       nPos = strRH.rfind(QUOTE1);
       if (nPos != string::npos)
          strRH = strRH.substr(0, nPos+1);
-      
+
       nPos = strRH.rfind(QUOTE2);
       if (nPos != string::npos)
          strRH = strRH.substr(0, nPos+1);
-      
+
       // Remove trailing whitespace
       strRH = strTrimRight(&strRH);
 
@@ -103,9 +103,9 @@ bool CSimulation::bReadIni(void)
       {
       case 1:
          // The main input run-data filename
-         if (strRH.empty())               
+         if (strRH.empty())
          {
-            strErr = "path and name of main datafile";            
+            strErr = "path and name of main datafile";
             break;
          }
 
@@ -137,7 +137,7 @@ bool CSimulation::bReadIni(void)
          // Check for trailing slash on RG output directory name (is vital)
          if (strRH[strRH.size()-1] != PATH_SEPARATOR)
             strRH.append(&PATH_SEPARATOR);
-         
+
          // Now check for leading slash, or leading Unix home dir symbol, or occurrence of a drive letter
          if ((strRH[0] == PATH_SEPARATOR) || (strRH[0] == '~') || (strRH[1] == ':'))
             // It is an absolute path, so use it 'as is'
@@ -150,7 +150,7 @@ bool CSimulation::bReadIni(void)
          }
 
          break;
-         
+
       case 3:
          // Email address, only useful if running under Linux/Unix
          if (! strRH.empty())
@@ -164,7 +164,7 @@ bool CSimulation::bReadIni(void)
             else
                m_strMailAddress = strRH;
          }
-         break;            
+         break;
       }
 
       // Did an error occur?
@@ -173,7 +173,7 @@ bool CSimulation::bReadIni(void)
          // Error in input to initialisation file
          cerr << ERR << "reading " << strErr << " in " << strFilePathName << endl << "'" << strRec << "'" << endl;
          InStream.close();
-         
+
          return false;
       }
    }
@@ -209,68 +209,68 @@ bool CSimulation::bReadRunData(void)
 
    int i = 0;
    string strRec, strRH, strErr;
-   
+
    while (getline(InStream, strRec))
    {
       // Trim off leading and trailing whitespace
       strRec = strTrim(&strRec);
-      
+
       // If it is a blank line or a comment then ignore it
       if ((strRec.empty()) || (strRec[0] == QUOTE1) || (strRec[0] == QUOTE2))
          continue;
-      
+
       // It isn't so increment counter
       i++;
-      
+
       // Get the RH bit of the string, after the colon
       strRH = strSplitRH(&strRec);
       if (strRH.empty())
       {
          // Error: badly formatted line (no colon)
          cerr << ERR << "badly formatted line (no ':') in " << m_strDataPathName << endl << "'" << strRec << "'" << endl;
-         return false;         
+         return false;
       }
-      
-      int 
+
+      int
          nMultiplier = 0,
          nLen = 0;
       string strTmp;
       vector<string> VstrItems;
-      
+
       switch (i)
       {
       // --------------------------------------------------- Run Information ----------------------------------------------------------
       case 1:
          // Duration of rainfall, then duration of simulation: first convert to lower case
          strRH = strToLower(&strRH);
-         
+
          // Split, space separated
          VstrItems = VstrSplit(&strRH, SPACE);
-         
+
          nLen = VstrItems.size();
          if ((nLen < 2) || (nLen > 3))
          {
             strErr = "simulation duration incorrectly specified";
             break;
          }
-         
+
          if (nLen == 3)
          {
             m_dSimulatedRainDuration = atof(VstrItems[0].c_str());
-            m_dSimulationDuration = atof(VstrItems[1].c_str());               
+            m_dSimulationDuration = atof(VstrItems[1].c_str());
          }
          else
          {
-            m_dSimulationDuration = atof(VstrItems[0].c_str());               
+            m_dSimulationDuration = atof(VstrItems[0].c_str());
             m_dSimulatedRainDuration = m_dSimulationDuration;
          }
-            
+
          if (m_dSimulationDuration <= 0)
          {
             strErr = "simulation duration must be greater than zero";
             break;
          }
-         
+
          // Now work out what units this is in
          if (VstrItems[nLen-1].find("m") != string::npos)
             // Specified in minutes
@@ -289,17 +289,17 @@ bool CSimulation::bReadRunData(void)
             strErr = "units of simulation duration";
             break;
          }
-         
+
          // Convert the simulation duration and rain duration to seconds
          m_dSimulationDuration *= nMultiplier;
          m_dSimulatedRainDuration *= nMultiplier;
-         
+
          break;
 
       case 2:
          // Save interval(s): first convert to lower case
          strRH = strToLower(&strRH);
-         
+
          // Split, space separated
          VstrItems = VstrSplit(&strRH, SPACE);
          nLen = VstrItems.size();
@@ -308,7 +308,7 @@ bool CSimulation::bReadRunData(void)
             // No save intervals specified, just output at end
             break;
          }
-         
+
          // Now work out what units this is in
          if (VstrItems[nLen-1].find("m") != string::npos)
             // Specified in minutes
@@ -327,40 +327,40 @@ bool CSimulation::bReadRunData(void)
             strErr = "units for save intervals";
             break;
          }
-         
+
          if (nLen == 2)
          {
             // Regular save intervals
             m_bSaveRegular = true;
             m_dRSaveInterval = atof(VstrItems[0].c_str()) * nMultiplier;
-            
+
             if (m_dRSaveTime <= 0)
             {
                strErr = "save interval must be greater than zero";
                break;
             }
-            
+
             // Set up for first save
-            m_dRSaveTime = m_dRSaveInterval;               
+            m_dRSaveTime = m_dRSaveInterval;
          }
          else
          {
             // Irregular save intervals
             m_bSaveRegular = false;
-            
+
             m_nUSave = nLen-1;
             for (int n = 0; n < m_nUSave; n++)
             {
                double dSave = atof(VstrItems[n].c_str());
                dSave *= nMultiplier;
-               
+
                m_VdSaveTime.push_back(dSave);
             }
-            
+
             // Put a dummy save interval as the last entry in the array: this is needed to stop problems at end of run
             m_VdSaveTime.push_back(m_dSimulationDuration + 1);
          }
-         
+
          break;
 
       case 3:
@@ -372,7 +372,7 @@ bool CSimulation::bReadRunData(void)
             // Just use previously set random number seeds
             break;
          }
-         
+
          // Use user-specified random number seeds
          for (int n = 0; n < NUMBER_OF_RNGS; n++)
          {
@@ -387,226 +387,226 @@ bool CSimulation::bReadRunData(void)
       case 4:
          // GIS files to output, convert to lower case filenames
          strRH = strToLower(&strRH);
-         if (strRH.find(ALL_CODE) != string::npos)
+         if (strRH.find(GIS_ALL_CODE) != string::npos)
          {
-            m_bRainVarMSave         =
-            m_bRunOnSave            =
-            m_bElevSave             =
-            m_bDetrendElevSave      =
-            m_bSlosSave             =
-            m_bInitElevSave         =
-            m_bInfiltSave           =
-            m_bTotInfiltSave        =
-            m_bSoilWaterSave        =
-            m_bInfiltDepositSave    =
-            m_bTotInfiltDepositSave =
-            m_bTopSurfaceSave       =
-            m_bSplashSave           =
-            m_bTotSplashSave        =
-            m_bInundationSave       =
-            m_bFlowDirSave          =
-            m_bStreamPowerSave      =
-            m_bShearStressSave      =
-            m_bFrictionFactorSave   =
-            m_bAvgShearStressSave   =
-            m_bReynoldsSave         =
-            m_bFroudeSave           =
-            m_bTCSave               =
-            m_bAvgDepthSave         =
-            m_bAvgDWSpdSave         =
-            m_bAvgSpdSave           =
-            m_bSedConcSave          =
-            m_bSedLoadSave          =
-            m_bAvgSedLoadSave       =
-            m_bTotDepositSave       =
-            m_bNetSlumpSave         =
-            m_bNetToppleSave        =
-            m_bTotNetSlosSave       = true;
+            m_bRainVarMSave            =
+            m_bCumulRunOnSave          =
+            m_bElevSave                =
+            m_bDetrendElevSave         =
+            m_bFlowDetachSave          =
+            m_bInitElevSave            =
+            m_bInfiltSave              =
+            m_bCumulInfiltSave         =
+            m_bSoilWaterSave           =
+            m_bInfiltDepositSave       =
+            m_bCumulInfiltDepositSave  =
+            m_bTopSurfaceSave          =
+            m_bSplashSave              =
+            m_bCumulSplashSave         =
+            m_bInundationSave          =
+            m_bFlowDirSave             =
+            m_bStreamPowerSave         =
+            m_bShearStressSave         =
+            m_bFrictionFactorSave      =
+            m_bCumulAvgShearStressSave =
+            m_bReynoldsSave            =
+            m_bFroudeSave              =
+            m_bTCSave                  =
+            m_bCumulAvgDepthSave       =
+            m_bCumulAvgDWSpdSave       =
+            m_bCumulAvgSpdSave         =
+            m_bSedConcSave             =
+            m_bSedLoadSave             =
+            m_bAvgSedLoadSave          =
+            m_bCumulFlowDepositSave    =
+            m_bSlumpSave               =
+            m_bToppleSave              =
+            m_bCumulLoweringSave       = true;
 #if defined _DEBUG
-            m_bLostSave             = true;
+            m_bLostSave                = true;
 #endif
          }
          else
          {
-            if (strRH.find(RAIN_VARIATION_CODE) != string::npos)
+            if (strRH.find(GIS_RAIN_VARIATION_CODE) != string::npos)
             {
                m_bRainVarMSave = true;
-               strRH = strRemoveSubstr(&strRH, &RAIN_VARIATION_CODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_RAIN_VARIATION_CODE);
             }
 
-            if (strRH.find(RUNON_CODE) != string::npos)
+            if (strRH.find(GIS_CUMUL_RUNON_CODE) != string::npos)
             {
-               m_bRunOnSave = true;
-               strRH = strRemoveSubstr(&strRH, &RUNON_CODE);
+               m_bCumulRunOnSave = true;
+               strRH = strRemoveSubstr(&strRH, &GIS_CUMUL_RUNON_CODE);
             }
 
-            if (strRH.find(ELEVATION_CODE) != string::npos)
+            if (strRH.find(GIS_ELEVATION_CODE) != string::npos)
             {
                m_bElevSave = true;
-               strRH = strRemoveSubstr(&strRH, &ELEVATION_CODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_ELEVATION_CODE);
             }
 
-            if (strRH.find(DETRENDED_ELEVATION_CODE) != string::npos)
+            if (strRH.find(GIS_DETREND_ELEVATION_CODE) != string::npos)
             {
                m_bDetrendElevSave = true;
-               strRH = strRemoveSubstr(&strRH, &DETRENDED_ELEVATION_CODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_DETREND_ELEVATION_CODE);
             }
 
-            if (strRH.find(DETACHCODE) != string::npos)
+            if (strRH.find(GIS_ALL_SIZE_FLOW_DETACH_CODE) != string::npos)
             {
-               m_bSlosSave = true;
-               strRH = strRemoveSubstr(&strRH, &DETACHCODE);
+               m_bFlowDetachSave = true;
+               strRH = strRemoveSubstr(&strRH, &GIS_ALL_SIZE_FLOW_DETACH_CODE);
             }
 
-            if (strRH.find(INITIAL_ELEVATION_CODE) != string::npos)
+            if (strRH.find(GIS_INITIAL_ELEVATION_CODE) != string::npos)
             {
                m_bInitElevSave = true;
-               strRH = strRemoveSubstr(&strRH, &INITIAL_ELEVATION_CODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_INITIAL_ELEVATION_CODE);
             }
 
-            if (strRH.find(INFILTRATION_CODE) != string::npos)
+            if (strRH.find(GIS_INFILT_CODE) != string::npos)
             {
-               m_bTotInfiltSave = true;
-               strRH = strRemoveSubstr(&strRH, &INFILTRATION_CODE);
+               m_bCumulInfiltSave = true;
+               strRH = strRemoveSubstr(&strRH, &GIS_INFILT_CODE);
             }
 
-            if (strRH.find(CUMULATIVE_INFILTRATION_CODE) != string::npos)
+            if (strRH.find(GIS_CUMUL_INFILT_CODE) != string::npos)
             {
-               m_bTotInfiltSave = true;
-               strRH = strRemoveSubstr(&strRH, &CUMULATIVE_INFILTRATION_CODE);
+               m_bCumulInfiltSave = true;
+               strRH = strRemoveSubstr(&strRH, &GIS_CUMUL_INFILT_CODE);
             }
 
-            if (strRH.find(SOIL_WATER_CODE) != string::npos)
+            if (strRH.find(GIS_SOIL_WATER_CODE) != string::npos)
             {
                m_bSoilWaterSave = true;
-               strRH = strRemoveSubstr(&strRH, &SOIL_WATER_CODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_SOIL_WATER_CODE);
             }
 
-            if (strRH.find(TOPSCODE) != string::npos)
+            if (strRH.find(GIS_TOP_SURFACE_CODE) != string::npos)
             {
                m_bTopSurfaceSave = true;
-               strRH = strRemoveSubstr(&strRH, &TOPSCODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_TOP_SURFACE_CODE);
             }
 
-            if (strRH.find(SPLASHCODE) != string::npos)
+            if (strRH.find(GIS_SPLASH_CODE) != string::npos)
             {
                m_bSplashSave = true;
-               strRH = strRemoveSubstr(&strRH, &SPLASHCODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_SPLASH_CODE);
             }
 
-            if (strRH.find(TOTSPLASHCODE) != string::npos)
+            if (strRH.find(GIS_CUMUL_SPLASH_CODE) != string::npos)
             {
-               m_bTotSplashSave = true;
-               strRH = strRemoveSubstr(&strRH, &TOTSPLASHCODE);
+               m_bCumulSplashSave = true;
+               strRH = strRemoveSubstr(&strRH, &GIS_CUMUL_SPLASH_CODE);
             }
 
-            if (strRH.find(INUNDATIONCODE) != string::npos)
+            if (strRH.find(GIS_INUNDATION_REGIME_CODE) != string::npos)
             {
                m_bInundationSave = true;
-               strRH = strRemoveSubstr(&strRH, &INUNDATIONCODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_INUNDATION_REGIME_CODE);
             }
 
-            if (strRH.find(FLOWDIRCODE) != string::npos)
+            if (strRH.find(GIS_OFLOW_DIRECTION_CODE) != string::npos)
             {
                m_bFlowDirSave = true;
-               strRH = strRemoveSubstr(&strRH, &FLOWDIRCODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_OFLOW_DIRECTION_CODE);
             }
 
-            if (strRH.find(STREAMPOWERCODE) != string::npos)
+            if (strRH.find(GIS_STREAMPOWER_CODE) != string::npos)
             {
                m_bStreamPowerSave = true;
-               strRH = strRemoveSubstr(&strRH, &STREAMPOWERCODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_STREAMPOWER_CODE);
             }
 
-            if (strRH.find(SHEARSTRESSCODE) != string::npos)
+            if (strRH.find(GIS_SHEAR_STRESS_CODE) != string::npos)
             {
                m_bShearStressSave = true;
-               strRH = strRemoveSubstr(&strRH, &SHEARSTRESSCODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_SHEAR_STRESS_CODE);
             }
 
-            if (strRH.find(FRICTIONFACTORCODE) != string::npos)
+            if (strRH.find(GIS_FRICTION_FACTOR_CODE) != string::npos)
             {
                m_bFrictionFactorSave = true;
-               strRH = strRemoveSubstr(&strRH, &FRICTIONFACTORCODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_FRICTION_FACTOR_CODE);
             }
 
-            if (strRH.find(AVGSHEARSTRESSCODE) != string::npos)
+            if (strRH.find(GIS_CUMUL_AVG_SHEAR_STRESS_CODE) != string::npos)
             {
-               m_bAvgShearStressSave = true;
-               strRH = strRemoveSubstr(&strRH, &AVGSHEARSTRESSCODE);
+               m_bCumulAvgShearStressSave = true;
+               strRH = strRemoveSubstr(&strRH, &GIS_CUMUL_AVG_SHEAR_STRESS_CODE);
             }
 
-            if (strRH.find(REYNOLDSCODE) != string::npos)
+            if (strRH.find(GIS_REYNOLDS_NUMBER_CODE) != string::npos)
             {
                m_bReynoldsSave = true;
-               strRH = strRemoveSubstr(&strRH, &REYNOLDSCODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_REYNOLDS_NUMBER_CODE);
             }
 
-            if (strRH.find(FROUDECODE) != string::npos)
+            if (strRH.find(GIS_FROUDE_NUMBER_CODE) != string::npos)
             {
                m_bFroudeSave = true;
-               strRH = strRemoveSubstr(&strRH, &FROUDECODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_FROUDE_NUMBER_CODE);
             }
 
-            if (strRH.find(TCCODE) != string::npos)
+            if (strRH.find(GIS_TRANSPORT_CAPACITY_CODE) != string::npos)
             {
                m_bTCSave = true;
-               strRH = strRemoveSubstr(&strRH, &TCCODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_TRANSPORT_CAPACITY_CODE);
             }
 
-            if (strRH.find(AVG_SURFACE_WATER_DEPTH_CODE) != string::npos)
+            if (strRH.find(GIS_CUMUL_AVG_OFLOW_DEPTH_CODE) != string::npos)
             {
-               m_bAvgDepthSave = true;
-               strRH = strRemoveSubstr(&strRH, &AVG_SURFACE_WATER_DEPTH_CODE);
+               m_bCumulAvgDepthSave = true;
+               strRH = strRemoveSubstr(&strRH, &GIS_CUMUL_AVG_OFLOW_DEPTH_CODE);
             }
 
-            if (strRH.find(AVGSPEEDCODE) != string::npos)
+            if (strRH.find(GIS_CUMUL_AVG_OFLOW_SPEED_CODE) != string::npos)
             {
-               m_bAvgSpdSave = true;
-               strRH = strRemoveSubstr(&strRH, &AVGSPEEDCODE);
+               m_bCumulAvgSpdSave = true;
+               strRH = strRemoveSubstr(&strRH, &GIS_CUMUL_AVG_OFLOW_SPEED_CODE);
             }
 
-            if (strRH.find(AVGDWSPEEDCODE) != string::npos)
+            if (strRH.find(GIS_CUMUL_AVG_OFLOW_DW_SPEED_CODE) != string::npos)
             {
-               m_bAvgDWSpdSave = true;
-               strRH = strRemoveSubstr(&strRH, &AVGDWSPEEDCODE);
+               m_bCumulAvgDWSpdSave = true;
+               strRH = strRemoveSubstr(&strRH, &GIS_CUMUL_AVG_OFLOW_DW_SPEED_CODE);
             }
 
-            if (strRH.find(SEDCONCCODE) != string::npos)
+            if (strRH.find(GIS_SEDIMENT_CONCENTRATION_CODE) != string::npos)
             {
                m_bSedConcSave = true;
-               strRH = strRemoveSubstr(&strRH, &SEDCONCCODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_SEDIMENT_CONCENTRATION_CODE);
             }
 
-            if (strRH.find(SEDLOADCODE) != string::npos)
+            if (strRH.find(GIS_SEDIMENT_LOAD_CODE) != string::npos)
             {
                m_bSedLoadSave = true;
-               strRH = strRemoveSubstr(&strRH, &SEDLOADCODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_SEDIMENT_LOAD_CODE);
             }
 
-            if (strRH.find(AVGSEDLOADCODE) != string::npos)
+            if (strRH.find(GIS_CUMUL_AVG_SEDIMENT_LOAD_CODE) != string::npos)
             {
                m_bAvgSedLoadSave = true;
-               strRH = strRemoveSubstr(&strRH, &AVGSEDLOADCODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_CUMUL_AVG_SEDIMENT_LOAD_CODE);
             }
 
-            if (strRH.find(CUMULATIVE_ALL_SIZE_FLOW_DEPOSITION_CODE) != string::npos)
+            if (strRH.find(GIS_CUMUL_ALL_SIZE_FLOW_DEPOSIT_CODE) != string::npos)
             {
-               m_bTotDepositSave = true;
-               strRH = strRemoveSubstr(&strRH, &CUMULATIVE_ALL_SIZE_FLOW_DEPOSITION_CODE);
+               m_bCumulFlowDepositSave = true;
+               strRH = strRemoveSubstr(&strRH, &GIS_CUMUL_ALL_SIZE_FLOW_DEPOSIT_CODE);
             }
 
-            if (strRH.find(TOT_SURFACE_LOWERING_CODE) != string::npos)
+            if (strRH.find(GIS_CUMUL_ALL_PROC_SURF_LOWER_CODE) != string::npos)
             {
-               m_bTotNetSlosSave = true;
-               strRH = strRemoveSubstr(&strRH, &TOT_SURFACE_LOWERING_CODE);
+               m_bCumulLoweringSave = true;
+               strRH = strRemoveSubstr(&strRH, &GIS_CUMUL_ALL_PROC_SURF_LOWER_CODE);
             }
 
 #if defined _DEBUG
-            if (strRH.find(LOSTCODE) != string::npos)
+            if (strRH.find(GIS_CUMUL_AVG_OFLOW_FROM_EDGES_CODE) != string::npos)
             {
                m_bLostSave = true;
-               strRH = strRemoveSubstr(&strRH, &LOSTCODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_CUMUL_AVG_OFLOW_FROM_EDGES_CODE);
             }
 #endif
 
@@ -630,7 +630,7 @@ bool CSimulation::bReadRunData(void)
             strErr = "output file names";
             break;
          }
-         
+
          m_strRunName = strRH;
 
          m_strOutFile = m_strOutputPath;
@@ -646,7 +646,7 @@ bool CSimulation::bReadRunData(void)
       case 7:
          // Time series files to output, convert to lower case filenames
          strRH = strToLower(&strRH);
-         if (strRH.find(ALL_CODE) != string::npos)
+         if (strRH.find(GIS_ALL_CODE) != string::npos)
          {
             m_bTimeStepTS         =
             m_bAreaWetTS          =
@@ -664,7 +664,7 @@ bool CSimulation::bReadRunData(void)
             m_bSedLoadTS          =
             m_bInfiltDepositTS    =
             m_bSplashRedistTS     =
-            m_bSplashKETS         = 
+            m_bSplashKETS         =
             m_bSoilWaterTS        = true;
          }
          else
@@ -687,11 +687,11 @@ bool CSimulation::bReadRunData(void)
                strRH = strRemoveSubstr(&strRH, &RAIN_TIME_SERIES_CODE);
             }
 
-            if (strRH.find(INFILTRATION_TIME_SERIES_CODE) != string::npos)
+            if (strRH.find(INFILT_TIME_SERIES_CODE) != string::npos)
             {
                m_bInfiltTS =
                m_bExfiltTS = true;
-               strRH = strRemoveSubstr(&strRH, &INFILTRATION_TIME_SERIES_CODE);
+               strRH = strRemoveSubstr(&strRH, &INFILT_TIME_SERIES_CODE);
             }
 
             if (strRH.find(RUNON_TIME_SERIES_CODE) != string::npos)
@@ -700,10 +700,10 @@ bool CSimulation::bReadRunData(void)
                strRH = strRemoveSubstr(&strRH, &RUNON_TIME_SERIES_CODE);
             }
 
-            if (strRH.find(SURFACE_WATER_TIME_SERIES_CODE) != string::npos)
+            if (strRH.find(OFLOW_TIME_SERIES_CODE) != string::npos)
             {
                m_bSurfaceWaterTS = true;
-               strRH = strRemoveSubstr(&strRH, &SURFACE_WATER_TIME_SERIES_CODE);
+               strRH = strRemoveSubstr(&strRH, &OFLOW_TIME_SERIES_CODE);
             }
 
             if (strRH.find(WATER_LOST_TIME_SERIES_CODE) != string::npos)
@@ -712,10 +712,10 @@ bool CSimulation::bReadRunData(void)
                strRH = strRemoveSubstr(&strRH, &WATER_LOST_TIME_SERIES_CODE);
             }
 
-            if (strRH.find(FLOW_DETACHMENT_TIME_SERIES_CODE) != string::npos)
+            if (strRH.find(FLOW_DETACH_TIME_SERIES_CODE) != string::npos)
             {
                m_bFlowDetachTS = true;
-               strRH = strRemoveSubstr(&strRH, &FLOW_DETACHMENT_TIME_SERIES_CODE);
+               strRH = strRemoveSubstr(&strRH, &FLOW_DETACH_TIME_SERIES_CODE);
             }
 
             if (strRH.find(SLUMP_DETACHMENT_TIME_SERIES_CODE) != string::npos)
@@ -730,10 +730,10 @@ bool CSimulation::bReadRunData(void)
                strRH = strRemoveSubstr(&strRH, &TOPPLE_DETACHMENT_TIME_SERIES_CODE);
             }
 
-            if (strRH.find(FLOW_DEPOSITION_TIME_SERIES_CODE) != string::npos)
+            if (strRH.find(FLOW_DEPOSIT_TIME_SERIES_CODE) != string::npos)
             {
                m_bDoFlowDepositionTS = true;
-               strRH = strRemoveSubstr(&strRH, &FLOW_DEPOSITION_TIME_SERIES_CODE);
+               strRH = strRemoveSubstr(&strRH, &FLOW_DEPOSIT_TIME_SERIES_CODE);
             }
 
             if (strRH.find(SEDIMENT_LOST_TIME_SERIES_CODE) != string::npos)
@@ -748,10 +748,10 @@ bool CSimulation::bReadRunData(void)
                strRH = strRemoveSubstr(&strRH, &SEDIMENT_LOAD_TIME_SERIES_CODE);
             }
 
-            if (strRH.find(INFILTRATION_DEPOSIT_TIME_SERIES_CODE) != string::npos)
+            if (strRH.find(INFILT_DEPOSIT_TIME_SERIES_CODE) != string::npos)
             {
                m_bInfiltDepositTS = true;
-               strRH = strRemoveSubstr(&strRH, &INFILTRATION_DEPOSIT_TIME_SERIES_CODE);
+               strRH = strRemoveSubstr(&strRH, &INFILT_DEPOSIT_TIME_SERIES_CODE);
             }
 
             if (strRH.find(SPLASH_REDISTRIBUTION_TIME_SERIES_CODE) != string::npos)
@@ -771,7 +771,7 @@ bool CSimulation::bReadRunData(void)
                m_bSoilWaterTS = true;
                strRH = strRemoveSubstr(&strRH, &SOIL_WATER_TIME_SERIES_CODE);
             }
-            
+
             // Check to see if all codes have been removed
             strRH = strTrimLeft(&strRH);
             if (! strRH.empty())
@@ -809,7 +809,7 @@ bool CSimulation::bReadRunData(void)
             strErr = "microtopography input file";
             break;
          }
-         
+
          // Check for leading slash, or leading Unix home dir symbol, or occurrence of a drive letter
          if ((strRH[0] == PATH_SEPARATOR) || (strRH[0] == '~') || (strRH.find(':') != string::npos))
          {
@@ -834,7 +834,7 @@ bool CSimulation::bReadRunData(void)
          else if (strRH.find("m") != string::npos)
             m_nZUnits = Z_UNIT_M;
          break;
-         
+
       case 12:
          // Output DEMs using Z units from input DEM?
          strRH = strToLower(&strRH);
@@ -844,8 +844,8 @@ bool CSimulation::bReadRunData(void)
             m_bOutDEMsUsingInputZUnits = false;
          else
             strErr = "output Z units using units from input DEM switch";
-         break;            
-         
+         break;
+
       case 13:
          // Which edges are bounded?
          strRH = strToLower(&strRH);
@@ -858,7 +858,7 @@ bool CSimulation::bReadRunData(void)
          if (strRH.find('l') != string::npos)
             m_bClosedThisEdge[EDGE_LEFT] = true;
          break;
-         
+
       case 14:
          // Gradient to add
          m_dGradient = atof(strRH.c_str());                                           // in per cent
@@ -885,30 +885,30 @@ bool CSimulation::bReadRunData(void)
          if (m_nNumSoilLayers < 1)
             strErr = "need at least one soil layer";
          break;
-         
+
       case 17:
          // Elevation of unerodible basement. This is the same as the elevation of the bottom of the lowest soil layer [Z units]
          m_dBasementElevation = atof(strRH.c_str());
-         
+
          if (m_nZUnits == Z_UNIT_M)
-            m_dBasementElevation /= 1e3;            
+            m_dBasementElevation /= 1e3;
          else if (m_nZUnits == Z_UNIT_CM)
-            m_dBasementElevation /= 1e2;            
-         
+            m_dBasementElevation /= 1e2;
+
          break;
-         
+
       case 18:
          // Repeat for number of layers
          for (int nLayer = 0; nLayer < m_nNumSoilLayers; nLayer++)
          {
             int j = 0;
-            double 
+            double
                dTmp,
                dPerCentClay = 0,
                dPerCentSilt = 0,
                dPerCentSand = 0,
                dTotal = 0;
-            
+
             while (j < 15)
             {
                if ((nLayer != 0) || (j != 0))
@@ -916,37 +916,37 @@ bool CSimulation::bReadRunData(void)
                   // Only need to read a line from the file for layers after the first (have already read the line for the first layer)
                   getline(InStream, strRec);
                }
-               
+
                // Trim off leading and trailing whitespace
                strRec = strTrim(&strRec);
-               
+
                // If this line is a blank line or a comment then ignore it
                if ((strRec.empty()) || (strRec[0] == QUOTE1) || (strRec[0] == QUOTE2))
                   continue;
-               
+
                // It isn't so increment counter
                j++;
-               
+
                strRH = strSplitRH(&strRec);
                if (strRH.empty())
                {
                   // Error: badly formatted line (no colon)
                   cerr << ERR << "badly formatted line (no ':') in " << m_strDataPathName << endl << "'" << strRec << "'" << endl;
-                  return false;         
+                  return false;
                }
-               
+
                switch (j)
                {
                   case 1:
                      // Layer name
                      m_VstrInputSoilLayerName.push_back(strRH);
                      break;
-                     
+
                   case 2:
                      // Thickness (omit for top layer)
                      m_VdInputSoilLayerThickness.push_back(atof(strRH.c_str()));
                      break;
-                     
+
                   case 3:
                      // % clay
                      dTmp = atof(strRH.c_str());
@@ -956,12 +956,12 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(dTmp));
                         strErr.append(") for soil layer ");
                         strErr.append(to_string(nLayer+1));
-                        
+
                         break;
                      }
                      dPerCentClay = dTmp;
                      break;
-                     
+
                   case 4:
                      // % silt
                      dTmp = atof(strRH.c_str());
@@ -971,12 +971,12 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(dTmp));
                         strErr.append(") for soil layer ");
                         strErr.append(to_string(nLayer+1));
-                        
+
                         break;
                      }
                      dPerCentSilt = dTmp;
                      break;
-                     
+
                   case 5:
                      // % sand
                      dTmp = atof(strRH.c_str());
@@ -986,7 +986,7 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(dTmp));
                         strErr.append(") for soil layer ");
                         strErr.append(to_string(nLayer+1));
-                        
+
                         break;
                      }
                      dPerCentSand = dTmp;
@@ -995,7 +995,7 @@ bool CSimulation::bReadRunData(void)
                      if (dTotal > 100)
                      {
                         strErr = "sum of clay, silt and sand % must not exceed 100 %";
-                        break;                              
+                        break;
                      }
                      else if (dTotal < 100)
                      {
@@ -1007,14 +1007,14 @@ bool CSimulation::bReadRunData(void)
                         else if (dPerCentSand == 0)
                            dPerCentSand = (100 - (dPerCentClay + dPerCentSilt));
                      }
-                     
+
                      m_VdInputSoilLayerPerCentClay.push_back(dPerCentClay);
                      m_VdInputSoilLayerPerCentSilt.push_back(dPerCentSilt);
                      m_VdInputSoilLayerPerCentSand.push_back(dPerCentSand);
 
                      break;
-                     
-                     
+
+
                   case 6:
                      // Bulk density (t/m**3 or g/cm**3)
                      dTmp = atof(strRH.c_str());
@@ -1024,14 +1024,14 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(nLayer+1));;
                         break;
                      }
-                           
+
                      // Convert to kg/m**3
                      dTmp *= 1000;
 
                      m_VdInputSoilLayerBulkDensity.push_back(dTmp);
-                     
+
                      break;
-                     
+
                   case 7:
                      // Clay flow erodibility [0-1]
                      dTmp = atof(strRH.c_str());
@@ -1041,13 +1041,13 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(dTmp));
                         strErr.append(") for soil layer ");
                         strErr.append(to_string(nLayer+1));
-                        
+
                         break;
                      }
                      m_VdInputSoilLayerClayFlowErodibility.push_back(dTmp);
-                     
+
                      break;
-                     
+
                   case 8:
                      // Silt flow erodibility [0-1]
                      dTmp = atof(strRH.c_str());
@@ -1057,13 +1057,13 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(dTmp));
                         strErr.append(") for soil layer ");
                         strErr.append(to_string(nLayer+1));
-                        
+
                         break;
                      }
                      m_VdInputSoilLayerSiltFlowErodibility.push_back(dTmp);
-                     
+
                      break;
-                     
+
                   case 9:
                      // Sand flow erodibility [0-1]
                      dTmp = atof(strRH.c_str());
@@ -1073,13 +1073,13 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(dTmp));
                         strErr.append(") for soil layer ");
                         strErr.append(to_string(nLayer+1));
-                        
+
                         break;
                      }
                      m_VdInputSoilLayerSandFlowErodibility.push_back(dTmp);
-                     
+
                      break;
-                     
+
                   case 10:
                      // Clay splash erodibility [0-1]
                      dTmp = atof(strRH.c_str());
@@ -1089,13 +1089,13 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(dTmp));
                         strErr.append(") for soil layer ");
                         strErr.append(to_string(nLayer+1));
-                        
+
                         break;
                      }
                      m_VdInputSoilLayerClaySplashErodibility.push_back(dTmp);
-                     
+
                      break;
-                     
+
                   case 11:
                      // Silt splash erodibility [0-1]
                      dTmp = atof(strRH.c_str());
@@ -1105,13 +1105,13 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(dTmp));
                         strErr.append(") for soil layer ");
                         strErr.append(to_string(nLayer+1));
-                        
+
                         break;
                      }
                      m_VdInputSoilLayerSiltSplashErodibility.push_back(dTmp);
-                     
+
                      break;
-                     
+
                   case 12:
                      // Sand splash erodibility [0-1]
                      dTmp = atof(strRH.c_str());
@@ -1121,13 +1121,13 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(dTmp));
                         strErr.append(") for soil layer ");
                         strErr.append(to_string(nLayer+1));
-                        
+
                         break;
                      }
                      m_VdInputSoilLayerSandSplashErodibility.push_back(dTmp);
-                     
+
                      break;
-                     
+
                   case 13:
                      // Clay slump erodibility [0-1]
                      dTmp = atof(strRH.c_str());
@@ -1137,13 +1137,13 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(dTmp));
                         strErr.append(") for soil layer ");
                         strErr.append(to_string(nLayer+1));
-                        
+
                         break;
                      }
                      m_VdInputSoilLayerClaySlumpErodibility.push_back(dTmp);
-                     
+
                      break;
-                     
+
                   case 14:
                      // Silt slump erodibility [0-1]
                      dTmp = atof(strRH.c_str());
@@ -1153,13 +1153,13 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(dTmp));
                         strErr.append(") for soil layer ");
                         strErr.append(to_string(nLayer+1));
-                        
+
                         break;
                      }
                      m_VdInputSoilLayerSiltSlumpErodibility.push_back(dTmp);
-                     
+
                      break;
-                     
+
                   case 15:
                      // Sand slump erodibility [0-1]
                      dTmp = atof(strRH.c_str());
@@ -1169,20 +1169,20 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(dTmp));
                         strErr.append(") for soil layer ");
                         strErr.append(to_string(nLayer+1));
-                        
+
                         break;
                      }
                      m_VdInputSoilLayerSandSlumpErodibility.push_back(dTmp);
-                     
+
                      break;
                }
-                  
+
                if (! strErr.empty())
                   break;
             }
-         }            
+         }
          break;
-         
+
          // ---------------------------------------------------------------- Rainfall ----------------------------------------------------
       case 19:
          // Mean rainfall intensity or rainfall intensity time-series file
@@ -1319,7 +1319,7 @@ bool CSimulation::bReadRunData(void)
             strErr = "splash vertical lowering";
          break;
 
-         // --------------------------------------------------------- Run-on -------------------------------------------------------------
+         // ---------------------------------------------------- Run-on and run-off ------------------------------------------------------
       case 29:
          // Run-on from outside the grid?
          strRH = strToLower(&strRH);
@@ -1343,7 +1343,7 @@ bool CSimulation::bReadRunData(void)
          if (strRH.find('l') != string::npos)
             m_bRunOnThisEdge[EDGE_LEFT] = true;
          break;
-         
+
       case 31:
          // Length of run-on area
          m_dRunOnLen = atof(strRH.c_str());
@@ -1365,8 +1365,16 @@ bool CSimulation::bReadRunData(void)
                strErr = "run-on flow speed";
          break;
 
-      // ----------------------------------------------------------- Infiltration -----------------------------------------------------
       case 34:
+         // Constant for overland flow leaving the grid, must be greater than zero
+         m_dOffEdgeConst = atof(strRH.c_str());
+         if (m_dOffEdgeConst<= 0)
+            strErr = "constant for overland flow leaving the grid must be greater than zero";
+         break;
+
+
+      // ----------------------------------------------------------- Infiltration -----------------------------------------------------
+      case 35:
          // Simulate infiltration?
          strRH = strToLower(&strRH);
          if (strRH.find('y') != string::npos)
@@ -1377,13 +1385,13 @@ bool CSimulation::bReadRunData(void)
             strErr = "infiltration switch";
          break;
 
-      case 35:
+      case 36:
          // Repeat for number of layers
          for (int nLayer = 0; nLayer < m_nNumSoilLayers; nLayer++)
          {
             int j = 0;
             double dTmp;
-            
+
             while (j < 5)
             {
                if ((nLayer != 0) || (j != 0))
@@ -1391,25 +1399,25 @@ bool CSimulation::bReadRunData(void)
                   // Only need to read a line from the file for layers after the first (have already read the line for the first layer)
                   getline(InStream, strRec);
                }
-               
+
                // Trim off leading and trailing whitespace
                strRec = strTrim(&strRec);
-               
+
                // If this line is a blank line or a comment then ignore it
                if ((strRec.empty()) || (strRec[0] == QUOTE1) || (strRec[0] == QUOTE2))
                   continue;
-               
+
                // It isn't so increment counter
                j++;
-               
+
                strRH = strSplitRH(&strRec);
                if (strRH.empty())
                {
                   // Error: badly formatted line (no colon)
                   cerr << ERR << "badly formatted line (no ':') in " << m_strDataPathName << endl << "'" << strRec << "'" << endl;
-                  return false;         
+                  return false;
                }
-               
+
                switch (j)
                {
                   case 1:
@@ -1426,8 +1434,8 @@ bool CSimulation::bReadRunData(void)
                         m_VdInputSoilLayerInfiltAirHead.push_back(dTmp);
                      }
                      break;
-                     
-                  case 2:   
+
+                  case 2:
                      // Exponent of Brooks-Corey water retention equation
                      if (m_bDoInfiltration)
                      {
@@ -1437,7 +1445,7 @@ bool CSimulation::bReadRunData(void)
                            strErr = "exponent of Brooks-Corey water retention equation";
                            break;
                         }
-                        
+
                         m_VdInputSoilLayerInfiltLambda.push_back(dTmp);
                      }
                      break;
@@ -1452,11 +1460,11 @@ bool CSimulation::bReadRunData(void)
                            strErr = "saturated volumetric water content";
                            break;
                         }
-                        
+
                         m_VdInputSoilLayerInfiltSatWater.push_back(dTmp);
                      }
                      break;
-                     
+
                   case 4:
                      // Initial volumetric water content (cm3/cm3 or mm3/mm3)
                      if (m_bDoInfiltration)
@@ -1467,11 +1475,11 @@ bool CSimulation::bReadRunData(void)
                            strErr = "initial volumetric water content";
                            break;
                         }
-                        
+
                         m_VdInputSoilLayerInfiltInitWater.push_back(dTmp);
                      }
                      break;
-                     
+
                   case 5:
                      // Saturated hydraulic conductivity (cm/h)
                      if (m_bDoInfiltration)
@@ -1482,20 +1490,20 @@ bool CSimulation::bReadRunData(void)
                            strErr = "saturated hydraulic conductivity";
                            break;
                         }
-                        
+
                         m_VdInputSoilLayerInfiltKSat.push_back(dTmp);
                      }
                      break;
                }
-               
+
                if (! strErr.empty())
                   break;
             }
-         }            
-         break;         
-         
+         }
+         break;
+
       // ----------------------------------------------------------- Overland Flow ----------------------------------------------------
-      case 36:
+      case 37:
          // In the partially-inundated flow regime, D50 of roughness elements (mm)
          m_dD50 = atof(strRH.c_str());
          if (m_dD50 <= 0)
@@ -1504,14 +1512,14 @@ bool CSimulation::bReadRunData(void)
             m_dEpsilon = 0.5 * m_dD50;
          break;
 
-      case 37:
+      case 38:
          // In the partially-inundated flow regime, % of surface covered with roughness elements
          m_dPr = atof(strRH.c_str());
          if ((m_dPr < 0) || (m_dPr > 100))
             strErr = "% of surface covered with roughness elements";
          break;
 
-      case 38:
+      case 39:
          // In the partially-inundated flow regime, the ratio between the drag of roughness elements and the ideal situation
          m_dCd = atof(strRH.c_str());
          if ((m_dCd < 0) || (m_dCd > 1))
@@ -1519,7 +1527,7 @@ bool CSimulation::bReadRunData(void)
          break;
 
       // ------------------------------------------------------------ Flow Erosion- ---------------------------------------------------
-      case 39:
+      case 40:
          // Simulate flow erosion?
          strRH = strToLower(&strRH);
          if (strRH.find('y') != string::npos)
@@ -1530,21 +1538,21 @@ bool CSimulation::bReadRunData(void)
             strErr = "flow erosion switch";
          break;
 
-      case 40:
+      case 41:
          // K in detachment equation
          m_dK = atof(strRH.c_str());
          if (m_bFlowErosion && (m_dK <= 0))
             strErr = "constant k for detachment";
          break;
 
-      case 41:
+      case 42:
          // T in detachment equation
          m_dT = atof(strRH.c_str());
          if (m_bFlowErosion && (m_dT <= 0))
             strErr = "constant T for detachment";
          break;
 
-      case 42:
+      case 43:
          // CV of T in detachment equation
          m_dCVT = atof(strRH.c_str());
          if (m_bFlowErosion)
@@ -1554,18 +1562,11 @@ bool CSimulation::bReadRunData(void)
          }
          break;
 
-      case 43:
+      case 44:
          // CV of tau-b in detachment equation
          m_dCVTaub = atof(strRH.c_str());
          if (m_bFlowErosion && (m_dCVTaub <= 0))
             strErr = "CV of tau-b for detachment";
-         break;
-
-      case 44:
-         // Critical angle (mm/mm) for source-desination erosion share
-         m_dSourceDestCritAngle = atof(strRH.c_str());
-         if (m_bFlowErosion && (m_dSourceDestCritAngle <= 0))
-            strErr = "critical angle for source-desination erosion share";
          break;
 
       // -------------------------------------------------------- Transport Capacity --------------------------------------------------
@@ -1599,40 +1600,40 @@ bool CSimulation::bReadRunData(void)
 
       // ----------------------------------------------------------- Deposition -------------------------------------------------------
       case 49:
-         // Grain density (kg/m**3)         
+         // Grain density (kg/m**3)
          m_dDepositionGrainDensity = atof(strRH.c_str());
          if (m_bFlowErosion && (m_dDepositionGrainDensity <= 0))
             strErr = "grain density, for deposition";
          break;
-         
+
       case 50:
          // Clay minimum size (mm)
          m_dClaySizeMin = atof(strRH.c_str());
          if (m_bFlowErosion && (m_dClaySizeMin < 0))
             strErr = "clay minimum size, for deposition";
          break;
-         
+
       case 51:
          // Clay-silt threshold size (mm)
          m_dClaySiltBoundarySize = atof(strRH.c_str());
          if (m_bFlowErosion && (m_dClaySiltBoundarySize <= m_dClaySizeMin))
             strErr = "clay-silt threshold size, for deposition";
          break;
-         
+
       case 52:
          // Silt-Sand threshold size (mm)
          m_dSiltSandBoundarySize = atof(strRH.c_str());
          if (m_bFlowErosion && (m_dSiltSandBoundarySize <= m_dClaySiltBoundarySize))
             strErr = "silt-sand threshold size, for deposition";
          break;
-         
+
       case 53:
          // Sand maximum size (mm)
          m_dSandSizeMax = atof(strRH.c_str());
          if (m_bFlowErosion && (m_dSandSizeMax <= m_dSiltSandBoundarySize))
             strErr = "sand maximum size, for deposition";
          break;
- 
+
       // -------------------------------------------------------------- Slumping ------------------------------------------------------
       case 54:
          // Simulate slumping?
@@ -1646,20 +1647,27 @@ bool CSimulation::bReadRunData(void)
          break;
 
       case 55:
-         // Threshold shear stress for slumping
-         m_dSlumpCritShearStress = atof(strRH.c_str());                    // kg/m s**2 (Pa)
-         if (m_bSlumping && (m_dSlumpCritShearStress < 0))
-            strErr = "threshold shear stress for slumping";
+         // Radius of soil shear stress 'patch'
+         m_dSSSPatchSize = atof(strRH.c_str());                    // mm
+         if (m_bSlumping && (m_dSSSPatchSize <= 0))
+            strErr = "radius of soil shear stress 'patch', for slumping";
          break;
 
       case 56:
+         // Threshold shear stress for slumping
+         m_dCritSSSForSlump = atof(strRH.c_str());                    // kg/m s**2 (Pa)
+         if (m_bSlumping && (m_dCritSSSForSlump < 0))
+            strErr = "threshold shear stress for slumping";
+         break;
+
+      case 57:
          // Angle of rest for saturated slumped soil
          m_dSlumpAngleOfRest = atof(strRH.c_str());                        // in per cent
          if (m_bSlumping && (m_dSlumpAngleOfRest < 0))
             strErr = "angle of rest for slumped soil";
          break;
 
-      case 57:
+      case 58:
          // Critical angle for toppling soil (not saturated)
          m_dToppleCriticalAngle = atof(strRH.c_str());                     // in per cent
          if (m_bSlumping)
@@ -1669,7 +1677,7 @@ bool CSimulation::bReadRunData(void)
          }
          break;
 
-      case 58:
+      case 59:
          // Angle of rest for toppled soil (not saturated)
          m_dToppleAngleOfRest = atof(strRH.c_str());                       // in per cent
          if (m_bSlumping)
@@ -1682,29 +1690,48 @@ bool CSimulation::bReadRunData(void)
          }
          break;
 
+         // ---------------------------------------------------------- Headcut Retreat ---------------------------------------------------
+      case 60:
+         // Simulate headcut retreat?
+         strRH = strToLower(&strRH);
+         if (strRH.find('y') != string::npos)
+            m_bHeadcutRetreat = true;
+         else if (strRH.find('n') != string::npos)
+            m_bHeadcutRetreat = false;
+         else
+            strErr = "headcut retreat switch";
+         break;
+
+      case 61:
+         // Headcut retreat constant
+         m_dHeadcutRetreatConst = atof(strRH.c_str());
+         if (m_dHeadcutRetreatConst <= 0)
+            strErr = "headcut retreat constant";
+         break;
+
          // --------------------------------------------------- Various Physical Constants -----------------------------------------------
-      case 59:
+      case 62:
          // Density of water
          m_dRho = atof(strRH.c_str());                                    // kg/m**3
          if (m_dRho <= 0)
             strErr = "density of water";
          break;
 
-      case 60:
+      case 63:
          // Viscosity of water
          m_dNu = atof(strRH.c_str());                                     // m**2/sec
          if (m_dNu <= 0)
             strErr = "viscosity of water";
          break;
 
-      case 61:
+      case 64:
          // Gravitational acceleration
          m_dG = atof(strRH.c_str());                                      // m/sec**2
          if (m_dG <= 0)
             strErr = "gravitational acceleration";
          break;
       }
-   
+
       // Did an error occur?
       if (! strErr.empty())
       {
@@ -1715,65 +1742,58 @@ bool CSimulation::bReadRunData(void)
       }
    }
 
-   // Make some changes now everything has been read: first, don't output runon files if no runon, ditto splash or KE GIS/TS files
-   // if no splash
-   if (! m_bRunOn)
-      m_bRunOnSave = false;
+   // Close the input file
+   InStream.close();
 
+   // Make some changes now everything has been read: first, don't output runon files if no runon
+   if (! m_bRunOn)
+      m_bCumulRunOnSave = false;
+
+   // Don't output splash or KE GIS/TS files if no splash
    if (! m_bSplash)
    {
       m_bSplashSave      =
-      m_bTotSplashSave   =
+      m_bCumulSplashSave =
       m_bSplashRedistTS  =
       m_bSplashKETS      = false;
    }
 
-   // Similarly, don't output runon TS file if no runon
+   // Don't output runon TS file if no runon
    if (! m_bRunOn)
       m_bRunOnTS = false;
 
-   // Or infiltration GIS/TS files if no infiltration
+   // Don't output infiltration GIS/TS files if no infiltration
    if (! m_bDoInfiltration)
    {
-      m_bInfiltSave           =
-      m_bTotInfiltSave        =
-      m_bSoilWaterSave        =
-      m_bInfiltDepositSave    =
-      m_bTotInfiltDepositSave =
-      m_bInfiltTS             =
-      m_bExfiltTS             =
-      m_bInfiltDepositTS      = 
-      m_bSoilWaterTS          = false;
+      m_bInfiltSave              =
+      m_bCumulInfiltSave         =
+      m_bSoilWaterSave           =
+      m_bInfiltDepositSave       =
+      m_bCumulInfiltDepositSave  =
+      m_bInfiltTS                =
+      m_bExfiltTS                =
+      m_bInfiltDepositTS         =
+      m_bSoilWaterTS             = false;
    }
 
-   // Or slumping or toppling GIS/TS files if no slumping
+   // Don't output slumping or toppling GIS/TS files if no slumping
    if (! m_bSlumping)
    {
-      m_bNetSlumpSave   =
-      m_bNetToppleSave  =
+      m_bSlumpSave      =
+      m_bToppleSave     =
       m_bSlumpDetachTS  =
       m_bToppleDetachTS = false;
    }
 
-   // Or flow erosion GIS/TS files if no flow erosion
+   // Don't output flow erosion GIS/TS files if no flow erosion
    if (! m_bFlowErosion)
    {
-      m_bTCSave         =
-      m_bSlosSave       =
-      m_bSedConcSave    =
-      m_bSedLoadSave    =
-      m_bAvgSedLoadSave =
-      m_bTotDepositSave =
-      m_bTotNetSlosSave = true;
-      
       m_bFlowDetachTS       =
       m_bDoFlowDepositionTS =
       m_bSedLostTS          =
       m_bSedLoadTS          = false;
    }
 
-   // Close file
-   InStream.close();
    return (true);
 }
 
@@ -1787,12 +1807,12 @@ bool CSimulation::bOpenLogFile(void)
 {
    // Open in binary mode if just checking random numbers
 #if defined RANDCHECK
-   LogStream.open(m_strLogFile, ios::out | ios::binary | ios::trunc);
+   m_ofsLog.open(m_strLogFile, ios::out | ios::binary | ios::trunc);
 #else
-   LogStream.open(m_strLogFile, ios::out | ios::trunc);
+   m_ofsLog.open(m_strLogFile, ios::out | ios::trunc);
 #endif
 
-   if (! LogStream)
+   if (! m_ofsLog)
    {
       // Error, cannot open log file
       cerr << ERR << "cannot open " << m_strLogFile << " for output" << endl;
@@ -1800,7 +1820,7 @@ bool CSimulation::bOpenLogFile(void)
    }
 
    // Set default Log output format
-   LogStream << setiosflags(ios::scientific);
+   m_ofsLog << setiosflags(ios::scientific);
 
    return (true);
 }
@@ -1842,7 +1862,7 @@ bool CSimulation::bReadRainfallTimeSeries(void)
       {
          // It isn't, so increment counter
          i++;
-         
+
          // Find the colon: note that lines MUST have a colon separating data from leading description portion
          size_t nPos = strRec.find(':');
          if (nPos == string::npos)
@@ -1851,33 +1871,33 @@ bool CSimulation::bReadRainfallTimeSeries(void)
             cerr << ERR << "badly formatted line (no ':') in " << m_strDataPathName << endl << strRec << endl;
             return false;
          }
-         
+
          // Strip off leading portion (the bit up to and including the colon)
          string strRH = strRec.substr(nPos+1);
-         
+
          // Remove leading whitespace after the colon
          strRH = strTrimLeft(&strRH);
-         
+
          // Look for trailing comments, if found then terminate string at that point and trim off any trailing whitespace
          bool bFound = true;
          while (bFound)
          {
             bFound = false;
-            
+
             nPos = strRH.rfind(QUOTE1);
             if (nPos != string::npos)
             {
                strRH = strRH.substr(0, nPos);
                bFound = true;
             }
-            
+
             nPos = strRH.rfind(QUOTE2);
             if (nPos != string::npos)
             {
                strRH = strRH.substr(0, nPos);
                bFound = true;
             }
-            
+
             // Trim trailing spaces
             strRH = strTrimRight(&strRH);
          }
@@ -1896,7 +1916,7 @@ bool CSimulation::bReadRainfallTimeSeries(void)
                break;
             }
          }
-         
+
          else
          {
             // Should be a time/intensity pair, so split by space
@@ -1907,18 +1927,18 @@ bool CSimulation::bReadRainfallTimeSeries(void)
                strErr.append(to_string(i+1));
                strErr.append(" is invalid: ");
                strErr.append(strRH);
-               break;               
+               break;
             }
-            
+
             // There are two items, so read in rainfall change time (convert to seconds, if necessary)
             double dRainChangeTime = atof(VstrItems[0].c_str()) * nMultiplier;
-            
+
             // Check for obvious error
-            if ((dRainChangeTime <= 0) || (dRainChangeTime > m_dSimulatedRainDuration))               
+            if ((dRainChangeTime <= 0) || (dRainChangeTime > m_dSimulatedRainDuration))
             {
                strErr = "rainfall change time must be greater than zero: ";
                strErr.append(strRH);
-               
+
                break;
             }
 
@@ -1932,7 +1952,7 @@ bool CSimulation::bReadRainfallTimeSeries(void)
                   strErr.append(" & ");
                   strErr.append(to_string(i-1));
                   strErr.append(" are out of sequence");
-                  
+
                   break;
                }
             }
@@ -1950,8 +1970,8 @@ bool CSimulation::bReadRainfallTimeSeries(void)
             }
 
             // All OK, so store
-            m_VdRainChangeTime.push_back(dRainChangeTime);            
-            m_VdRainChangeIntensity.push_back(dRainChangeIntensity);            
+            m_VdRainChangeTime.push_back(dRainChangeTime);
+            m_VdRainChangeIntensity.push_back(dRainChangeIntensity);
          }
 
          // Did an error occur?
@@ -1975,15 +1995,15 @@ bool CSimulation::bReadRainfallTimeSeries(void)
 
 
 /*========================================================================================================================================
- 
+
  Returns the after-colon part of a line read from the text input file
- 
+
 ========================================================================================================================================*/
 string CSimulation::strSplitRH(string const* pstrRec) const
 {
    size_t nPos = 0;
    string strRH;
-   
+
    // Find the colon: note that lines MUST have a colon separating data from leading description portion
    nPos = pstrRec->find(':');
    if (nPos == string::npos)
@@ -2004,24 +2024,24 @@ string CSimulation::strSplitRH(string const* pstrRec) const
    while (bFound)
    {
       bFound = false;
-      
+
       nPos = strRH.rfind(QUOTE1);
       if (nPos != string::npos)
       {
          strRH = strRH.substr(0, nPos);
          bFound = true;
       }
-      
+
       nPos = strRH.rfind(QUOTE2);
       if (nPos != string::npos)
       {
          strRH = strRH.substr(0, nPos);
          bFound = true;
       }
-      
+
       // Trim trailing spaces
       strRH = strTrimRight(&strRH);
    }
-   
+
    return strRH;
 }

@@ -2,9 +2,9 @@
    #define __SURFACE_WATER_H__
 /*=========================================================================================================================================
 
- This is cell_surface_water.h: declarations for the RillGrow class used to represent a cell's surface water
+ This is cell_surface_water.h: declarations for the RillGrow class used to represent a cell's overland flow
 
- Copyright (C) 2018 David Favis-Mortlock
+ Copyright (C) 2020 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -27,65 +27,65 @@ class CSimulation;                                 // Ditto
 class CSurfaceWater
 {
 public:
-   static CSimulation* m_pSim; 
+   static CSimulation* m_pSim;
 
 private:
    int
       m_nFlowDirection,
-      m_nInundationClass;                          // 0 = dry, 1 = shallow flow, 2 = marginally inundated, 3 = well inundated   
-      
+      m_nInundationClass;                          // 0 = dry, 1 = shallow flow, 2 = marginally inundated, 3 = well inundated
+
    double
       m_dSurfaceWaterDepth,                        // Water on soil surface, as a depth (mm)
-      m_dCumulativeSurfaceWaterDepth,              // As a depth (mm) but weighted by time (since timstep varies)
+      m_dCumulSurfaceWaterDepth,                   // Cumulative deoth of water on soil surface (mm)
       m_dStreamPower,
-      m_dTransCap,      
+      m_dTransCap,
       m_dFrictionFactor;
-      
+
 #if defined _DEBUG
    double
-      m_dCumulativeSurfaceWaterDepthLost;          // Total lost from grid via this edge cell, as a depth (mm)
+      m_dCumulSurfaceWaterDepthLost;               // Total lost from grid via this edge cell, as a depth (mm)
 #endif
 
    C2DVec
       m_vFlowVelocity,                             // Flow velocity
-      m_vTotFlowVelocity,                          // Cumulative time-weighted flow velocity
+      m_vCumulFlowVelocity,                        // Cumulative time-weighted flow velocity
       m_vDWFlowVelocity,                           // Depth-weighted flow velocity
-      m_vTotDWFlowVelocity;                        // Cumulative time-weighted depth-weighted flow velocity
-      
-   CCell* m_pCell;   
-      
+      m_vCumulDWFlowVelocity;                      // Cumulative time-weighted depth-weighted flow velocity
+
+   CCell* m_pCell;
+
 public:
    CSurfaceWater(void);
    ~CSurfaceWater(void);
-   
+
    void SetParent(CCell* const);
-   
+
    void InitializeFlow(void);
-   
+
    void SetInundation(int const);
    int nGetInundation(void) const;
-   
+
    void SetFlowDirection(int const);
    int nGetFlowDirection(void) const;
-   
+
    void ChangeSurfaceWater(double const);
    void SetSurfaceWaterZero(void);
-   double dGetSurfaceWater(void) const;   
-   bool bIsWet(void) const;   
-   double dGetCumulativeSurfaceWater(void) const;
-   
+   double dGetSurfaceWater(void) const;
+   bool bIsWet(void) const;
+   double dGetCumulSurfaceWater(void) const;
+
 #if defined _DEBUG
    void AddSurfaceWaterLost(double const);
-   double dGetCumulativeSurfaceWaterLost(void) const;
+   double dGetCumulSurfaceWaterLost(void) const;
 #endif
-   
+
    void InitializeAllFlowVelocity(void);
    void SetFlowVelocity(const C2DVec&);
    void SetFlowVelocity(const C2DVec*);
    void SetFlowVelocity(double const, double const);
    C2DVec* vecGetFlowVel(void);
    double dGetFlowSpd(void) const;
-   double dCumulativeFlowSpeed(void) const;
+   double dCumulFlowSpeed(void) const;
    void SetDepthWeightedFlowVelocity(const C2DVec&);
    void SetDepthWeightedFlowVelocity(const C2DVec*);
    void SetDepthWeightedFlowVelocity(double const, double const);
@@ -93,18 +93,18 @@ public:
    double dGetDWFlowVelX(void) const;
    double dGetDWFlowVelY(void) const;
    double dGetDWFlowSpd(void) const;
-   double dGetTotDWFlowSpd(void) const;
-   
+   double dGetCumulDWFlowSpd(void) const;
+
    void SetStreamPower(double const);
    double dGetStreamPower(void) const;
-   
+
    void SetTransportCapacity(double const);
    double dGetTransportCapacity(void) const;
-   
+
    void SetFrictionFactor(double const);
    double dGetFrictionFactor(void) const;
-   
-   double dGetReynolds(double const) const;   
-   double dGetFroude(double const) const;    
+
+   double dGetReynolds(double const) const;
+   double dGetFroude(double const) const;
 };
 #endif         // __SURFACE_WATER_H__

@@ -2,7 +2,7 @@
 
  This is utils.cpp: utility routines for RillGrow
 
- Copyright (C) 2018 David Favis-Mortlock
+ Copyright (C) 2020 David Favis-Mortlock
 
  =========================================================================================================================================
 
@@ -177,7 +177,7 @@ bool CSimulation::bFindExeDir(char* pcArg)
 {
    string strTmp;
    char szBuf[BUFFER_SIZE] = "";
-   
+
 #ifdef _WIN32
    if (0 != GetModuleFileName(NULL, szBuf, BUFFER_SIZE))
       strTmp = szBuf;
@@ -186,22 +186,22 @@ bool CSimulation::bFindExeDir(char* pcArg)
       strTmp = pcArg;
 #else
    //   char* pResult = getcwd(szBuf, BUFFER_SIZE);          // Used to use this, but what if cwd is not the same as the CoastalME dir?
-   
+
    if (-1 != readlink("/proc/self/exe", szBuf, BUFFER_SIZE))
       strTmp = szBuf;
    else
       // It failed, so try another approach
       strTmp = pcArg;
 #endif
-   
+
    // Neither approach has worked, so give up
    if (strTmp.empty())
       return false;
-   
+
    // It's OK, so trim off the executable's name
    int nPos = strTmp.find_last_of(PATH_SEPARATOR);
    m_strRGDir = strTmp.substr(0, nPos+1);            // Note that this must be terminated with a backslash
-   
+
    return true;
 }
 
@@ -283,7 +283,7 @@ void CSimulation::WrapLongString(string* pstrTemp)
 {
    if (static_cast<int>(pstrTemp->size()) > OUTPUT_WIDTH)
    {
-      OutStream << *pstrTemp << endl << "                                                        \t: ";
+      m_ofsOut << *pstrTemp << endl << "                                                        \t: ";
       *pstrTemp = "";
    }
 }
@@ -297,7 +297,7 @@ void CSimulation::WrapLongString(string* pstrTemp)
 string CSimulation::strGetComputerName(void)
 {
    string strComputerName;
-   
+
 #ifdef _WIN32
    // Being compiled to run under Windows, either by MS VC++, Borland C++, or Cygwin
    strComputerName = getenv("COMPUTERNAME");
@@ -305,12 +305,12 @@ string CSimulation::strGetComputerName(void)
    // Being compiled for another platform; assume for Linux-Unix
    char szHostName[BUFFER_SIZE] = "";
    gethostname(szHostName, BUFFER_SIZE);
-   
+
    strComputerName = szHostName;
    if (strComputerName.empty())
       strComputerName = "Unknown Computer";
 #endif
-   
+
    return strComputerName;
 }
 
@@ -325,7 +325,7 @@ void CSimulation::DoCPUClockReset(void)
    if (static_cast<clock_t>(-1) == clock())
    {
       // Error
-      LogStream << "CPU time not available" << endl;
+      m_ofsLog << "CPU time not available" << endl;
       m_dCPUClock = -1;
       return;
    }
@@ -342,7 +342,7 @@ void CSimulation::DoCPUClockReset(void)
 
 #if defined CLOCKCHECK
       // For debug purposes
-      LogStream << "Rolled over: dClkThis=" << dClkThis << " m_dClkLast=" << m_dClkLast << endl << "\t" << " before rollover=" << (CLOCK_T_RANGE + 1 - m_dClkLast) << endl << "\t" << " after rollover=" << dClkThis << endl << "\t" << " ADDED=" << (CLOCK_T_RANGE + 1 - m_dClkLast + dClkThis) << endl;
+      m_ofsLog << "Rolled over: dClkThis=" << dClkThis << " m_dClkLast=" << m_dClkLast << endl << "\t" << " before rollover=" << (CLOCK_T_RANGE + 1 - m_dClkLast) << endl << "\t" << " after rollover=" << dClkThis << endl << "\t" << " ADDED=" << (CLOCK_T_RANGE + 1 - m_dClkLast + dClkThis) << endl;
 #endif
    }
    else
@@ -352,7 +352,7 @@ void CSimulation::DoCPUClockReset(void)
 
 #if defined CLOCKCHECK
       // For debug purposes
-      LogStream << "No rollover: dClkThis=" << dClkThis << " m_dClkLast=" << m_dClkLast << " ADDED=" << dClkThis - m_dClkLast << endl;
+      m_ofsLog << "No rollover: dClkThis=" << dClkThis << " m_dClkLast=" << m_dClkLast << " ADDED=" << dClkThis - m_dClkLast << endl;
 #endif
    }
 
@@ -388,29 +388,29 @@ void CSimulation::CalcTime(double const dRunLength)
       // Calculate CPU time in secs
       double dDuration = m_dCPUClock/CLOCKS_PER_SEC;
 
-      // And write CPU time out to OutStream and LogStream
-      OutStream << "CPU time elapsed: " << strDispTime(dDuration, false, true);
-      LogStream << "CPU time elapsed: " << strDispTime(dDuration, false, true);
+      // And write CPU time out to m_ofsOut and m_ofsLog
+      m_ofsOut << "CPU time elapsed: " << strDispTime(dDuration, false, true);
+      m_ofsLog << "CPU time elapsed: " << strDispTime(dDuration, false, true);
 
       // Calculate CPU time per iteration
       double dPerIter = dDuration / m_ulTotIter;
 
-      // And write CPU time per iteration to OutStream and LogStream
-      OutStream << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << " (" << setprecision(4) << dPerIter << " per iteration)" << endl;
-      LogStream << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << " (" << setprecision(4) << dPerIter << " per iteration)" << endl;
+      // And write CPU time per iteration to m_ofsOut and m_ofsLog
+      m_ofsOut << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << " (" << setprecision(4) << dPerIter << " per iteration)" << endl;
+      m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << " (" << setprecision(4) << dPerIter << " per iteration)" << endl;
 
       // Calculate ratio of CPU time to time simulated
-      OutStream << "In terms of CPU time, this is ";
-      LogStream << "In terms of CPU time, this is ";
+      m_ofsOut << "In terms of CPU time, this is ";
+      m_ofsLog << "In terms of CPU time, this is ";
       if (dDuration > dRunLength)
       {
-         OutStream << setprecision(3) << dDuration / dRunLength << " x slower than reality" << endl;
-         LogStream << setprecision(3) << dDuration / dRunLength << " x slower than reality" << endl;
+         m_ofsOut << setprecision(3) << dDuration / dRunLength << " x slower than reality" << endl;
+         m_ofsLog << setprecision(3) << dDuration / dRunLength << " x slower than reality" << endl;
       }
       else
       {
-         OutStream << setprecision(3) << dRunLength / dDuration << " x faster than reality" << endl;
-         LogStream << setprecision(3) << dRunLength / dDuration << " x faster than reality" << endl;
+         m_ofsOut << setprecision(3) << dRunLength / dDuration << " x faster than reality" << endl;
+         m_ofsLog << setprecision(3) << dRunLength / dDuration << " x faster than reality" << endl;
       }
    }
 
@@ -420,29 +420,29 @@ void CSimulation::CalcTime(double const dRunLength)
    // Calculate run time
    double dDuration = difftime(m_tSysEndTime, m_tSysStartTime);
 
-   // And write run time out to OutStream and LogStream
-   OutStream << "Run time elapsed: " << strDispTime(dDuration, false, true);
-   LogStream << "Run time elapsed: " << strDispTime(dDuration, false, true);
+   // And write run time out to m_ofsOut and m_ofsLog
+   m_ofsOut << "Run time elapsed: " << strDispTime(dDuration, false, true);
+   m_ofsLog << "Run time elapsed: " << strDispTime(dDuration, false, true);
 
    // Calculate run time per iteration
    double dPerIter = dDuration / m_ulTotIter;
 
-   // And write run time per iteration to OutStream and LogStream
-   OutStream << setiosflags(ios::fixed) << " (" << setprecision(4) << dPerIter << " per iteration)" << endl;
-   LogStream << setiosflags(ios::fixed) << " (" << setprecision(4) << dPerIter << " per iteration)" << endl;
+   // And write run time per iteration to m_ofsOut and m_ofsLog
+   m_ofsOut << setiosflags(ios::fixed) << " (" << setprecision(4) << dPerIter << " per iteration)" << endl;
+   m_ofsLog << setiosflags(ios::fixed) << " (" << setprecision(4) << dPerIter << " per iteration)" << endl;
 
    // Calculate ratio of run time to time simulated
-   OutStream << "In terms of run time, this is ";
-   LogStream << "In terms of run time, this is ";
+   m_ofsOut << "In terms of run time, this is ";
+   m_ofsLog << "In terms of run time, this is ";
    if (dDuration > dRunLength)
    {
-      OutStream << setprecision(3) << dDuration / dRunLength << " x slower than reality" << endl;
-      LogStream << setprecision(3) << dDuration / dRunLength << " x slower than reality" << endl;
+      m_ofsOut << setprecision(3) << dDuration / dRunLength << " x slower than reality" << endl;
+      m_ofsLog << setprecision(3) << dDuration / dRunLength << " x slower than reality" << endl;
    }
    else
    {
-      OutStream << setprecision(3) << dRunLength / dDuration << " x faster than reality" << endl;
-      LogStream << setprecision(3) << dRunLength / dDuration << " x faster than reality" << endl;
+      m_ofsOut << setprecision(3) << dRunLength / dDuration << " x faster than reality" << endl;
+      m_ofsLog << setprecision(3) << dRunLength / dDuration << " x faster than reality" << endl;
    }
 }
 
@@ -456,18 +456,18 @@ string CSimulation::strDispTime(double const dTimeIn, bool const bRound, bool co
 {
    // Make sure no negative times
    double dTmpTime = tMax(dTimeIn, 0.0);
-   
+
    if (bRound)
       dTmpTime = dRound(dTmpTime);
-   
+
    string strTime;
-      
+
    // Display hours
    if (dTmpTime >= 3600)
    {
       unsigned long ulHours = dTmpTime / 3600;
       dTmpTime -= (ulHours * 3600);
-      
+
       stringstream ststrTmp;
       ststrTmp << FillToWidth('0', 2) << ulHours;
       strTime.append(ststrTmp.str());
@@ -475,13 +475,13 @@ string CSimulation::strDispTime(double const dTimeIn, bool const bRound, bool co
    }
    else
       strTime.append("00h ");
-   
+
    // Display minutes
    if (dTmpTime >= 60)
    {
       unsigned long ulMinutes = dTmpTime / 60;
       dTmpTime -= (ulMinutes * 60);
-      
+
       stringstream ststrTmp;
       ststrTmp << FillToWidth('0', 2) << ulMinutes;
       strTime.append(ststrTmp.str());
@@ -489,12 +489,12 @@ string CSimulation::strDispTime(double const dTimeIn, bool const bRound, bool co
    }
    else
       strTime.append("00m ");
-   
+
    // Display seconds
    stringstream ststrTmp;
    ststrTmp << FillToWidth('0', 2) << static_cast<int>(dTmpTime);
    strTime.append(ststrTmp.str());
-   
+
    if (bFrac)
    {
       // Fractions of a second
@@ -505,7 +505,7 @@ string CSimulation::strDispTime(double const dTimeIn, bool const bRound, bool co
       strTime.append(ststrTmp.str());
    }
    strTime.append("s");
-   
+
    return strTime;
 }
 
@@ -541,18 +541,18 @@ void CSimulation::AnnounceProgress(void)
       // Stdout is connected to a tty, so not running as a background job
       static double sdElapsed = 0;
       static double sdToGo = 0;
-      
+
       // Get current time
       time_t tNow = time(nullptr);
-      
+
       // Calculate time elapsed and remaining
       sdElapsed = difftime(tNow, m_tSysStartTime);
       sdToGo = (sdElapsed * m_dSimulationDuration / m_dSimulatedTimeElapsed) - sdElapsed;
-      
+
       // Tell the user about progress (note need to make several separate calls to cout here, or MS VC++ compiler appears to get confused)
       cout << SIMULATING << strDispTime(m_dSimulatedTimeElapsed, false, true);
       cout << setiosflags(ios::fixed) << setprecision(3) << setw(9) << 100 * m_dSimulatedTimeElapsed / m_dSimulationDuration;
-      cout << "%   (elapsed " << strDispTime(sdElapsed, true, false) << " remaining ";      
+      cout << "%   (elapsed " << strDispTime(sdElapsed, true, false) << " remaining ";
       cout << strDispTime(sdToGo, true, false) << ")  ";
       cout.flush();
    }
@@ -686,9 +686,9 @@ void CSimulation::CalcProcessStats(void)
 {
    string const      NA = "Not available";
 
-   OutStream << endl;
-   OutStream << "Process statistics" << endl;
-   OutStream << "------------------" << endl;
+   m_ofsOut << endl;
+   m_ofsOut << "Process statistics" << endl;
+   m_ofsOut << "------------------" << endl;
 
 #if defined _MSC_VER
    // First, find out which version of Windows we are running under
@@ -706,60 +706,60 @@ void CSimulation::CalcProcessStats(void)
       if (! GetVersionEx((OSVERSIONINFO *) &osvi))
       {
          // That didn't work either, too risky to proceed so give up
-         OutStream << NA << endl;
+         m_ofsOut << NA << endl;
          return;
       }
    }
 
    // OK, we have Windows version so display it
-   OutStream << "Running under                                \t: ";
+   m_ofsOut << "Running under                                \t: ";
    switch (osvi.dwPlatformId)
    {
       case VER_PLATFORM_WIN32_NT:
          if (osvi.dwMajorVersion <= 4)
-            OutStream << "Windows NT ";
+            m_ofsOut << "Windows NT ";
          else if (5 == osvi.dwMajorVersion && 0 == osvi.dwMinorVersion)
-            OutStream << "Windows 2000 ";
+            m_ofsOut << "Windows 2000 ";
          else if (5 == osvi.dwMajorVersion && 1 == osvi.dwMinorVersion)
-            OutStream << "Windows XP ";
+            m_ofsOut << "Windows XP ";
          else if (6 == osvi.dwMajorVersion && 0 == osvi.dwMinorVersion)
-            OutStream << "Windows Vista ";
+            m_ofsOut << "Windows Vista ";
          // TODO add info for other Windows version
          else
-            OutStream << "unknown Windows version ";
+            m_ofsOut << "unknown Windows version ";
 
          // Display version, service pack (if any), and build number
          if (osvi.dwMajorVersion <= 4)
             // TODO does this still work on 64-bit platforms?
-            OutStream << "version " << osvi.dwMajorVersion << "." << osvi.dwMinorVersion << " " << osvi.szCSDVersion << " (Build " << (osvi.dwBuildNumber & 0xFFFF) << ")" << endl;
+            m_ofsOut << "version " << osvi.dwMajorVersion << "." << osvi.dwMinorVersion << " " << osvi.szCSDVersion << " (Build " << (osvi.dwBuildNumber & 0xFFFF) << ")" << endl;
          else
             // TODO does this still work on 64-bit platforms?
-            OutStream << osvi.szCSDVersion << " (Build " << (osvi.dwBuildNumber & 0xFFFF) << ")" << endl;
+            m_ofsOut << osvi.szCSDVersion << " (Build " << (osvi.dwBuildNumber & 0xFFFF) << ")" << endl;
          break;
 
       case VER_PLATFORM_WIN32_WINDOWS:
          if (4 == osvi.dwMajorVersion && 0 == osvi.dwMinorVersion)
          {
-             OutStream << "Windows 95";
+             m_ofsOut << "Windows 95";
              if ('C' == osvi.szCSDVersion[1] || 'B' == osvi.szCSDVersion[1])
-                OutStream << " OSR2";
-             OutStream << endl;
+                m_ofsOut << " OSR2";
+             m_ofsOut << endl;
          }
          else if (4 == osvi.dwMajorVersion && 10 == osvi.dwMinorVersion)
          {
-             OutStream << "Windows 98";
+             m_ofsOut << "Windows 98";
              if ('A' == osvi.szCSDVersion[1])
-                OutStream << "SE";
-             OutStream << endl;
+                m_ofsOut << "SE";
+             m_ofsOut << endl;
          }
          else if (4 == osvi.dwMajorVersion && 90 == osvi.dwMinorVersion)
-             OutStream << "Windows Me" << endl;
+             m_ofsOut << "Windows Me" << endl;
          else
-             OutStream << "unknown 16-bit Windows version " << endl;
+             m_ofsOut << "unknown 16-bit Windows version " << endl;
          break;
 
       case VER_PLATFORM_WIN32s:
-         OutStream << "Win32s" << endl;
+         m_ofsOut << "Win32s" << endl;
          break;
    }
 
@@ -772,14 +772,14 @@ void CSimulation::CalcProcessStats(void)
          ULARGE_INTEGER ul;
          ul.LowPart = ftUser.dwLowDateTime;
          ul.HighPart = ftUser.dwHighDateTime;
-         OutStream << "Time spent executing user code               \t: " << strDispTime(static_cast<double>(ul.QuadPart) * 1e-7, false, true) << endl;
+         m_ofsOut << "Time spent executing user code               \t: " << strDispTime(static_cast<double>(ul.QuadPart) * 1e-7, false, true) << endl;
          ul.LowPart = ftKernel.dwLowDateTime;
          ul.HighPart = ftKernel.dwHighDateTime;
-         OutStream << "Time spent executing kernel code             \t: " << strDispTime(static_cast<double>(ul.QuadPart) * 1e-7, false, true) << endl;
+         m_ofsOut << "Time spent executing kernel code             \t: " << strDispTime(static_cast<double>(ul.QuadPart) * 1e-7, false, true) << endl;
       }
    }
    else
-      OutStream << "Process timings                              \t: " << NA << endl;
+      m_ofsOut << "Process timings                              \t: " << NA << endl;
 
    // Finally get more process statistics: this needs psapi.dll, so only proceed if it is present on this system
    HINSTANCE hDLL = LoadLibrary("psapi.dll");
@@ -799,15 +799,15 @@ void CSimulation::CalcProcessStats(void)
          // Now call the function
          if ((ProcAdd) (GetCurrentProcess(), &pmc, sizeof(pmc)))
          {
-            OutStream << "Peak working set size                        \t: " << pmc.PeakWorkingSetSize / (1024.0 * 1024.0) << " Mb" << endl;
-            OutStream << "Current working set size                     \t: " << pmc.WorkingSetSize / (1024.0 * 1024.0) << " Mb" << endl;
-            OutStream << "Peak paged pool usage                        \t: " << pmc.QuotaPeakPagedPoolUsage / (1024.0 * 1024.0) << " Mb" << endl;
-            OutStream << "Current paged pool usage                     \t: " << pmc.QuotaPagedPoolUsage / (1024.0 * 1024.0) << " Mb" << endl;
-            OutStream << "Peak non-paged pool usage                    \t: " << pmc.QuotaPeakNonPagedPoolUsage / (1024.0 * 1024.0) << " Mb" << endl;
-            OutStream << "Current non-paged pool usage                 \t: " << pmc.QuotaNonPagedPoolUsage / (1024.0 * 1024.0) << " Mb" << endl;
-            OutStream << "Peak pagefile usage                          \t: " << pmc.PeakPagefileUsage / (1024.0 * 1024.0) << " Mb" << endl;
-            OutStream << "Current pagefile usage                       \t: " << pmc.PagefileUsage / (1024.0 * 1024.0) << " Mb" << endl;
-            OutStream << "No. of page faults                           \t: " << pmc.PageFaultCount << endl;
+            m_ofsOut << "Peak working set size                        \t: " << pmc.PeakWorkingSetSize / (1024.0 * 1024.0) << " Mb" << endl;
+            m_ofsOut << "Current working set size                     \t: " << pmc.WorkingSetSize / (1024.0 * 1024.0) << " Mb" << endl;
+            m_ofsOut << "Peak paged pool usage                        \t: " << pmc.QuotaPeakPagedPoolUsage / (1024.0 * 1024.0) << " Mb" << endl;
+            m_ofsOut << "Current paged pool usage                     \t: " << pmc.QuotaPagedPoolUsage / (1024.0 * 1024.0) << " Mb" << endl;
+            m_ofsOut << "Peak non-paged pool usage                    \t: " << pmc.QuotaPeakNonPagedPoolUsage / (1024.0 * 1024.0) << " Mb" << endl;
+            m_ofsOut << "Current non-paged pool usage                 \t: " << pmc.QuotaNonPagedPoolUsage / (1024.0 * 1024.0) << " Mb" << endl;
+            m_ofsOut << "Peak pagefile usage                          \t: " << pmc.PeakPagefileUsage / (1024.0 * 1024.0) << " Mb" << endl;
+            m_ofsOut << "Current pagefile usage                       \t: " << pmc.PagefileUsage / (1024.0 * 1024.0) << " Mb" << endl;
+            m_ofsOut << "No. of page faults                           \t: " << pmc.PageFaultCount << endl;
          }
       }
 
@@ -819,27 +819,27 @@ void CSimulation::CalcProcessStats(void)
    rusage ru;
    if (getrusage(RUSAGE_SELF, &ru) >= 0)
    {
-      OutStream << "Time spent executing user code               \t: "  << strDispTime(ru.ru_utime.tv_sec, false, true) << endl;
-//      OutStream << "ru_utime.tv_usec                             \t: " << ru.ru_utime.tv_usec << endl;
-      OutStream << "Time spent executing kernel code             \t: " << strDispTime(ru.ru_stime.tv_sec, false, true) << endl;
-//      OutStream << "ru_stime.tv_usec                             \t: " << ru.ru_stime.tv_usec << endl;
-//      OutStream << "Maximum resident set size                    \t: " << ru.ru_maxrss/1024.0 << " Mb" << endl;
-//      OutStream << "ixrss (???)                                  \t: " << ru.ru_ixrss << endl;
-//      OutStream << "Sum of rm_asrss (???)                        \t: " << ru.ru_idrss << endl;
-//      OutStream << "isrss (???)                                  \t: " << ru.ru_isrss << endl;
-      OutStream << "No. of page faults not requiring physical I/O\t: " << ru.ru_minflt << endl;
-      OutStream << "No. of page faults requiring physical I/O    \t: " << ru.ru_majflt << endl;
-//      OutStream << "No. of times swapped out of main memory      \t: " << ru.ru_nswap << endl;
-//      OutStream << "No. of times performed input (read request)  \t: " << ru.ru_inblock << endl;
-//      OutStream << "No. of times performed output (write request)\t: " << ru.ru_oublock << endl;
-//      OutStream << "No. of signals received                      \t: " << ru.ru_nsignals << endl;
-      OutStream << "No. of voluntary context switches            \t: " << ru.ru_nvcsw << endl;
-      OutStream << "No. of involuntary context switches          \t: " << ru.ru_nivcsw << endl;
+      m_ofsOut << "Time spent executing user code               \t: "  << strDispTime(ru.ru_utime.tv_sec, false, true) << endl;
+//      m_ofsOut << "ru_utime.tv_usec                             \t: " << ru.ru_utime.tv_usec << endl;
+      m_ofsOut << "Time spent executing kernel code             \t: " << strDispTime(ru.ru_stime.tv_sec, false, true) << endl;
+//      m_ofsOut << "ru_stime.tv_usec                             \t: " << ru.ru_stime.tv_usec << endl;
+//      m_ofsOut << "Maximum resident set size                    \t: " << ru.ru_maxrss/1024.0 << " Mb" << endl;
+//      m_ofsOut << "ixrss (???)                                  \t: " << ru.ru_ixrss << endl;
+//      m_ofsOut << "Sum of rm_asrss (???)                        \t: " << ru.ru_idrss << endl;
+//      m_ofsOut << "isrss (???)                                  \t: " << ru.ru_isrss << endl;
+      m_ofsOut << "No. of page faults not requiring physical I/O\t: " << ru.ru_minflt << endl;
+      m_ofsOut << "No. of page faults requiring physical I/O    \t: " << ru.ru_majflt << endl;
+//      m_ofsOut << "No. of times swapped out of main memory      \t: " << ru.ru_nswap << endl;
+//      m_ofsOut << "No. of times performed input (read request)  \t: " << ru.ru_inblock << endl;
+//      m_ofsOut << "No. of times performed output (write request)\t: " << ru.ru_oublock << endl;
+//      m_ofsOut << "No. of signals received                      \t: " << ru.ru_nsignals << endl;
+      m_ofsOut << "No. of voluntary context switches            \t: " << ru.ru_nvcsw << endl;
+      m_ofsOut << "No. of involuntary context switches          \t: " << ru.ru_nivcsw << endl;
    }
    else
-      OutStream << NA << endl;
+      m_ofsOut << NA << endl;
 #else
-   OutStream << NA << endl;
+   m_ofsOut << NA << endl;
 #endif
 
 }
@@ -961,16 +961,16 @@ void CSimulation::DoEndRun(int const nRtn)
       time(&m_tSysEndTime);
       cout << ERROR_NOTICE << nRtn << " (" << pszGetErrorText(nRtn) << ") on " << ctime(&m_tSysEndTime);
 
-      if (LogStream && LogStream.is_open())
+      if (m_ofsLog && m_ofsLog.is_open())
       {
-         LogStream << ERR << "run aborted (error code " << nRtn << "): " << pszGetErrorText(nRtn) << " on " << ctime(&m_tSysEndTime);
-         LogStream.flush();
+         m_ofsLog << ERR << "run aborted (error code " << nRtn << "): " << pszGetErrorText(nRtn) << " on " << ctime(&m_tSysEndTime);
+         m_ofsLog.flush();
       }
 
-      if (OutStream && OutStream.is_open())
+      if (m_ofsOut && m_ofsOut.is_open())
       {
-         OutStream << ERR << "run aborted (error code " << nRtn << "): " << pszGetErrorText(nRtn) << " on " << ctime(&m_tSysEndTime);
-         OutStream.flush();
+         m_ofsOut << ERR << "run aborted (error code " << nRtn << "): " << pszGetErrorText(nRtn) << " on " << ctime(&m_tSysEndTime);
+         m_ofsOut.flush();
       }
    }
 
@@ -1030,7 +1030,7 @@ void CSimulation::DoEndRun(int const nRtn)
             strCmd.append(": ERROR\" ");
             strCmd.append(m_strMailAddress);
          }
-         
+
          int nRet = system(strCmd.c_str());
          if (WEXITSTATUS(nRet) != 0)
             cout << ERR << EMAIL_ERROR << endl;
@@ -1043,25 +1043,60 @@ void CSimulation::DoEndRun(int const nRtn)
 
 /*========================================================================================================================================
 
- Return the simulation-wide missing-value value
- 
+ Returns the simulation-wide missing-value value
+
 ========================================================================================================================================*/
 double CSimulation::dGetMissingValue(void) const
 {
    return m_dMissingValue;
 }
-   
-   
+
+
+/*========================================================================================================================================
+
+ Returns the simulation-wide cell side value
+
+========================================================================================================================================*/
+double CSimulation::dGetCellSide(void) const
+{
+   return m_dCellSide;
+}
+
+
+/*========================================================================================================================================
+
+ Returns the simulation-wide cell diagonal value
+
+ ========================================================================================================================================*/
+double CSimulation::dGetCellSideDiag(void) const
+{
+   return m_dCellDiag;
+}
+
+
+/*========================================================================================================================================
+
+ Returns the reverse (opposite) direction
+
+========================================================================================================================================*/
+int CSimulation::nCalcOppositeDirection(int const nDir) const
+{
+   int nReverseDir = (nDir + 4) % 8;
+
+   return nReverseDir;
+}
+
+
 /*==============================================================================================================================
- 
+
  Trims whitespace from the left side of a string, does not change the original string
- 
+
 ==============================================================================================================================*/
 string CSimulation::strTrimLeft(string const* pStrIn)
 {
    if (pStrIn->empty())
       return "";
-   
+
    size_t nStartpos = pStrIn->find_first_not_of(" \t");
    if (nStartpos == string::npos)
       // The string consists only of whitespace
@@ -1072,9 +1107,9 @@ string CSimulation::strTrimLeft(string const* pStrIn)
 
 
 /*==============================================================================================================================
- 
+
  Trims whitespace from the right side of a string, does not change the original string
- 
+
 ==============================================================================================================================*/
 string CSimulation::strTrimRight(string const* pStrIn)
 {
@@ -1089,9 +1124,9 @@ string CSimulation::strTrimRight(string const* pStrIn)
 }
 
 /*==============================================================================================================================
- 
+
  Trims whitespace from both sides of a string, does not change the original string
- 
+
 ==============================================================================================================================*/
 string CSimulation::strTrim(string const* pStrIn)
 {
@@ -1099,10 +1134,10 @@ string CSimulation::strTrim(string const* pStrIn)
       return "";
 
    string strTmp = *pStrIn;
-   
+
    // Trim leading spaces
    size_t nFoundPos = strTmp.find_first_not_of(" \t");
-   
+
    if (nFoundPos == string::npos)
       // The string consists only of whitespace
       return "";
@@ -1111,15 +1146,15 @@ string CSimulation::strTrim(string const* pStrIn)
 
    // Trim trailing spaces
    nFoundPos = strTmp.find_last_not_of(" \t");
-   
+
    if (nFoundPos != string::npos)
       strTmp = strTmp.substr(0, nFoundPos+1);
-   
+
    return strTmp;
 }
 
 /*==============================================================================================================================
- 
+
  Returns the lower case version of an string, leaving the original unchanged
 
 =============================================================================================================================*/
@@ -1131,26 +1166,26 @@ string CSimulation::strToLower(string const* strIn)
 }
 
 /*==============================================================================================================================
- 
+
  Returns a string with a substring removed
- 
+
 ==============================================================================================================================*/
 string CSimulation::strRemoveSubstr(string* strIn, string const* strSub)
 {
    size_t nPos = strIn->find(*strSub);
-   
+
    // If not found, return the string unchanged
    if (nPos != string::npos)
       strIn->replace(nPos, strSub->size(), "");
-   
+
    return *strIn;
 }
 
 
 /*==============================================================================================================================
- 
+
  These two functions are from http://stackoverflow.com/questions/236129/split-a-string-in-c They implement (approximately) Python's split() function. This first version puts the results into a pre-constructed string vector. It ignores empty items
- 
+
 ==============================================================================================================================*/vector<string>* CSimulation::VstrSplit(string const* s, char const delim, vector<string>* elems)
 {
    stringstream ss(*s);
@@ -1165,9 +1200,9 @@ string CSimulation::strRemoveSubstr(string* strIn, string const* strSub)
 
 
 /*==============================================================================================================================
- 
+
  This second version returns a new string vector (it calls the first version)
- 
+
 ==============================================================================================================================*/
 vector<string> CSimulation::VstrSplit(string const* s, char const delim)
 {

@@ -4,7 +4,7 @@
 
  This is cell_soil_layer.h: declaration for the RillGrow class used to represent a layer in the soil column
 
- Copyright (C) 2018 David Favis-Mortlock
+ Copyright (C) 2020 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -26,7 +26,7 @@ class CLayer
 {
 private:
    string m_strName;
-   double 
+   double
       m_dClayThickness,
       m_dSiltThickness,
       m_dSandThickness,
@@ -41,14 +41,14 @@ private:
       m_dSiltSlumpErodibility,
       m_dSandSlumpErodibility,
       m_dSoilWater;
-      
+
 public:
    CLayer(void);
    ~CLayer(void);
-   
+
    void SetName(string const*);
    string* pstrGetName(void);
-   
+
    void SetClayThickness(double const);
    void SetSiltThickness(double const);
    void SetSandThickness(double const);
@@ -57,49 +57,45 @@ public:
    double dGetSandThickness(void) const;
    double dGetLayerThickness(void) const;
 //    bool bIsZeroTotalThickness(void) const;
-   
+
    void SetBulkDensity(double const);
    double dGetBulkDensity(void) const;
-   
+
    void SetClayFlowErodibility(double const);
    void SetSiltFlowErodibility(double const);
    void SetSandFlowErodibility(double const);
    double dGetClayFlowErodibility(void) const;
    double dGetSiltFlowErodibility(void) const;
    double dGetSandFlowErodibility(void) const;
-   
+
    void SetClaySplashErodibility(double const);
    void SetSiltSplashErodibility(double const);
    void SetSandSplashErodibility(double const);
    double dGetClaySplashErodibility(void) const;
    double dGetSiltSplashErodibility(void) const;
    double dGetSandSplashErodibility(void) const;
-   
+
    void SetClaySlumpErodibility(double const);
    void SetSiltSlumpErodibility(double const);
    void SetSandSlumpErodibility(double const);
    double dGetClaySlumpErodibility(void) const;
    double dGetSiltSlumpErodibility(void) const;
    double dGetSandSlumpErodibility(void) const;
-   
-   void DoFlowErosionLayer(double const, double&, double&, double&);
-   void DoSplashErosionLayer(double const, double&, double&, double&);
-   void DoSlumpErosionLayer(double const, double&, double&, double&);
-   void DoToppleErosionLayer(double const, double&, double&, double&);
-   
-   void DoFlowDepositionLayer(double const, double const, double const);
-   void DoSplashDepositionLayer(double const, double const, double const);
-   void DoToppleClayDepositionLayer(double const);
-   void DoToppleSiltDepositionLayer(double const);
-   void DoToppleSandDepositionLayer(double const);
-   
-   void DoInfiltrationDepositionLayer(double const, double const, double const);
-   
+
+   void DoLayerFlowErosion(double const, double&, double&, double&);
+   void DoLayerSplashErosion(double const, double&, double&, double&);
+   void DoLayerSlumpErosion(double const, double&, double&, double&);
+   void DoLayerToppleErosion(double const, double&, double&, double&);
+
+   void DoLayerDeposition(double const, double const, double const);
+
    void SetSoilWater(double const);
    void ChangeSoilWater(double const);
    double dGetSoilWater(void) const;
-   
-   void ChangeThickness(double const);
+
+//    void ChangeThickness(double const);
+
+   void DoLayerHeadcutRetreatErosion(double const, double&, double&, double&);
 };
 
 #endif         // __SOIL_LAYER_H__

@@ -1,8 +1,8 @@
 /*=========================================================================================================================================
 
- This is do_overland_flow.cpp: it handles overland flow
+ This is simulate_overland_flow.cpp: it handles overland flow
 
- Copyright (C) 2018 David Favis-Mortlock
+ Copyright (C) 2020 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -36,7 +36,7 @@ void CSimulation::DoAllFlowRouting(void)
       {
          if (Cell[nX][nY].bIsMissingValue())
             continue;
-         
+
          if (Cell[nX][nY].pGetSurfaceWater()->bIsWet())
          {
             // This is a wet cell, is an edge cell?
@@ -44,7 +44,7 @@ void CSimulation::DoAllFlowRouting(void)
             {
                // It is an edge cell, which edge?
                int nEdge = Cell[nX][nY].nGetEdge();
-               
+
                if (nEdge == DIRECTION_TOP)
                {
                   // Top edge
@@ -55,7 +55,7 @@ void CSimulation::DoAllFlowRouting(void)
                      // This is not closed, so see if we can do some off-edge flow. If so, move the water and maybe do some erosion or deposition
                      TryEdgeCellOutFlow(nX, nY, DIRECTION_TOP);
                }
-               
+
                else if (nEdge == DIRECTION_RIGHT)
                {
                   // Right edge
@@ -66,7 +66,7 @@ void CSimulation::DoAllFlowRouting(void)
                      // This is not closed, so see if we can do some off-edge flow. If so, move the water and maybe do some erosion or deposition
                      TryEdgeCellOutFlow(nX, nY, DIRECTION_RIGHT);
                }
-               
+
                else if (nEdge == DIRECTION_BOTTOM)
                {
                   // Bottom edge
@@ -77,7 +77,7 @@ void CSimulation::DoAllFlowRouting(void)
                      // This is not closed, so see if we can do some off-edge flow. If so, move the water and maybe do some erosion or deposition
                      TryEdgeCellOutFlow(nX, nY, DIRECTION_BOTTOM);
                }
-               
+
                else if (nEdge == DIRECTION_LEFT)
                {
                   // Left edge
@@ -108,31 +108,29 @@ void CSimulation::TryCellOutFlow(int const nX, int const nY)
    int
       nLowX = 0,
       nLowY = 0;
-      
+
    double
       dHead = 0,
       dTopSlope = 0,
       dHLen = 0;
 
-   // Look on the Cell array and find the adjacent cell with the steepest energy slope i.e. the steepest downhill top-surface gradient from the water surface of this wet cell to the top surface (which could be either water or soil) of an adjacent cell. This elevation difference is the head
+   // Look at the Cell array and find the adjacent cell with the steepest energy slope i.e. the steepest downhill top-surface gradient from the water surface of this wet cell to the top surface (which could be either water or soil) of an adjacent cell. This elevation difference is the head
    int nDir = nFindSteepestEnergySlope(nX, nY, Cell[nX][nY].dGetTopElevation(), nLowX, nLowY, dHead, dTopSlope, dHLen);
    Cell[nX][nY].pGetSurfaceWater()->SetFlowDirection(nDir);
    if (DIRECTION_NONE == nDir)
    {
       // No adjacent cells have a downhill top surface, so no outflow here. Set flow velocity and depth-weighted flow velocity to zero and return
       Cell[nX][nY].pGetSurfaceWater()->InitializeAllFlowVelocity();
-      
+
       return;
    }
 
    // The top surface of an adjacent cell is lower, so water could flow from this cell to the lower cell: to equalize water surfaces, we need to move half the head
    dHead /= 2;
 
-   // If this is the biggest head during this iteration, save it (will be used in off-edge flow calcs)
-   m_dThisIterMaxHead = tMax(dHead, m_dThisIterMaxHead);
-   
-   // Ditto for the smallest head
-   m_dThisIterMinHead = tMin(dHead, m_dThisIterMinHead);
+   // Add this head to the this-iteration total, and increment the count of this-iteration heads (this is used in off-edge flow calcs)
+   m_dThisIterTotHead += dHead;
+   m_ulNumHead++;
 
    double dThisDepth = Cell[nX][nY].pGetSurfaceWater()->dGetSurfaceWater();
    if (dThisDepth <= dHead)
@@ -163,7 +161,7 @@ void CSimulation::TryCellOutFlow(int const nX, int const nY)
    }
 
    // If the timestep is less than this outflow time, there will not have been enough time for the whole of the head to move from the centroid of one cell to the centroid of the next. Assume a linear relationship, so that depth_to_move = (head * timestep) / outflowtime
-   double 
+   double
       dFractionOfTimestep = tMin(m_dTimeStep / dOutFlowTime, 1.0),
       dWDpthToMove = dHead * dFractionOfTimestep;
 
@@ -177,7 +175,7 @@ void CSimulation::TryCellOutFlow(int const nX, int const nY)
 
    // This outflow may or may not be erosive: it depends on whether or not it has exceeded its transport capacity. So check transport capacity for this cell, and either erode it or deposit some sediment here
    if (m_bFlowErosion)
-      CalcTransportCapacity(nX, nY, nLowX, nLowY, dThisDepth, dHead, dTopSlope, dHLen, dFlowSpeed, dWDpthToMove);
+      CalcTransportCapacity(nX, nY, nLowX, nLowY, nDir, dThisDepth, dHead, dTopSlope, dHLen, dFlowSpeed, dWDpthToMove);
 }
 
 
@@ -188,18 +186,8 @@ void CSimulation::TryCellOutFlow(int const nX, int const nY)
 =========================================================================================================================================*/
 void CSimulation::TryEdgeCellOutFlow(int const nX, int const nY, int const nDir)
 {
-   // We need a value for off-edge head: different approaches seem to work best in different situations
-   double dHead = 0;
-   if (m_dGradient > 0)
-   {
-      // The user has imposed a gradient, so this is e.g. a flume. Use the maximum on-grid head during the previous iteration
-      dHead = m_dLastIterMaxHead;      
-   }
-   else
-   {
-      // No gradient imposed, so this is probably a real soil-surface DEM. TODO experiment
-      dHead = (m_dLastIterMaxHead + m_dLastIterMaxHead) / 2;
-   }   
+   // We need a value for off-edge head: use the average on-grid head during the previous iteration, multiplied by a constant
+   double dHead = m_dLastIterAvgHead * m_dOffEdgeConst;
 
    double dThisDepth = Cell[nX][nY].pGetSurfaceWater()->dGetSurfaceWater();
    if (dThisDepth < dHead)
@@ -221,7 +209,7 @@ void CSimulation::TryEdgeCellOutFlow(int const nX, int const nY, int const nDir)
    // OK, there is flow off this edge, so set the flow direction
    Cell[nX][nY].pGetSurfaceWater()->SetFlowDirection(nDir);
 
-   double 
+   double
       dTopSlope = dHead * m_dInvCellSide,
       dFlowSpeed = 0;                                                      // Value to be calculated in dTimeToCrossCell
    C2DVec Vec2DFlowVelocity;                                               // Ditto
@@ -232,12 +220,12 @@ void CSimulation::TryEdgeCellOutFlow(int const nX, int const nY, int const nDir)
    {
       // TODO check this
       //      Cell[nX][nY].InitializeAllFlowVelocity();
-      
+
       return;
    }
 
    // If the timestep is less than this outflow time, there will not have been enough time for the whole of the head to move from the centroid of one cell to the centroid of the next. Assume a linear relationship, so that depth_to_move = (head * timestep) / outflowtime
-   double 
+   double
       dFractionOfTimestep = tMin(m_dTimeStep / dOutFlowTime, 1.0),
       dWDpthToMove = dHead * dFractionOfTimestep,
       dFractionToMove = tMin(dWDpthToMove / dThisDepth, 1.0);
@@ -249,42 +237,42 @@ void CSimulation::TryEdgeCellOutFlow(int const nX, int const nY, int const nDir)
    // Move water from this cell, off the edge
    Cell[nX][nY].pGetSurfaceWater()->ChangeSurfaceWater(-dWDpthToMove);
    m_dThisIterWaterLost += dWDpthToMove;
-   
+
    // Now move the sediment that was being transported in this depth of water (assumes that sediment is well mixed in the water column)
-   double 
+   double
       dClaySedimentToRemove = Cell[nX][nY].pGetSediment()->dGetClaySedimentLoad() * dFractionToMove,
       dSiltSedimentToRemove = Cell[nX][nY].pGetSediment()->dGetSiltSedimentLoad() * dFractionToMove,
       dSandSedimentToRemove = Cell[nX][nY].pGetSediment()->dGetSandSedimentLoad() * dFractionToMove;
-      
+
    if (dClaySedimentToRemove > 0)
    {
       // Remove some clay-sized sediment
-      Cell[nX][nY].pGetSediment()->dChangeClaySedimentLoad(-dClaySedimentToRemove);       
+      Cell[nX][nY].pGetSediment()->DoChangeClaySedimentLoad(-dClaySedimentToRemove);
       m_dThisIterClaySedLost += dClaySedimentToRemove;
    }
 
    if (dSiltSedimentToRemove > 0)
    {
       // Remove some silt-sized sediment
-      Cell[nX][nY].pGetSediment()->dChangeSiltSedimentLoad(-dSiltSedimentToRemove);       
+      Cell[nX][nY].pGetSediment()->DoChangeSiltSedimentLoad(-dSiltSedimentToRemove);
       m_dThisIterSiltSedLost += dSiltSedimentToRemove;
    }
-   
+
    if (dSandSedimentToRemove > 0)
    {
       // Remove some sand-sized sediment
-      Cell[nX][nY].pGetSediment()->dChangeSandSedimentLoad(-dSandSedimentToRemove);       
+      Cell[nX][nY].pGetSediment()->DoChangeSandSedimentLoad(-dSandSedimentToRemove);
       m_dThisIterSandSedLost += dSandSedimentToRemove;
    }
-   
+
    #if defined _DEBUG
-   // Add this amount to the display-only total of surface water lost from the edge for this cell
+   // Add this amount to the display-only total of overland flow lost from the edge for this cell
    Cell[nX][nY].pGetSurfaceWater()->AddSurfaceWaterLost(dWDpthToMove);
 #endif
 
    // Finally, off-edge outflow from this edge cell may be capable of eroding the edge cell, or deposition may occur on the edge cell. So check transport capacity for this cell, and either erode it or deposit some sediment here. TODO Note that we use the original (i.e. pre-outflow) values here, is this OK?
    if (m_bFlowErosion)
-      CalcTransportCapacity(nX, nY, -1, -1, dThisDepth, dHead, dTopSlope, m_dCellSide, dFlowSpeed, dWDpthToMove);
+      CalcTransportCapacity(nX, nY, -1, -1, nDir, dThisDepth, dHead, dTopSlope, m_dCellSide, dFlowSpeed, dWDpthToMove);
 }
 
 
@@ -296,7 +284,7 @@ void CSimulation::TryEdgeCellOutFlow(int const nX, int const nY, int const nDir)
 =========================================================================================================================================*/
 double CSimulation::dTimeToCrossCell(int const nX, int const nY, int const nDir, double const dTopSlope, double dThisDepth, double const dHLen, C2DVec& Vec2DFlowVelocity, double& dFlowSpeed)
 {
-   double const 
+   double const
       DARCY_WEISBACH_CONST = 0.008,
       CONV_CONST = 1000;
 
@@ -471,11 +459,11 @@ double CSimulation::dCalcHydraulicRadius(int const nX, int const nY, int const n
 =========================================================================================================================================*/
 double CSimulation::dCalcFrictionFactor(int const nX, int const nY, double const dLambda, bool const bJustCheckEquation)
 {
-   double const 
+   double const
       LAMBDA_SHALLOW_FLOW_THRESHOLD                = 1,
       LAMBDA_MARGINALLY_INUNDATED_FLOW_THRESHOLD   = 10;
 
-   double const 
+   double const
       MARGINAL_FLOW_CONST = 10,
       DEEP_FLOW_CONST_A = 1.64,
       DEEP_FLOW_CONST_B = 0.803;
@@ -664,40 +652,21 @@ void CSimulation::CellMoveWater(int const nXFrom, int const nYFrom, int const nX
       dClaySedToMove = Cell[nXFrom][nYFrom].pGetSediment()->dGetClaySedimentLoad() * dFrac,
       dSiltSedToMove = Cell[nXFrom][nYFrom].pGetSediment()->dGetSiltSedimentLoad() * dFrac,
       dSandSedToMove = Cell[nXFrom][nYFrom].pGetSediment()->dGetSandSedimentLoad() * dFrac;
-      
-   if (dClaySedToMove > 0)
-   {
-      // Remove this depth of clay-sized sediment from the source cell
-      Cell[nXFrom][nYFrom].pGetSediment()->dChangeClaySedimentLoad(-dClaySedToMove);
-      
-      // And add it to the destination cell
-      Cell[nXTo][nYTo].pGetSediment()->dChangeClaySedimentLoad(dClaySedToMove);
-   }
-   
-   if (dSiltSedToMove > 0)
-   {
-      // Remove this depth of silt-sized sediment from the source cell
-      Cell[nXFrom][nYFrom].pGetSediment()->dChangeSiltSedimentLoad(-dSiltSedToMove);
-      
-      // And add it to the destination cell
-      Cell[nXTo][nYTo].pGetSediment()->dChangeSiltSedimentLoad(dSiltSedToMove);
-   }
-   
-   if (dSandSedToMove > 0)
-   {
-      // Remove this depth of sand-sized sediment from the source cell
-      Cell[nXFrom][nYFrom].pGetSediment()->dChangeSandSedimentLoad(-dSandSedToMove);
-      
-      // And add it to the destination cell
-      Cell[nXTo][nYTo].pGetSediment()->dChangeSandSedimentLoad(dSandSedToMove);
-   }
+
+   assert(dFrac <= 1.0);
+
+   // Remove this depth of sediment from the source cell
+   Cell[nXFrom][nYFrom].pGetSediment()->ChangeSedimentLoad(-dClaySedToMove, -dSiltSedToMove, -dSandSedToMove);
+
+   // And add it to the destination cell
+   Cell[nXTo][nYTo].pGetSediment()->ChangeSedimentLoad(dClaySedToMove, dSiltSedToMove, dSandSedToMove);
 }
 
 
 /*=========================================================================================================================================
- 
- Adds to this this-iteration value of surface water depth
- 
+
+ Adds to this this-iteration value of overland flow depth
+
 =========================================================================================================================================*/
 void CSimulation::AddThisIterSurfaceWater(double const dDepth)
 {

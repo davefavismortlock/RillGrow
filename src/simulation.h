@@ -5,7 +5,7 @@
 
  This is simulation.h: this class runs RillGrow simulations
 
- Copyright (C) 2018 David Favis-Mortlock
+ Copyright (C) 2020 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -30,38 +30,38 @@ class CSimulation
 {
 private:
    bool
-      m_bSlosSave,
+      m_bFlowDetachSave,
       m_bRainVarMSave,
-      m_bRunOnSave,
+      m_bCumulRunOnSave,
       m_bElevSave,
       m_bInitElevSave,
       m_bDetrendElevSave,
       m_bInfiltSave,
-      m_bTotInfiltSave,
+      m_bCumulInfiltSave,
       m_bSoilWaterSave,
       m_bInfiltDepositSave,
-      m_bTotInfiltDepositSave,
+      m_bCumulInfiltDepositSave,
       m_bTopSurfaceSave,
       m_bSplashSave,
-      m_bTotSplashSave,
+      m_bCumulSplashSave,
       m_bInundationSave,
       m_bFlowDirSave,
       m_bStreamPowerSave,
       m_bShearStressSave,
       m_bFrictionFactorSave,
-      m_bAvgShearStressSave,
+      m_bCumulAvgShearStressSave,
       m_bReynoldsSave,
       m_bFroudeSave,
-      m_bAvgDepthSave,
-      m_bAvgDWSpdSave,
-      m_bAvgSpdSave,
+      m_bCumulAvgDepthSave,
+      m_bCumulAvgDWSpdSave,
+      m_bCumulAvgSpdSave,
       m_bSedConcSave,
       m_bSedLoadSave,
       m_bAvgSedLoadSave,
-      m_bTotDepositSave,
-      m_bTotNetSlosSave,
-      m_bNetSlumpSave,
-      m_bNetToppleSave,
+      m_bCumulFlowDepositSave,
+      m_bCumulLoweringSave,
+      m_bSlumpSave,
+      m_bToppleSave,
       m_bTCSave,
       m_bSaveRegular,
       m_bDetrend,
@@ -77,6 +77,8 @@ private:
       m_bGISOutDiffers,
       m_bSlumping,
       m_bSlumpThisIter,
+      m_bHeadcutRetreat,
+      m_bHeadcutRetreatThisIter,
       m_bTimeStepTS,
       m_bAreaWetTS,
       m_bRainTS,
@@ -115,7 +117,8 @@ private:
       m_nHeaderSize,
       m_nRainChangeTimeMax,
       m_nZUnits,
-      m_nNumSoilLayers;
+      m_nNumSoilLayers,
+      m_nSSSQuadrantSize;
 
    unsigned long
       m_ulIter,
@@ -125,7 +128,8 @@ private:
       m_ulVarChkEnd,
       m_ulNActiveCells,
       m_ulNWet,
-      m_ulMissingValueCells;
+      m_ulMissingValueCells,
+      m_ulNumHead;
 
    double
       m_dMinX,
@@ -181,7 +185,6 @@ private:
       m_dCVT,
       m_dCVTaub,
       m_dST2,
-      m_dSourceDestCritAngle,
       m_dBulkDensityForOutputCalcs,
       m_dAlpha,
       m_dBeta,
@@ -190,7 +193,7 @@ private:
       m_dPrevAdj,
       m_dRunOnLen,
       m_dRunOnSpd,
-      m_dSlumpCritShearStress,
+      m_dCritSSSForSlump,
       m_dSlumpAngleOfRest,
       m_dSlumpAngleOfRestDiff,
       m_dSlumpAngleOfRestDiffDiag,
@@ -234,16 +237,17 @@ private:
       m_dThisIterSandToppleDetach,
       m_dThisIterClayToppleDeposit,
       m_dThisIterSiltToppleDeposit,
-      m_dThisIterSandToppleDeposit,      
+      m_dThisIterSandToppleDeposit,
       m_dThisIterInfiltration,
       m_dThisIterClayInfiltDeposit,
       m_dThisIterSiltInfiltDeposit,
       m_dThisIterSandInfiltDeposit,
+      m_dThisIterClayHeadcutRetreatDetach,
+      m_dThisIterSiltHeadcutRetreatDetach,
+      m_dThisIterSandHeadcutRetreatDetach,
       m_dThisIterExfiltration,
-      m_dLastIterMaxHead,
-      m_dLastIterMinHead,
-      m_dThisIterMaxHead,
-      m_dThisIterMinHead,
+      m_dLastIterAvgHead,
+      m_dThisIterTotHead,
       m_dSimulationDuration,           // Duration of simulation in secs
       m_dSimulatedRainDuration,        // Duration of simulated rainfall, secs
       m_dTimeStep,
@@ -267,6 +271,7 @@ private:
       m_dSiltSandBoundarySize,
       m_dSandSizeMax,
       m_dLastSlumpCalcTime,
+      m_dLastHeadcutRetreatCalcTime,
       m_dSinceLastTSInfiltration,
       m_dSinceLastTSExfiltration,
       m_dSinceLastTSClayInfiltDeposit,
@@ -281,8 +286,11 @@ private:
       m_dSinceLastTSSandSlumpDetach,
       m_dSinceLastTSClayToppleDetach,
       m_dSinceLastTSSiltToppleDetach,
-      m_dSinceLastTSSandToppleDetach;
-      
+      m_dSinceLastTSSandToppleDetach,
+      m_dHeadcutRetreatConst,
+      m_dOffEdgeConst,
+      m_dSSSPatchSize;
+
    // These grand totals are all long doubles, the aim is to minimize rounding errors when many very small numbers are added to a single much larger number, see e.g. http://www.ddj.com/cpp/184403224
    long double
       m_ldGTotDrops,
@@ -358,10 +366,10 @@ private:
       m_VdInfiltChiPart,
       m_VdThisIterSoilWater,
       m_VdSinceLastTSSoilWater;
-      
+
    vector<string>
       m_VstrInputSoilLayerName;
-         
+
    struct RandState
    {
       unsigned long s1, s2, s3;
@@ -372,29 +380,30 @@ private:
       m_tSysEndTime;
 
    ofstream
-      OutStream,
-      LogStream,
-      TimeStepTSStream,
-      AreaWetTSStream,
-      RainTSStream,
-      InfiltrationTSStream,
-      ExfiltrationTSStream,
-      RunOnTSStream,
-      SurfaceWaterTSStream,
-      SurfaceWaterLostTSStream,
-      FlowDetachmentTSStream,
-      SlumpDetachmentTSStream,
-      ToppleDetachmentTSStream,
-      FlowDepositionTSStream,
-      SedimentLostTSStream,
-      SedimentLoadTSStream,
-      InfiltrationDepositionTSStream,
-      SplashDetachmentTSStream,
-      SplashDepositionTSStream,
-      SplashKineticEnergyTSStream,
-      SoilWaterTSStream;
+      m_ofsOut,
+      m_ofsLog,
+      m_ofsTimestepTS,
+      m_ofsAreaWetTS,
+      m_ofsRainTS,
+      m_ofsInfiltTS,
+      m_ofsExfiltTS,
+      m_ofsRunOnTS,
+      m_ofsSurfaceWaterTS,
+      m_ofsSurfaceWaterLostTS,
+      m_ofsFlowDetachTS,
+      m_ofsSlumpDetachTS,
+      m_ofsToppleDetachTS,
+      m_ofsFlowDepositSS,
+      m_ofsSedLostTS,
+      m_ofsSedLoadTS,
+      m_ofsInfiltDepositTS,
+      m_ofsSplashDetachTS,
+      m_ofsSplashDepositTS,
+      m_ofsSplashKETS,
+      m_ofsSoilWaterTS;
 
-   CCell** Cell;           // Array of soil cell objects
+   CCell** Cell;                       // Pointer to 2D array of soil cell objects
+   double** m_SSSWeightQuadrant;       // Pointer to 2D array for weights for soil shear stress spatial distribution
 
 private:
    // Initialization
@@ -414,7 +423,8 @@ private:
    void CalcGradient(void);
    void InitSoilWater(void);
    static void AnnounceSimEnd(void);
-   
+   int nInitSlumping(void);
+
    // Input and output
    int nHandleCommandLineParams(int, char*[]);
    bool bCheckGISOutputFormat(void);
@@ -432,7 +442,7 @@ private:
 
    // Soil
    void CreateSoilLayers(void);
-   
+
    // Simulation routines
    int nDoSimulation(void);
    void CalcTimestep(void);
@@ -443,7 +453,8 @@ private:
    void DoAllInfiltration(void);
    void DoAllSplash(void);
    void DoAllSlump(void);
-   
+   void DoAllHeadcutRetreat(void);
+
    // Lower-level simulation routines
    void TryCellOutFlow(int const, int const);
    void TryEdgeCellOutFlow(int const, int const, int const);
@@ -452,8 +463,8 @@ private:
    double dTimeToCrossCell(int const, int const, int const, double const, double, double const, C2DVec&, double&);
    double dCalcHydraulicRadius(int const, int const, int const, double const);
    double dCalcFrictionFactor(int const, int const, double const, bool const);
-   void CalcTransportCapacity(int const, int const, int const, int const, double const, double const, double const, double const, double const, double const);
-   void DoCellErosion(int const, int const, int const, int const, double const, double const, double const, double const, double const);
+   void CalcTransportCapacity(int const, int const, int const, int const, int const, double const, double const, double const, double const, double const, double const);
+   void DoCellErosion(int const, int const, int const, int const, int const, double const, double const, double const, double const, double const);
    void DoCellDeposition(int const, int const, double const, double const, double const);
    double dCalcSplashCubicSpline(double) const;
    double dCalcLaplacian(int const, int const);
@@ -462,14 +473,16 @@ private:
    void DoToppleCells(int const, int const, int const, int const, double, bool const);
    void DoCellInfiltration(int const, int const, int const, CLayer*, double const);
    void DoCellExfiltration(int const, int const, int const, CLayer*, double const);
-   
+   void DoHeadcutRetreatMoveSoil(int const, int const, int const, int const, int const, double const);
+   void DoDistributeShearStress(int const, int const, double const);
+
    // Utility
-   bool bTimeToQuit(void);
+   bool bIsTimeToQuit(void);
    bool bSetUpRainfallIntensity(void);
    void RemoveCumulativeRoundingErrors(void);
    int nCheckForInstability(void);
    void UpdateGrandTotals(void);
-   void AdjustUnboundedEdges(void);
+//    void AdjustUnboundedEdges(void);
    static string strGetBuild(void);
    static string strGetComputerName(void);
    void DoCPUClockReset(void);
@@ -493,7 +506,7 @@ private:
    static vector<string>* VstrSplit(string const*, char const, vector<string>*);
    static vector<string> VstrSplit(string const*, char const);
    string strSplitRH(string const*) const;
-   
+
    // Random number stuff
    static unsigned long ulGetTausworthe(unsigned long const, unsigned long const, unsigned long const, unsigned long const, unsigned long const);
    void InitRand0(unsigned long);
@@ -507,50 +520,56 @@ private:
    double dGetRand0GaussPos(double const, double const);
    double dGetRand0Gaussian(void);
    static double dGetCGaussianPDF(double const);
-   
+
 public:
    CSimulation(void);
    ~CSimulation(void);
 
    int nDoRun(int, char*[]);
    void DoEndRun(int const);
-   
+
+   int nCalcOppositeDirection(int const) const;
+
    double dGetTimeStep(void) const;
-   
    double dGetMissingValue(void) const;
-   
+   double dGetCellSide(void) const;
+   double dGetCellSideDiag(void) const;
+
    void IncrThisIterNumWetCells(void);
    void DecrThisIterNumWetCells(void);
-   
+
    void AddThisIterSurfaceWater(double const);
-   
+
    void AddThisIterClaySedimentLoad(double const);
    void AddThisIterSiltSedimentLoad(double const);
    void AddThisIterSandSedimentLoad(double const);
-   
+
    void AddThisIterClayFlowDetach(double const);
    void AddThisIterSiltFlowDetach(double const);
    void AddThisIterSandFlowDetach(double const);
-   
+
    void AddThisIterClayFlowDeposit(double const);
    void AddThisIterSiltFlowDeposit(double const);
    void AddThisIterSandFlowDeposit(double const);
-   
-   void AddThisIterClaySplashDetach(double const);
-   void AddThisIterSiltSplashDetach(double const);
-   void AddThisIterSandSplashDetach(double const);
-   
+
+   void AddThisIterSplashDetach(double const, double const, double const);
+
    void AddThisIterClaySplashDeposit(double const);
    void AddThisIterSiltSplashDeposit(double const);
    void AddThisIterSandSplashDeposit(double const);
-   
+
    void AddThisIterClaySlumpDetach(double const);
    void AddThisIterSiltSlumpDetach(double const);
    void AddThisIterSandSlumpDetach(double const);
-   
+
    void AddThisIterClayToppleDetach(double const);
    void AddThisIterSiltToppleDetach(double const);
    void AddThisIterSandToppleDetach(double const);
+
+   void AddThisIterClayHeadcutRetreatDetach(double const);
+   void AddThisIterSiltHeadcutRetreatDetach(double const);
+   void AddThisIterSandHeadcutRetreatDetach(double const);
+
 };
 
 #endif                  // __SIMULATION_H__

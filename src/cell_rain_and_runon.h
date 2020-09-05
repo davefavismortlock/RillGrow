@@ -4,7 +4,7 @@
 
  This is cell_rain_and_runon.h: declarations for the RillGrow class used to represent incident water i.e. rain and runon
 
- Copyright (C) 2018 David Favis-Mortlock
+ Copyright (C) 2020 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -24,35 +24,35 @@ class CCell;                                 // Forward declaration
 class CRainAndRunon
 {
 public:
-   static CSimulation* m_pSim; 
+   static CSimulation* m_pSim;
 
 private:
    double
       m_dRain,                               // This-iteration rainfall, as a depth (mm)
-      m_dTotRain,                            // Cumulative rain, as a depth (mm)
+      m_dCumulRain,                          // Cumulative rain, as a depth (mm)
       m_dRunOn,                              // This-iteration runon, as a depth (mm)
-      m_dTotRunOn,                           // Cumulative runon, as a depth (mm)
+      m_dCumulRunOn,                         // Cumulative runon, as a depth (mm)
       m_dRainVarM;                           // Constant multiplier, default = 1
-      
-   CCell* m_pCell;   
-   
+
+   CCell* m_pCell;
+
 public:
    CRainAndRunon(void);
    ~CRainAndRunon(void);
-   
+
    void SetParent(CCell* const);
-   
+
    void InitializeRainAndRunon(void);
-   
+
    void dAddRain(double const);
    double dGetRain(void) const;
-   double dGetTotRain(void) const;
+   double dGetCumulRain(void) const;
    void SetRainVarM(double const);
    double dGetRainVarM(void) const;
-   
+
    void AddRunOn(double const);
    double dGetRunOn(void) const;
-   double dGetTotRunOn(void) const;
+   double dGetCumulRunOn(void) const;
 };
 
 #endif         // __RAIN_AND_RUNON_H__

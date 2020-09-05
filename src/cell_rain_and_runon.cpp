@@ -2,7 +2,7 @@
 
  This is cell_rain_and_runon.cpp: implementations of the RillGrow class used to represent incident water i.e. rain and runon
 
- Copyright (C) 2018 David Favis-Mortlock
+ Copyright (C) 2020 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -24,11 +24,11 @@
 CRainAndRunon::CRainAndRunon(void)
 :
    m_dRain(0),
-   m_dTotRain(0),
+   m_dCumulRain(0),
    m_dRunOn(0),
-   m_dTotRunOn(0),
+   m_dCumulRunOn(0),
    m_dRainVarM(1)
-{   
+{
    m_pCell = NULL;
 }
 
@@ -46,31 +46,31 @@ void CRainAndRunon::SetParent(CCell* const pParent)
 // Sets this-iteration rainfall and runon to zero for this cell
 void CRainAndRunon::InitializeRainAndRunon(void)
 {
-   m_dRain = 
+   m_dRain =
    m_dRunOn = 0;
 }
 
-// Increments rainfall for this cell, also adds to the surface water in the cell
+// Increments rainfall for this cell, also adds to the overland flow in the cell
 void CRainAndRunon::dAddRain(double const dRain)
 {
    // Add rain to this cell
-   m_dRain    += dRain;
-   m_dTotRain += dRain;
-   
+   m_dRain      += dRain;
+   m_dCumulRain += dRain;
+
    // Was the cell previously dry?
    if (! m_pCell->pGetSurfaceWater()->bIsWet())
    {
       // It was, so increment the number of wet cells
       m_pSim->IncrThisIterNumWetCells();
-      
+
       // And initialize flow velocity on this cell
       m_pCell->pGetSurfaceWater()->InitializeAllFlowVelocity();
-      
+
       // Initialize sediment load
       m_pCell->pGetSediment()->InitializeAllSizeSedimentLoad();
    }
-   
-   // Increase the depth of surface water
+
+   // Increase the depth of overland flow
    m_pCell->pGetSurfaceWater()->ChangeSurfaceWater(dRain);
 }
 
@@ -81,10 +81,10 @@ double CRainAndRunon::dGetRain(void) const
 }
 
 
-// Returns the total rainfall on this cell
-double CRainAndRunon::dGetTotRain(void) const
+// Returns the cumulative rainfall on this cell
+double CRainAndRunon::dGetCumulRain(void) const
 {
-   return m_dTotRain;
+   return m_dCumulRain;
 }
 
 
@@ -101,26 +101,26 @@ double CRainAndRunon::dGetRainVarM(void) const
 }
 
 
-// Increments this cell's runon, also adds to the surface water on the cell
+// Increments this cell's runon, also adds to the overland flow on the cell
 void CRainAndRunon::AddRunOn(double const dRunOn)
 {
    m_dRunOn += dRunOn;
-   m_dTotRunOn += dRunOn;
-   
+   m_dCumulRunOn += dRunOn;
+
    // Was the cell previously dry?
    if (! m_pCell->pGetSurfaceWater()->bIsWet())
-   {   
+   {
       // It was, so increment this this-iteration count of wet cells
       m_pSim->IncrThisIterNumWetCells();
-      
+
       // And initialize flow velocity for this cell
       m_pCell->pGetSurfaceWater()->InitializeAllFlowVelocity();
-      
+
       // Initialize sediment load
       m_pCell->pGetSediment()->InitializeAllSizeSedimentLoad();
    }
-   
-   // Increase the depth of surface water
+
+   // Increase the depth of overland flow
    m_pCell->pGetSurfaceWater()->ChangeSurfaceWater(dRunOn);
 }
 
@@ -131,9 +131,9 @@ double CRainAndRunon::dGetRunOn(void) const
 }
 
 // Returns the total run-on on this cell
-double CRainAndRunon::dGetTotRunOn(void) const
+double CRainAndRunon::dGetCumulRunOn(void) const
 {
-   return m_dTotRunOn;
+   return m_dCumulRunOn;
 }
 
 

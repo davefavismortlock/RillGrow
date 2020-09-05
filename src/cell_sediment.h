@@ -2,9 +2,9 @@
    #define __SEDIMENT_H__
 /*=========================================================================================================================================
 
- This is cell_sediment.h: declarations for the RillGrow class used to represent sediment in a cell's surface water
+ This is cell_sediment.h: declarations for the RillGrow class used to represent sediment in a cell's overland flow
 
- Copyright (C) 2018 David Favis-Mortlock
+ Copyright (C) 2020 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -24,38 +24,44 @@ class CCell;                                 // Forward declaration
 class CSediment
 {
 public:
-   static CSimulation* m_pSim; 
+   static CSimulation* m_pSim;
 
 private:
    double
       m_dClaySedimentLoad,
       m_dSiltSedimentLoad,
-      m_dSandSedimentLoad;
+      m_dSandSedimentLoad,
+      m_dCumulClaySedimentLoad,
+      m_dCumulSiltSedimentLoad,
+      m_dCumulSandSedimentLoad;
 
-   CCell* m_pCell;   
-      
+   CCell* m_pCell;
+
 public:
    CSediment(void);
    ~CSediment(void);
-   
+
    void SetParent(CCell* const);
 
    void InitializeAllSizeSedimentLoad(void);
-   
+
    double dGetAllSizeSedimentLoad(void) const;
-   
-   double dChangeClaySedimentLoad(double const);
+   double dGetCumulAllSizeSedimentLoad(void) const;
+
+   void ChangeSedimentLoad(double const, double const, double const);
+
+   void DoChangeClaySedimentLoad(double const);
    double dGetClaySedimentLoad(void) const;
    double dSetClaySedLoadZero(void);
-   
-   double dChangeSiltSedimentLoad(double const);
+
+   void DoChangeSiltSedimentLoad(double const);
    double dGetSiltSedimentLoad(void) const;
    double dSetSiltSedLoadZero(void);
-   
-   double dChangeSandSedimentLoad(double const);
+
+   void DoChangeSandSedimentLoad(double const);
    double dGetSandSedimentLoad(void) const;
    double dSetSandSedimentLoadZero(void);
-   
+
    double dGetAllSizeSedimentConcentration(void);
 };
 

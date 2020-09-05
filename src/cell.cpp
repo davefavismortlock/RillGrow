@@ -2,7 +2,7 @@
 
  This is cell.cpp: the implementation of the class used to represent each soil cell object
 
- Copyright (C) 2018 David Favis-Mortlock
+ Copyright (C) 2020 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -24,7 +24,8 @@
 
 CCell::CCell(void)
 :
-   m_nEdgeCell(DIRECTION_NONE),   
+   m_bHasHadHeadcutRetreat(false),
+   m_nEdgeCell(DIRECTION_NONE),
    m_dBasementElevationation(0),
    m_dInitialSoilSurfaceElevation(0)
 {
@@ -33,6 +34,11 @@ CCell::CCell(void)
    m_SoilWater.SetParent(this);
    m_RainAndRunon.SetParent(this);
    m_Sediment.SetParent(this);
+
+   for (int n = 0; n < 8; n++)
+   {
+      m_dStoredRetreat[n] = 0;
+   }
 }
 
 CCell::~CCell(void)
@@ -60,7 +66,7 @@ bool CCell::bIsMissingValue(void) const
 {
    if (m_dInitialSoilSurfaceElevation == m_pSim->dGetMissingValue())
       return true;
-   
+
    return false;
 }
 
@@ -68,8 +74,8 @@ bool CCell::bIsMissingOrEdge(void) const
 {
    if ((m_dInitialSoilSurfaceElevation == m_pSim->dGetMissingValue()) || (m_nEdgeCell != DIRECTION_NONE))
       return true;
-   
-   return false;   
+
+   return false;
 }
 
 
@@ -105,13 +111,57 @@ double CCell::dGetTopElevation(void)
 }
 
 // This sets a new value for the soil surface elevation. Since it destroys mass balance, it must only be called during the ugly-but-necessary AdjustUnboundedEdges() routine
-void CCell::SetSoilSurfaceElevation(double const dNewElev)
+// void CCell::SetSoilSurfaceElevation(double const dNewElev)
+// {
+//    double
+//       dCurrentElev = m_Soil.dGetSoilSurfaceElevation(),
+//       dDiff = dNewElev - dCurrentElev;
+//
+//    m_Soil.ChangeTopLayerThickness(dDiff);
+// }
+
+// Returns the elevation of this cell's soil surface
+double CCell::dGetSoilSurfaceElevation(void)
 {
-   double 
-      dCurrentElev = m_Soil.dGetSoilSurfaceElevation(),
-      dDiff = dNewElev - dCurrentElev;
-   
-   m_Soil.ChangeTopLayerThickness(dDiff);
+   return (m_Soil.dGetSoilSurfaceElevation());
+}
+
+
+// Sets this cell's retreat for one of the eight directions
+double CCell::dGetStoredRetreat(int const nDirection)
+{
+   // Note does not check for valid nDirection
+   return m_dStoredRetreat[nDirection];
+}
+
+void CCell::SetStoredRetreat(int const nDirection, double const dRet)
+{
+   // Note does not check for valid nDirection
+   m_dStoredRetreat[nDirection] = dRet;
+}
+
+void CCell::AddToStoredRetreat(int const nDirection, double const dInc)
+{
+   // Note does not check for valid nDirection
+   m_dStoredRetreat[nDirection] += dInc;
+}
+
+bool CCell::bIsReadyForHeadcutRetreat(int const nDirection, double const dSize)
+{
+   if (m_dStoredRetreat[nDirection] >= dSize)
+      return true;
+
+   return false;
+}
+
+void CCell::SetHasHadHeadcutRetreat(void)
+{
+   m_bHasHadHeadcutRetreat = true;
+}
+
+bool CCell::bHasHadHeadcutRetreat(void)
+{
+   return m_bHasHadHeadcutRetreat;
 }
 
 
@@ -145,7 +195,7 @@ CSoilWater* CCell::pGetSoilWater(void)
 }
 
 
-// Initializes this-iteration values ready for this iteration's flow routing, splash redistribution, and slumping/toppling
+// Initializes per-operation values ready for this iteration's flow routing, splash redistribution, and slumping/toppling
 void CCell::InitializeAtStartOfIteration(bool const bSlump)
 {
    m_RainAndRunon.InitializeRainAndRunon();

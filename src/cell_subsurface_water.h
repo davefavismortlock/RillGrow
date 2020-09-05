@@ -2,9 +2,9 @@
    #define __SUBSURFACE_WATER_H__
 /*=========================================================================================================================================
 
- This is cell_subsurface_water.h: declarations for the RillGrow class used to represent subsurface water
+ This is cell_subsurface_water.h: declarations for the RillGrow class used to represent suboverland flow
 
- Copyright (C) 2018 David Favis-Mortlock
+ Copyright (C) 2020 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -27,23 +27,23 @@ class CSoilWater
 {
 private:
    double
-      m_dInfiltWaterLost,                    // As a depth (mm)
-      m_dTotInfiltWaterLost;                 // As a depth (mm)
-   
-   CCell* m_pCell;   
-   
+      m_dInfiltWaterLost,                    // Overland flow lost to infiltration, as a depth (mm)
+      m_dCumulInfiltWaterLost;               // Cumulative overland flow lost to infiltration, as a depth (mm)
+
+   CCell* m_pCell;
+
 public:
    CSoilWater(void);
    ~CSoilWater(void);
-   
+
    void SetParent(CCell* const);
-   
+
    void Infiltrate(double const);
    void InfiltrateAndMakeDry(void);
    void SetZeroThisIterInfiltration(void);
    double dGetInfiltration(void) const;
-   double dGetCumulativeInfiltration(void) const;
-   
+   double dGetCumulInfiltration(void) const;
+
    double dGetTopLayerSoilWater(void);
 };
 

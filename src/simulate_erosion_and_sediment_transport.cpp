@@ -1,8 +1,8 @@
 /*=========================================================================================================================================
 
- This is do_sediment.cpp: it handles erosion and deposition
+ This is simulate_erosion_and_sediment_transport: it handles erosion and deposition
 
- Copyright (C) 2018 David Favis-Mortlock
+ Copyright (C) 2020 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -26,7 +26,7 @@
  Calculates transport capacity in a single wet cell to decide whether erosion or deposition should occur there
 
 =========================================================================================================================================*/
-void CSimulation::CalcTransportCapacity(int const nX, int const nY, int const nLowX, int const nLowY, double const dWaterDepth, double const dTopDiff, double const dTopSlope, double const dHLen, double const dVel, double const dMoveDepth)
+void CSimulation::CalcTransportCapacity(int const nX, int const nY, int const nLowX, int const nLowY, int const nDirection, double const dWaterDepth, double const dTopDiff, double const dTopSlope, double const dHLen, double const dVel, double const dMoveDepth)
 {
    // For transport capacity, use the equation (5) in Nearing, M.A., Norton, L.D., Bulgakov, D.A., Larionov, G.A., West, L.T. and Dontsova, K. (1997). Hydraulics and erosion in eroding rills. Water Resources Research 33(4), 865-876.
 
@@ -40,7 +40,7 @@ void CSimulation::CalcTransportCapacity(int const nX, int const nY, int const nL
    Cell[nX][nY].pGetSurfaceWater()->SetStreamPower(dW * 0.001);
 
    // Calculate potential unit sediment load dQs using Nearing et al. 1997 equation
-   double 
+   double
       dTmp1 = exp(m_dGamma + (m_dDelta * log(dW))),
       dTmp2 = dTmp1 + 1,
       dQs = exp(((m_dAlpha * dTmp2) + (m_dBeta * dTmp1)) / dTmp2);
@@ -57,9 +57,9 @@ void CSimulation::CalcTransportCapacity(int const nX, int const nY, int const nL
    if (dBulkDensity < 0)
    {
       // We are down to unerodible basement, so no sediment to be transported
-      return;      
+      return;
    }
-   
+
    // Convert this amount to a volumetric measure in mm3; div by 1/1000 since bulk density was previously multiplied by 1000, and also multiplied by 1000 to convert cm3 -> mm3
    dTmp3 *= (1e6 / dBulkDensity);
 
@@ -73,7 +73,7 @@ void CSimulation::CalcTransportCapacity(int const nX, int const nY, int const nL
    double dSedimentLoad = Cell[nX][nY].pGetSediment()->dGetAllSizeSedimentLoad();
 
    // Finally, compare sediment load and transport capacity
-   if (dSedimentLoad > dTransportCapacity) 
+   if (dSedimentLoad > dTransportCapacity)
    {
       // Sediment load is more than transport capacity, so do some deposition
       DoCellDeposition(nX, nY, dWaterDepth, dSedimentLoad, dTransportCapacity);
@@ -81,7 +81,7 @@ void CSimulation::CalcTransportCapacity(int const nX, int const nY, int const nL
    else
    {
       // Sediment load is less than transport capacity and the adjacent cell is downhill from this one, so do some erosion
-      DoCellErosion(nX, nY, nLowX, nLowY, dTopSlope, dHLen, dVel, 1.0 - (dSedimentLoad / dTransportCapacity), dMoveDepth);
+      DoCellErosion(nX, nY, nLowX, nLowY, nDirection, dTopSlope, dHLen, dVel, 1.0 - (dSedimentLoad / dTransportCapacity), dMoveDepth);
    }
 }
 
@@ -91,7 +91,7 @@ void CSimulation::CalcTransportCapacity(int const nX, int const nY, int const nL
  This method erodes a cell as a result of downhill flow; it uses a probabilistic equation from Nearing (1991)
 
 =========================================================================================================================================*/
-void CSimulation::DoCellErosion(int const nX, int const nY, int const nLowX, int const nLowY, double const dS, double const dHLen, double const dVel, double const dSedimentLoadWt, double const dMoveDepth)
+void CSimulation::DoCellErosion(int const nX, int const nY, int const nLowX, int const nLowY, int const nDirection, double const dS, double const dHLen, double const dVel, double const dSedimentLoadWt, double const dMoveDepth)
 {
    /*
    For detachment, use the relationship:
@@ -152,18 +152,18 @@ void CSimulation::DoCellErosion(int const nX, int const nY, int const nLowX, int
 
       S-tau-b = 0.4 . 150 rho g h S
    */
-   
+
    double const TAUB_CONST = 150;
 
    // For dTau, must divide by 1000 to convert dMoveDepth to m, and divide by 1000 as m_dRho is in t/m3
-   double 
+   double
       dTau = m_dRho * m_dG * dMoveDepth * dS * 1e-6,
       dTaub = TAUB_CONST * dTau,
       dSTaub = m_dCVTaub * dTaub;
 
-   // Save the shear stress (both this-iteration and cumulative total) TODO is this OK? Should it be cumulative?
-   Cell[nX][nY].pGetSoil()->IncShearStress(dTau);
-   Cell[nX][nY].pGetSoil()->IncTotShearStress(dTau);
+   // Save the shear stress (both this-operation and cumulative total)
+   // TODO Use m_SSSWeightQuadrant to allocate shear stress to this and adjacent cells
+   DoDistributeShearStress(nX, nY, dTau);
 
 /*
    // TESTING
@@ -175,12 +175,12 @@ void CSimulation::DoCellErosion(int const nX, int const nY, int const nLowX, int
    if (sbFirst)
    {
       sbFirst = false;
-      LogStream << "m_dT" << '\t' << "m_dST" << endl;
-      LogStream << m_dT << '\t' << sqrt(m_dST2) << endl;
-      LogStream << "dTaub" << '\t' << "dSTaub" << '\t' << "dZ"  << '\t' << "dP" << '\t' << "dE" << endl;
+      m_ofsLog << "m_dT" << '\t' << "m_dST" << endl;
+      m_ofsLog << m_dT << '\t' << sqrt(m_dST2) << endl;
+      m_ofsLog << "dTaub" << '\t' << "dSTaub" << '\t' << "dZ"  << '\t' << "dP" << '\t' << "dE" << endl;
    }
    if (0 == m_ulIter % 10)
-      LogStream << dTaub << '\t' << dSTaub << '\t' << dZ  << '\t' << dP << '\t' << dE << endl;
+      m_ofsLog << dTaub << '\t' << dSTaub << '\t' << dZ  << '\t' << dP << '\t' << dE << endl;
 */
 
    // Use Nearing's equation to calculate soil loss as detachment rate per unit area of soil surface i.e. in kg/(sec m2). First calculate the difference between burst shear stress and soil strength, normalize this to SD units then use the normalized value to sample a value from the cumulative probability distribution function of a standard Gaussian (normal) distribution
@@ -195,13 +195,13 @@ void CSimulation::DoCellErosion(int const nX, int const nY, int const nLowX, int
    if (dBulkDensity < 0)
    {
       // We are down to unerodible basement, so no sediment to be transported
-      return;      
+      return;
    }
-   
+
    // Now convert the total thickness of soil lost per sec; to be split between 'this' and 'next' cells
    double dThickLost = 1000 * dE / dBulkDensity;       // mm/sec
 
-//   LogStream << m_ulIter << " [" << nX << "][" << nY << "] dThickLost="  << dThickLost << endl;
+//   m_ofsLog << m_ulIter << " [" << nX << "][" << nY << "] dThickLost="  << dThickLost << endl;
 
    // Is this an edge cell?
    if (nLowX < 0)
@@ -210,33 +210,38 @@ void CSimulation::DoCellErosion(int const nX, int const nY, int const nLowX, int
       if (m_bHaveBaseLevel)
          // We do, so make sure that we do not cut down below the baselevel
          dThickLost = tMin(Cell[nX][nY].pGetSoil()->dGetSoilSurfaceElevation() - m_dBaseLevel, dThickLost);
-      
+
       // Erode 'this' cell, also add to sediment load and totals
       if (dThickLost > TOLERANCE)
-         Cell[nX][nY].pGetSoil()->DoFlowDetach(dThickLost);      
+         Cell[nX][nY].pGetSoil()->DoFlowDetach(dThickLost);
    }
    else
    {
-      // It is not an edge cell, so calculate the relative amounts to be removed from source and destination cells: as the soil surface slope gets steeper, relatively more is removed from 'this' cell than from the 'next' cell. Helps both to avoid excavating pits, and in the simulation of headcut retreat
-      // Note: tried using water surface gradient (i.e. the hydraulic gradient) rather than soil surface gradient here, but made v little difference TODO again
-      double dElevSlope = (Cell[nX][nY].pGetSoil()->dGetSoilSurfaceElevation() - Cell[nLowX][nLowY].pGetSoil()->dGetSoilSurfaceElevation()) / dHLen;
-         
-      if (dElevSlope > 0)
+      // It is not an edge cell, so is the depth of soil lost greater than the TOLERANCE amount? (Need to check this to avoid removing miniscule depths)
+      if (dThickLost > TOLERANCE)
       {
-         // Need to check dElevSlope, because it is possible that both cells may have exactly the same elevation
-         double dSourceWeight = tMin(0.5 + (0.5 * dElevSlope / m_dSourceDestCritAngle), 1.0);
-//         double dSourceWeight = 0.5 + (0.5 * exp(-1.0 / (dElevSlope * m_dSourceDestCritAngle)));
-         double dDestWeight = 1.0 - dSourceWeight;
-//         LogStream << m_ulIter << " [" << nX << "][" << nY << "] dSourceWeight=" << dSourceWeight << " fDestWeight=" << dSourceWeight << endl;
-         
-         if (dThickLost > TOLERANCE)
-         {
-            // Erode 'this' cell, and add to sediment load and totals
-            Cell[nX][nY].pGetSoil()->DoFlowDetach(dThickLost * dSourceWeight);
-            
-            // Also erode the 'next' cell, and add to sediment load and totals
-            Cell[nLowX][nLowY].pGetSoil()->DoFlowDetach(dThickLost * dDestWeight);
-         }
+         // Erode 'this' (source) and 'next' (destination) cells equally
+         double dHalfThickLost = dThickLost * 0.5;
+
+         // Erode 'this' cell, and add to sediment load and totals
+         Cell[nX][nY].pGetSoil()->DoFlowDetach(dHalfThickLost);
+
+         // Also erode the 'next' cell, and add to sediment load and totals
+         Cell[nLowX][nLowY].pGetSoil()->DoFlowDetach(dHalfThickLost);
+
+         // OK, now add to the potential headcut erosion: dElevSlope is in radians TODO try using water surface gradient (i.e. the hydraulic gradient) rather than soil surface gradient here, but made v little difference
+         double dElevSlope = atan((Cell[nX][nY].pGetSoil()->dGetSoilSurfaceElevation() - Cell[nLowX][nLowY].pGetSoil()->dGetSoilSurfaceElevation()) / dHLen);
+
+         // TODO BODGE
+         double dConst = 0.01;
+         double dThisRetreat = dConst * sin(dElevSlope);
+//          m_ofsLog << m_ulIter << " [" << nX << "][" << nY << "] dElevSlope (degrees)=" << dElevSlope * 180 / PI << " dThisRetreat=" << dThisRetreat << endl;
+
+         // AddToStoredRetreat nDirection
+         int nHeadcutDirection = nCalcOppositeDirection(nDirection);
+         Cell[nX][nY].AddToStoredRetreat(nHeadcutDirection, dThisRetreat);
+
+
       }
    }
 }
@@ -250,7 +255,7 @@ void CSimulation::DoCellErosion(int const nX, int const nY, int const nLowX, int
 void CSimulation::DoCellDeposition(int const nX, int const nY, double const dWaterDepth, double const dSedimentLoad, double const dTransportCapacity)
 {
    // First calculate Reynold's Number, and a drag coefficient
-   double 
+   double
       dReynoldsNumber = Cell[nX][nY].pGetSurfaceWater()->dGetReynolds(m_dNu),
       dDragCoefficient = 24.0 / dReynoldsNumber;
 
@@ -259,22 +264,22 @@ void CSimulation::DoCellDeposition(int const nX, int const nY, double const dWat
       dClaySettlingSpeed = 1000 * sqrt((4 * m_dG * m_dClayDiameter) * m_dDensityDiffExpression / ( 3 * dDragCoefficient)),     // in mm/sec
       dSiltSettlingSpeed = 1000 * sqrt((4 * m_dG * m_dSiltDiameter) * m_dDensityDiffExpression / ( 3 * dDragCoefficient)),
       dSandSettlingSpeed = 1000 * sqrt((4 * m_dG * m_dSandDiameter) * m_dDensityDiffExpression / ( 3 * dDragCoefficient));
-   
+
    // Now calculate the distance fallen during this timestep by a grain of each sediment size class
    double
       dClayDistance = m_dTimeStep * dClaySettlingSpeed,
       dSiltDistance = m_dTimeStep * dSiltSettlingSpeed,
       dSandDistance = m_dTimeStep * dSandSettlingSpeed;
-   
+
    // Assume that, for all sediment size classes, deposition is a linear function of the difference between sediment load and transport capacity: see equation 12 in Lei et al. (1998)
    double dDiff = dSedimentLoad - dTransportCapacity;
-   
+
    // Also assume that the sediment in each size class is well mixed vertically, and that the fraction deposited is proportional to distance fallen divided by water depth
    double
       dClayFrac = tMin(1.0, dClayDistance / dWaterDepth) * dDiff,
       dSiltFrac = tMin(1.0, dSiltDistance / dWaterDepth) * dDiff,
       dSandFrac = tMin(1.0, dSandDistance / dWaterDepth) * dDiff;
-   
+
    // Finally, deposit these fractions of each sediment size class. Note that if there isn't enough being transported, then we will reduce the amount (= depth) which gets deposited
    // TODO Note too that what is implied here is that deposited sediment becomes indistinguishable from the original soil. To be considered in a later version
    Cell[nX][nY].pGetSoil()->DoFlowDeposit(dClayFrac, dSiltFrac, dSandFrac);
@@ -282,9 +287,9 @@ void CSimulation::DoCellDeposition(int const nX, int const nY, double const dWat
 
 
 /*=========================================================================================================================================
- 
+
  Adds to the this-iteration flow detachment value for clay-sized sediment
- 
+
 =========================================================================================================================================*/
 void CSimulation::AddThisIterClayFlowDetach(double const dDetach)
 {
@@ -292,9 +297,9 @@ void CSimulation::AddThisIterClayFlowDetach(double const dDetach)
 }
 
 /*=========================================================================================================================================
- 
+
  Adds to the this-iteration flow detachment value for silt-sized sediment
- 
+
 =========================================================================================================================================*/
 void CSimulation::AddThisIterSiltFlowDetach(double const dDetach)
 {
@@ -302,9 +307,9 @@ void CSimulation::AddThisIterSiltFlowDetach(double const dDetach)
 }
 
 /*=========================================================================================================================================
- 
+
  Adds to the this-iteration flow detachment value for sand-sized sediment
- 
+
 =========================================================================================================================================*/
 void CSimulation::AddThisIterSandFlowDetach(double const dDetach)
 {
@@ -312,9 +317,9 @@ void CSimulation::AddThisIterSandFlowDetach(double const dDetach)
 }
 
 /*=========================================================================================================================================
- 
+
  Adds to the this-iteration flow deposition value for clay-sized sediment
- 
+
 =========================================================================================================================================*/
 void CSimulation::AddThisIterClayFlowDeposit(double const dDeposit)
 {
@@ -322,9 +327,9 @@ void CSimulation::AddThisIterClayFlowDeposit(double const dDeposit)
 }
 
 /*=========================================================================================================================================
- 
+
  Adds to the this-iteration flow deposition value for silt-sized sediment
- 
+
 =========================================================================================================================================*/
 void CSimulation::AddThisIterSiltFlowDeposit(double const dDeposit)
 {
@@ -332,9 +337,9 @@ void CSimulation::AddThisIterSiltFlowDeposit(double const dDeposit)
 }
 
 /*=========================================================================================================================================
- 
+
  Adds to the this-iteration flow deposition value for sand-sized sediment
- 
+
 =========================================================================================================================================*/
 void CSimulation::AddThisIterSandFlowDeposit(double const dDeposit)
 {
@@ -343,9 +348,9 @@ void CSimulation::AddThisIterSandFlowDeposit(double const dDeposit)
 
 
 /*=========================================================================================================================================
- 
+
  Adds to the this-iteration clay-sized sediment load
- 
+
 =========================================================================================================================================*/
 void CSimulation::AddThisIterClaySedimentLoad(double const dChange)
 {
@@ -353,9 +358,9 @@ void CSimulation::AddThisIterClaySedimentLoad(double const dChange)
 }
 
 /*=========================================================================================================================================
- 
+
  Adds to the this-iteration silt-sized sediment load
- 
+
 =========================================================================================================================================*/
 void CSimulation::AddThisIterSiltSedimentLoad(double const dChange)
 {
@@ -363,9 +368,9 @@ void CSimulation::AddThisIterSiltSedimentLoad(double const dChange)
 }
 
 /*=========================================================================================================================================
- 
+
  Adds to the this-iteration sand-sized sediment load
- 
+
 =========================================================================================================================================*/
 void CSimulation::AddThisIterSandSedimentLoad(double const dChange)
 {

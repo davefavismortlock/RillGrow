@@ -2,7 +2,7 @@
 
  This is cell_soil_layer.cpp: implementations of the RillGrow class used to represent a layer in the soil column
 
- Copyright (C) 2018 David Favis-Mortlock
+ Copyright (C) 2020 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -36,7 +36,7 @@ CLayer::CLayer(void)
    m_dSiltSlumpErodibility(0),
    m_dSandSlumpErodibility(0),
    m_dSoilWater(0)
-{   
+{
 }
 
 CLayer::~CLayer(void)
@@ -57,17 +57,17 @@ string* CLayer::pstrGetName(void)
 
 void CLayer::SetClayThickness(double const dThick)
 {
-   m_dClayThickness = dThick;   
+   m_dClayThickness = dThick;
 }
 
 void CLayer::SetSiltThickness(double const dThick)
 {
-   m_dSiltThickness = dThick;   
+   m_dSiltThickness = dThick;
 }
 
 void CLayer::SetSandThickness(double const dThick)
 {
-   m_dSandThickness = dThick;   
+   m_dSandThickness = dThick;
 }
 
 double CLayer::dGetClayThickness(void) const
@@ -111,7 +111,7 @@ void CLayer::SetClayFlowErodibility(double const dErod)
 {
    m_dClayFlowErodibility = dErod;
 }
-   
+
 void CLayer::SetSiltFlowErodibility(double const dErod)
 {
    m_dSiltFlowErodibility = dErod;
@@ -121,7 +121,7 @@ void CLayer::SetSandFlowErodibility(double const dErod)
 {
    m_dSandFlowErodibility = dErod;
 }
-   
+
 double CLayer::dGetClayFlowErodibility(void) const
 {
    return m_dClayFlowErodibility;
@@ -200,30 +200,30 @@ double CLayer::dGetSandSlumpErodibility(void) const
 }
 
 
-void CLayer::DoFlowErosionLayer(double const dToErode, double& dClayEroded, double& dSiltEroded, double& dSandEroded)
+void CLayer::DoLayerFlowErosion(double const dToErode, double& dClayEroded, double& dSiltEroded, double& dSandEroded)
 {
    double dTotalThickness = m_dClayThickness + m_dSiltThickness + m_dSandThickness;
-   
+
    // Is this a zero-thickness layer?
    if (dTotalThickness == 0)
       return;
-   
+
    // OK, we have a layer that can be eroded by flow, so partition the total lowering for this cell between the three size fractions: do this by relative erodibility
    int
       nClayWeight = (m_dClayThickness > 0 ? 1 : 0),
       nSiltWeight = (m_dSiltThickness > 0 ? 1 : 0),
       nSandWeight = (m_dSandThickness > 0 ? 1 : 0);
-   
+
    double dTotErodibility = (nClayWeight * m_dClayFlowErodibility) + (nSiltWeight * m_dSiltFlowErodibility) + (nSandWeight * m_dSandFlowErodibility);
-   
+
    if (nClayWeight)
    {
       // Erode some clay-sized sediment
       double dTmp = (m_dClayFlowErodibility * dToErode) / dTotErodibility;
-      
+
       // Make sure we don't get -ve amounts left on the cell
       dClayEroded = tMin(m_dClayThickness, dTmp);
-      
+
       // Do the erosion
       m_dClayThickness -= dClayEroded;
    }
@@ -232,230 +232,196 @@ void CLayer::DoFlowErosionLayer(double const dToErode, double& dClayEroded, doub
    {
       // Erode some silt-sized sediment
       double dTmp = (m_dSiltFlowErodibility * dToErode) / dTotErodibility;
-      
+
       // Make sure we don't get -ve amounts left on the cell
       dSiltEroded = tMin(m_dSiltThickness, dTmp);
-      
+
       // Do the erosion
       m_dSiltThickness -= dSiltEroded;
    }
-   
+
    if (nSandWeight)
    {
       // Erode some sand-sized sediment
       double dTmp = (m_dSandFlowErodibility * dToErode) / dTotErodibility;
-      
+
       // Make sure we don't get -ve amounts left on the cell
       dSandEroded = tMin(m_dSandThickness, dTmp);
-      
+
       // Do the erosion
       m_dSandThickness -= dSandEroded;
    }
 }
 
 
-void CLayer::DoFlowDepositionLayer(double const dClayDepth, double const dSiltDepth, double const dSandDepth)
-{
-   // Do the deposition
-   m_dClayThickness += dClayDepth;
-   m_dSiltThickness += dSiltDepth;
-   m_dSandThickness += dSandDepth;   
-}
-
-
-void CLayer::DoSplashErosionLayer(double const dToErode, double& dClayEroded, double& dSiltEroded, double& dSandEroded)
+void CLayer::DoLayerSplashErosion(double const dToErode, double& dClayEroded, double& dSiltEroded, double& dSandEroded)
 {
    double dTotalThickness = m_dClayThickness + m_dSiltThickness + m_dSandThickness;
-   
+
    // Is this a zero-thickness layer?
    if (dTotalThickness == 0)
       return;
-   
+
    // OK, we have a layer that can be eroded by splash, so partition the total lowering for this cell between the three size fractions: do this by relative erodibility
    int
       nClayWeight = (m_dClayThickness > 0 ? 1 : 0),
       nSiltWeight = (m_dSiltThickness > 0 ? 1 : 0),
       nSandWeight = (m_dSandThickness > 0 ? 1 : 0);
-   
+
    double dTotErodibility = (nClayWeight * m_dClaySplashErodibility) + (nSiltWeight * m_dSiltSplashErodibility) + (nSandWeight * m_dSandSplashErodibility);
-   
+
    if (nClayWeight)
    {
       // Erode some clay-sized sediment
       double dTmp = (m_dClaySplashErodibility * dToErode) / dTotErodibility;
-      
+
       // Make sure we don't get -ve amounts left on the cell
       dClayEroded = tMin(m_dClayThickness, dTmp);
-      
+
       // Do the erosion
       m_dClayThickness -= dClayEroded;
    }
-   
+
    if (nSiltWeight)
    {
       // Erode some silt-sized sediment
       double dTmp = (m_dSiltSplashErodibility * dToErode) / dTotErodibility;
-      
+
       // Make sure we don't get -ve amounts left on the cell
       dSiltEroded = tMin(m_dSiltThickness, dTmp);
-      
+
       // Do the erosion
       m_dSiltThickness -= dSiltEroded;
    }
-   
+
    if (nSandWeight)
    {
       // Erode some sand-sized sediment
       double dTmp = (m_dSandSplashErodibility * dToErode) / dTotErodibility;
-      
+
       // Make sure we don't get -ve amounts left on the cell
       dSandEroded = tMin(m_dSandThickness, dTmp);
-      
+
       // Do the erosion
       m_dSandThickness -= dSandEroded;
    }
 }
 
-void CLayer::DoSplashDepositionLayer(double const dClayDepth, double const dSiltDepth, double const dSandDepth)
-{
-   // Do the deposition
-   m_dClayThickness += dClayDepth;
-   m_dSiltThickness += dSiltDepth;
-   m_dSandThickness += dSandDepth;   
-}
 
-
-void CLayer::DoSlumpErosionLayer(double const dToErode, double& dClayEroded, double& dSiltEroded, double& dSandEroded)
+void CLayer::DoLayerSlumpErosion(double const dToErode, double& dClayEroded, double& dSiltEroded, double& dSandEroded)
 {
    double dTotalThickness = m_dClayThickness + m_dSiltThickness + m_dSandThickness;
-   
+
    // Is this a zero-thickness layer?
    if (dTotalThickness == 0)
       return;
-   
+
    // OK, we have a layer that can be eroded by slumping, so partition the total lowering for this cell between the three size fractions: do this by relative erodibility
    int
       nClayWeight = (m_dClayThickness > 0 ? 1 : 0),
       nSiltWeight = (m_dSiltThickness > 0 ? 1 : 0),
       nSandWeight = (m_dSandThickness > 0 ? 1 : 0);
-   
+
    double dTotErodibility = (nClayWeight * m_dClaySlumpErodibility) + (nSiltWeight * m_dSiltSlumpErodibility) + (nSandWeight * m_dSandSlumpErodibility);
-   
+
    if (nClayWeight)
    {
       // Erode some clay-sized sediment
       double dTmp = (m_dClaySlumpErodibility * dToErode) / dTotErodibility;
-      
+
       // Make sure we don't get -ve amounts left on the cell
       dClayEroded = tMin(m_dClayThickness, dTmp);
-      
+
       // Do the erosion
       m_dClayThickness -= dClayEroded;
    }
-   
+
    if (nSiltWeight)
    {
       // Erode some silt-sized sediment
       double dTmp = (m_dSiltSlumpErodibility * dToErode) / dTotErodibility;
-      
+
       // Make sure we don't get -ve amounts left on the cell
       dSiltEroded = tMin(m_dSiltThickness, dTmp);
-      
+
       // Do the erosion
       m_dSiltThickness -= dSiltEroded;
    }
-   
+
    if (nSandWeight)
    {
       // Erode some sand-sized sediment
       double dTmp = (m_dSandSlumpErodibility * dToErode) / dTotErodibility;
-      
+
       // Make sure we don't get -ve amounts left on the cell
       dSandEroded = tMin(m_dSandThickness, dTmp);
-      
+
       // Do the erosion
       m_dSandThickness -= dSandEroded;
    }
 }
 
-void CLayer::DoToppleErosionLayer(double const dToErode, double& dClayEroded, double& dSiltEroded, double& dSandEroded)
+void CLayer::DoLayerToppleErosion(double const dToErode, double& dClayEroded, double& dSiltEroded, double& dSandEroded)
 {
    double dTotalThickness = m_dClayThickness + m_dSiltThickness + m_dSandThickness;
-   
+
    // Is this a zero-thickness layer?
    if (dTotalThickness == 0)
       return;
-   
+
    // OK, we have a layer that can be eroded by toppling, so partition the total lowering for this cell between the three size fractions: do this by relative erodibility
    int
    nClayWeight = (m_dClayThickness > 0 ? 1 : 0),
    nSiltWeight = (m_dSiltThickness > 0 ? 1 : 0),
    nSandWeight = (m_dSandThickness > 0 ? 1 : 0);
-   
+
    double dTotErodibility = (nClayWeight * m_dClaySlumpErodibility) + (nSiltWeight * m_dSiltSlumpErodibility) + (nSandWeight * m_dSandSlumpErodibility);
-   
+
    if (nClayWeight)
    {
       // Erode some clay-sized sediment
       double dTmp = (m_dClaySlumpErodibility * dToErode) / dTotErodibility;
-      
+
       // Make sure we don't get -ve amounts left on the cell
       dClayEroded = tMin(m_dClayThickness, dTmp);
-      
+
       // Do the erosion
       m_dClayThickness -= dClayEroded;
    }
-   
+
    if (nSiltWeight)
    {
       // Erode some silt-sized sediment
       double dTmp = (m_dSiltSlumpErodibility * dToErode) / dTotErodibility;
-      
+
       // Make sure we don't get -ve amounts left on the cell
       dSiltEroded = tMin(m_dSiltThickness, dTmp);
-      
+
       // Do the erosion
       m_dSiltThickness -= dSiltEroded;
    }
-   
+
    if (nSandWeight)
    {
       // Erode some sand-sized sediment
       double dTmp = (m_dSandSlumpErodibility * dToErode) / dTotErodibility;
-      
+
       // Make sure we don't get -ve amounts left on the cell
       dSandEroded = tMin(m_dSandThickness, dTmp);
-      
+
       // Do the erosion
       m_dSandThickness -= dSandEroded;
    }
 }
 
 
-
-void CLayer::DoToppleClayDepositionLayer(double const dDepth)
+void CLayer::DoLayerDeposition(double const dClayDepth, double const dSiltDepth, double const dSandDepth)
 {
-   m_dClayThickness += dDepth;   
-}
-
-void CLayer::DoToppleSiltDepositionLayer(double const dDepth)
-{
-   m_dSiltThickness += dDepth;   
-}
-
-void CLayer::DoToppleSandDepositionLayer(double const dDepth)
-{
-   m_dSandThickness += dDepth;   
-}
-
-
-void CLayer::DoInfiltrationDepositionLayer(double const dClayDepth, double const dSiltDepth, double const dSandDepth)
-{
-   // Do the deposition
    m_dClayThickness += dClayDepth;
    m_dSiltThickness += dSiltDepth;
-   m_dSandThickness += dSandDepth;   
+   m_dSandThickness += dSandDepth;
 }
+
 
 void CLayer::SetSoilWater(double const dWater)
 {
@@ -473,24 +439,78 @@ double CLayer::dGetSoilWater(void) const
 }
 
 
-// This ugly-but-necessary method changes the thickness of a soil layer; it is for use in the AdjustUnboundedEdges() routine only
-void CLayer::ChangeThickness(double const dChange)
+void CLayer::DoLayerHeadcutRetreatErosion(double const dToErode, double& dClayEroded, double& dSiltEroded, double& dSandEroded)
 {
    double dTotalThickness = m_dClayThickness + m_dSiltThickness + m_dSandThickness;
-   
-   if (dTotalThickness > 0)
-   {   
-      // This is not a zero thickness layer, so change the thickness of each size component in proportion to that component's existing thickness
-      m_dClayThickness += (dChange * m_dClayThickness / dTotalThickness);
-      m_dSiltThickness += (dChange * m_dSiltThickness / dTotalThickness);
-      m_dSandThickness += (dChange * m_dSandThickness / dTotalThickness);
-   }      
-   else if (dChange > 0)
+
+   // Is this a zero-thickness layer?
+   if (dTotalThickness == 0)
+      return;
+
+   // OK, we have a layer that can be eroded by slumping, so partition the total lowering for this cell between the three size fractions: do this by relative erodibility
+   int
+   nClayWeight = (m_dClayThickness > 0 ? 1 : 0),
+   nSiltWeight = (m_dSiltThickness > 0 ? 1 : 0),
+   nSandWeight = (m_dSandThickness > 0 ? 1 : 0);
+
+   double dTotErodibility = (nClayWeight * m_dClaySlumpErodibility) + (nSiltWeight * m_dSiltSlumpErodibility) + (nSandWeight * m_dSandSlumpErodibility);
+
+   if (nClayWeight)
    {
-      // This is a zero thickness layer: we can't remove from it, so if dChange is -ve then do nothing. If dChange is +ve then add to each size component equally
-      m_dClayThickness += (dChange / 3);
-      m_dSiltThickness += (dChange / 3);
-      m_dSandThickness += (dChange / 3);      
+      // Erode some clay-sized sediment
+      double dTmp = (m_dClaySlumpErodibility * dToErode) / dTotErodibility;
+
+      // Make sure we don't get -ve amounts left on the cell
+      dClayEroded = tMin(m_dClayThickness, dTmp);
+
+      // Do the erosion
+      m_dClayThickness -= dClayEroded;
+   }
+
+   if (nSiltWeight)
+   {
+      // Erode some silt-sized sediment
+      double dTmp = (m_dSiltSlumpErodibility * dToErode) / dTotErodibility;
+
+      // Make sure we don't get -ve amounts left on the cell
+      dSiltEroded = tMin(m_dSiltThickness, dTmp);
+
+      // Do the erosion
+      m_dSiltThickness -= dSiltEroded;
+   }
+
+   if (nSandWeight)
+   {
+      // Erode some sand-sized sediment
+      double dTmp = (m_dSandSlumpErodibility * dToErode) / dTotErodibility;
+
+      // Make sure we don't get -ve amounts left on the cell
+      dSandEroded = tMin(m_dSandThickness, dTmp);
+
+      // Do the erosion
+      m_dSandThickness -= dSandEroded;
    }
 }
+
+
+// This ugly-but-possibly-necessary method changes the thickness of a soil layer; it is for use in the AdjustUnboundedEdges() routine only
+// void CLayer::ChangeThickness(double const dChange)
+// {
+//    double dTotalThickness = m_dClayThickness + m_dSiltThickness + m_dSandThickness;
+//
+//    if (dTotalThickness > 0)
+//    {
+//       // This is not a zero thickness layer, so change the thickness of each size component in proportion to that component's existing thickness
+//       m_dClayThickness += (dChange * m_dClayThickness / dTotalThickness);
+//       m_dSiltThickness += (dChange * m_dSiltThickness / dTotalThickness);
+//       m_dSandThickness += (dChange * m_dSandThickness / dTotalThickness);
+//    }
+//    else if (dChange > 0)
+//    {
+//       // This is a zero thickness layer: we can't remove from it, so if dChange is -ve then do nothing. If dChange is +ve then add to each size component equally
+//       m_dClayThickness += (dChange / 3);
+//       m_dSiltThickness += (dChange / 3);
+//       m_dSandThickness += (dChange / 3);
+//    }
+// }
 
