@@ -4,14 +4,14 @@ RillGrow simulates the growth and development of rills on a bare soil area: the 
 
 For discussions regarding aspects of this model, many thanks to:
 <ul>
-<li>John Boardman</li>
-<li>tBob Evans</li>
-<li>Peter Kinnell</li>
-<li>tMike Kirkby</li>
-<li>Mark Nearing</li>
-<li>Tony Parsons</li>
-<li>Olivier Planchon</li>
-<li>(the late) John Thornes</li>
+<li>John Boardman (University of Oxford)</li>
+<li>Bob Evans (Anglia Polytechnic University)</li>
+<li>Peter Kinnell (University of Canberra)</li>
+<li>Mike Kirkby (University of Leeds)</li>
+<li>Mark Nearing (USDA)</li>
+<li>Tony Parsons (University of Sheffield)</li>
+<li>Olivier Planchon (INRA)</li>
+<li>(the late) John Thornes (King's College London)</li>
 </ul>
 
 
