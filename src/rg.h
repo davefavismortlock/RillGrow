@@ -139,11 +139,11 @@ using std::to_string;
 #endif
 
 //========================================================== Hard-Wired Constants =========================================================
-string const   PROGNAME                                     = "RillGrow serial (18 June 2020 version)";
+string const   PROGNAME                                     = "RillGrow serial (11 September 2020 version)";
 string const   SHORTNAME                                    = "RG";
 string const   RG_INI                                       = "rg.ini";
 
-string const   COPYRIGHT                                    = "(C) 2020 David Favis-Mortlock (d.favismortlock@gmail.com)";
+string const   COPYRIGHT                                    = "(C) 2020 David Favis-Mortlock (dfm1@bgs.ac.uk)";
 string const   LINE                                         = "-------------------------------------------------------------------------------";
 string const   DISCLAIMER1                                  = "This program is distributed in the hope that it will be useful, but WITHOUT ANY";
 string const   DISCLAIMER2                                  = "WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A";
