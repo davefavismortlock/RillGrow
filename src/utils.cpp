@@ -638,10 +638,10 @@ double CSimulation::dGetCGaussianPDF(double const dZ)
 
 /*========================================================================================================================================
 
-  This member function of CSimulation outputs lambda - friction factor (calculated as a cubic spline) for checking purposes
+  This member function of CSimulation outputs Lawrence's (1997) lambda - friction factor (calculated as a cubic spline) for checking purposes
 
 ========================================================================================================================================*/
-void CSimulation::CheckFF(void)
+void CSimulation::CheckLawrenceFF(void)
 {
    // Put together file name for CSV friction factor check file
    string strFilePathName = m_strOutputPath;
@@ -649,31 +649,31 @@ void CSimulation::CheckFF(void)
    strFilePathName.append(CSV_EXT);
 
    // Create an ofstream object then try to open file for output
-   ofstream FFStream;
-   FFStream.open(strFilePathName.c_str(), ios::out | ios::trunc);
+   ofstream ofsFF;
+   ofsFF.open(strFilePathName.c_str(), ios::out | ios::trunc);
 
    // Did it open OK?
-   if (! FFStream.is_open())
+   if (! ofsFF.is_open())
    {
       // Error: cannot open friction factor check file for output
       cerr << ERR << "cannot open " << strFilePathName << " for output" << endl;
       return;
    }
 
-   FFStream << setiosflags(ios::scientific);
-   FFStream << setprecision(6);
+   ofsFF << setiosflags(ios::scientific);
+   ofsFF << setprecision(6);
 
-//   FFStream << "lambda\t,\tFF" << endl;
+   ofsFF << "lambda\t,\tFF" << endl;
    double dLambda = 1e-6;                                             // Arbitrarily small
-   while (dLambda <= 1000)                                           // Arbitrarily large
+   while (dLambda <= 1000)                                            // Arbitrarily large
    {
-      double fFF = dCalcFrictionFactor(0, 0, dLambda, true);          // 1 / sqrt(friction factor)
-      FFStream << dLambda << "\t,\t" << 1 / (fFF * fFF) << endl;
+      double dFF = dCalcLawrenceFrictionFactor(0, 0, dLambda, true);
+      ofsFF << dLambda << "\t,\t" << dFF << endl;
       dLambda *= 1.1;
    }
 
    // Close file
-   FFStream.close();
+   ofsFF.close();
 }
 
 
@@ -948,12 +948,16 @@ void CSimulation::DoEndRun(int const nRtn)
    switch (nRtn)
    {
    case (RTN_OK):
-      // normal ending
+      // Normal ending
       cout << RUN_END_NOTICE << ctime(&m_tSysEndTime);
       break;
 
    case (RTN_HELPONLY):
+      cout << "End of help-only run" << endl;
+      return;
+
    case (RTN_CHECKONLY):
+      cout << "End of check-only run" << endl;
       return;
 
    default:

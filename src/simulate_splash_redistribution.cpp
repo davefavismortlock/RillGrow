@@ -30,9 +30,6 @@
 =========================================================================================================================================*/
 void CSimulation::DoAllSplash(void)
 {
-   // Calculate the vertical lowering in mm for this timestep
-   double dVertLowering = m_dSplashVertical * m_dTimeStep;
-
    // First calculate the Laplacian for all cells in the grid. Process the interior first
    static bool sbSw = true;
    if (sbSw)
@@ -84,10 +81,6 @@ void CSimulation::DoAllSplash(void)
 
             // Now calculate the amount of splash detachment or deposition resulting from this KE
             double dToChange = dKE * m_VdSplashEffN * Cell[nX][nY].pGetSoil()->dGetLaplacian();
-
-            // Add in the vertical lowering
-            dToChange -= dVertLowering;
-
             if (dToChange > 0)
             {
                // Splash deposition: save the dToChange value for the moment, until we know the proportion in each sediment size class for splashed detached sediment during this iteration
@@ -97,7 +90,7 @@ void CSimulation::DoAllSplash(void)
             else
             {
                // Splash detachment, first attenuate the dToChange depending on the depth of overland flow
-               dToChange *= dCalcSplashCubicSpline(Cell[nX][nY].pGetSurfaceWater()->dGetSurfaceWater());
+               dToChange *= dCalcSplashCubicSpline(Cell[nX][nY].pGetSurfaceWater()->dGetSurfaceWaterDepth());
 
                // Now do the detachment
                Cell[nX][nY].pGetSoil()->DoSplashDetach(-dToChange);
@@ -394,7 +387,7 @@ bool CSimulation::bReadSplashEffData(void)
             }
 
             // OK we have a pair, so first read depth, multiplied by drop diameter
-            double dDpth = atof(VstrDepthEfficiency[0].c_str()) * m_dDropDiameter;      // in mm
+            double dDpth = stod(VstrDepthEfficiency[0]) * m_dDropDiameter;      // in mm
 
             if (dDpth < 0)
             {
@@ -408,7 +401,7 @@ bool CSimulation::bReadSplashEffData(void)
             }
 
             // Now read in splash efficiency
-            double dSplashEff = atof(VstrDepthEfficiency[1].c_str());
+            double dSplashEff = stod(VstrDepthEfficiency[1]);
 
             if (dSplashEff < 0)
             {

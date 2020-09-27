@@ -107,7 +107,7 @@ double CCell::dGetInitialSoilSurfaceElevation(void) const
 // Returns the elevation of this cell's top surface, which could be the water surface if the cell is wet, or the soil surface if dry
 double CCell::dGetTopElevation(void)
 {
-   return (m_Soil.dGetSoilSurfaceElevation() + m_SurfaceWater.dGetSurfaceWater());
+   return (m_Soil.dGetSoilSurfaceElevation() + m_SurfaceWater.dGetSurfaceWaterDepth());
 }
 
 // This sets a new value for the soil surface elevation. Since it destroys mass balance, it must only be called during the ugly-but-necessary AdjustUnboundedEdges() routine

@@ -70,7 +70,7 @@ public:
 
    void ChangeSurfaceWater(double const);
    void SetSurfaceWaterZero(void);
-   double dGetSurfaceWater(void) const;
+   double dGetSurfaceWaterDepth(void) const;
    bool bIsWet(void) const;
    double dGetCumulSurfaceWater(void) const;
 
@@ -104,7 +104,6 @@ public:
    void SetFrictionFactor(double const);
    double dGetFrictionFactor(void) const;
 
-   double dGetReynolds(double const) const;
    double dGetFroude(double const) const;
 };
 #endif         // __SURFACE_WATER_H__

@@ -108,8 +108,8 @@ void CSurfaceWater::SetSurfaceWaterZero(void)
    m_pSim->DecrThisIterNumWetCells();
 }
 
-// Returns the depth of overland flow on this cell
-double CSurfaceWater::dGetSurfaceWater(void) const
+// Returns the depth of overland flow (in mm) on this cell
+double CSurfaceWater::dGetSurfaceWaterDepth(void) const
 {
    return m_dSurfaceWaterDepth;
 }
@@ -301,6 +301,7 @@ void CSurfaceWater::SetFrictionFactor(double const dNewFrictionFactor)
    m_dFrictionFactor = dNewFrictionFactor;
 }
 
+
 // Returns the friction factor for this cell
 double CSurfaceWater::dGetFrictionFactor(void) const
 {
@@ -308,18 +309,10 @@ double CSurfaceWater::dGetFrictionFactor(void) const
 }
 
 
-// Calculates and returns the Reynolds number
-double CSurfaceWater::dGetReynolds(double const dNu) const
-{
-   // Divide by 1e6 because velocity and depth in mm/sec and mm, need them in m/sec and m
-   return (m_vFlowVelocity.dToScalar() * m_dSurfaceWaterDepth * 1e-6 / dNu);
-}
-
-
 // Calculates and returns the Froude number
 double CSurfaceWater::dGetFroude(double const dG) const
 {
-   // Divide by 1e3 in each case because in mm/sec and mm, need in m/sec and m
+   // Divide by 1e3 in each case because in mm/sec and mm, need them in m/sec and m
    return ((m_dSurfaceWaterDepth > 0) ? m_vFlowVelocity.dToScalar() * 1e-3 / sqrt(m_dSurfaceWaterDepth * dG * 1e-3) : 0);
 }
 

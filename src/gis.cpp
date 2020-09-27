@@ -810,26 +810,26 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
       dDiff = 0;
 
    // Fill the array
-   for (int y = 0; y < m_nYGridMax; y++)
+   for (int nY = 0; nY < m_nYGridMax; nY++)
    {
-      for (int x = 0; x < m_nXGridMax; x++)
+      for (int nX = 0; nX < m_nXGridMax; nX++)
       {
          switch (nDataItem)
          {
             case (GIS_CUMUL_RAIN) :
-               dTmp = Cell[x][y].pGetRainAndRunon()->dGetCumulRain();
+               dTmp = Cell[nX][nY].pGetRainAndRunon()->dGetCumulRain();
                break;
 
             case (GIS_RAIN_SPATIAL_VARIATION) :
-               dTmp = Cell[x][y].pGetRainAndRunon()->dGetRainVarM();
+               dTmp = Cell[nX][nY].pGetRainAndRunon()->dGetRainVarM();
                break;
 
             case (GIS_CUMUL_RUNON) :
-               dTmp = Cell[x][y].pGetRainAndRunon()->dGetCumulRunOn();
+               dTmp = Cell[nX][nY].pGetRainAndRunon()->dGetCumulRunOn();
                break;
 
             case (GIS_ELEVATION) :
-               dTmp = Cell[x][y].pGetSoil()->dGetSoilSurfaceElevation();
+               dTmp = Cell[nX][nY].pGetSoil()->dGetSoilSurfaceElevation();
                if (dTmp != m_dMissingValue)
                {
                   if (m_bOutDEMsUsingInputZUnits)
@@ -844,7 +844,7 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
                break;
 
             case (GIS_DETREND_ELEVATION) :
-               dTmp = Cell[x][y].pGetSoil()->dGetSoilSurfaceElevation();
+               dTmp = Cell[nX][nY].pGetSoil()->dGetSoilSurfaceElevation();
                if (dTmp != m_dMissingValue)
                {
                   if (m_bOutDEMsUsingInputZUnits)
@@ -861,35 +861,35 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
                break;
 
             case (GIS_OFLOW_DEPTH) :
-               dTmp = Cell[x][y].pGetSurfaceWater()->dGetSurfaceWater();
+               dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetSurfaceWaterDepth();
                break;
 
             case (GIS_ALL_SIZE_FLOW_DETACH) :
-               dTmp = Cell[x][y].pGetSoil()->dGetTotFlowDetach();
+               dTmp = Cell[nX][nY].pGetSoil()->dGetTotFlowDetach();
                break;
 
             case (GIS_INFILT) :
-               dTmp = Cell[x][y].pGetSoilWater()->dGetInfiltration();
+               dTmp = Cell[nX][nY].pGetSoilWater()->dGetInfiltration();
                break;
 
             case (GIS_CUMUL_INFILT) :
-               dTmp = Cell[x][y].pGetSoilWater()->dGetCumulInfiltration();
+               dTmp = Cell[nX][nY].pGetSoilWater()->dGetCumulInfiltration();
                break;
 
             case (GIS_SOIL_WATER) :
-               dTmp = Cell[x][y].pGetSoilWater()->dGetTopLayerSoilWater();
+               dTmp = Cell[nX][nY].pGetSoilWater()->dGetTopLayerSoilWater();
                break;
 
             case (GIS_INFILT_DEPOSIT) :
-               dTmp = Cell[x][y].pGetSoil()->dGetTotInfiltDeposit();
+               dTmp = Cell[nX][nY].pGetSoil()->dGetTotInfiltDeposit();
                break;
 
             case (GIS_CUMUL_INFILT_DEPOSIT) :
-               dTmp = Cell[x][y].pGetSoil()->dGetCumulTotInfiltDeposit();
+               dTmp = Cell[nX][nY].pGetSoil()->dGetCumulTotInfiltDeposit();
                break;
 
             case (GIS_TOP_SURFACE):
-               dTmp = Cell[x][y].dGetTopElevation();
+               dTmp = Cell[nX][nY].dGetTopElevation();
                if (dTmp != m_dMissingValue)
                {
                   if (m_bOutDEMsUsingInputZUnits)
@@ -905,110 +905,110 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
                break;
 
             case (GIS_SPLASH) :
-               dTmp = Cell[x][y].pGetSoil()->dGetAllSizeSplashDetach() - Cell[x][y].pGetSoil()->dGetAllSizeSplashDeposit();
+               dTmp = Cell[nX][nY].pGetSoil()->dGetAllSizeSplashDetach() - Cell[nX][nY].pGetSoil()->dGetAllSizeSplashDeposit();
                break;
 
             case (GIS_CUMUL_SPLASH) :
-               dTmp = Cell[x][y].pGetSoil()->dGetCumulAllSizeSplashDetach() - Cell[x][y].pGetSoil()->dGetCumulAllSizeSplashDeposit();
+               dTmp = Cell[nX][nY].pGetSoil()->dGetCumulAllSizeSplashDetach() - Cell[nX][nY].pGetSoil()->dGetCumulAllSizeSplashDeposit();
                break;
 
             case (GIS_OFLOW_SPEED) :
-               dTmp = Cell[x][y].pGetSurfaceWater()->dGetFlowSpd();
+               dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetFlowSpd();
                break;
 
             case (GIS_OFLOW_DW_SPEED) :
-               dTmp = Cell[x][y].pGetSurfaceWater()->dGetDWFlowSpd();
+               dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetDWFlowSpd();
                break;
 
 #if defined _DEBUG
             case (GIS_CUMUL_AVG_OFLOW_FROM_EDGES) :
-               dTmp = Cell[x][y].pGetSurfaceWater()->dGetCumulSurfaceWaterLost() / m_dSimulatedTimeElapsed;
+               dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetCumulSurfaceWaterLost() / m_dSimulatedTimeElapsed;
                break;
 #endif
 
             case (GIS_STREAMPOWER) :
-               dTmp = Cell[x][y].pGetSurfaceWater()->dGetStreamPower();
+               dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetStreamPower();
                break;
 
             case GIS_SHEAR_STRESS:
                dTmp1 = m_dSimulatedTimeElapsed - m_dLastSlumpCalcTime;
                if (dTmp1 > 0)
-                  dTmp = Cell[x][y].pGetSoil()->dGetShearStress() / (m_dSimulatedTimeElapsed - m_dLastSlumpCalcTime);
+                  dTmp = Cell[nX][nY].pGetSoil()->dGetShearStress() / (m_dSimulatedTimeElapsed - m_dLastSlumpCalcTime);
                else
                   dTmp = 0;
                break;
 
             case (GIS_FRICTION_FACTOR) :
-               dTmp = Cell[x][y].pGetSurfaceWater()->dGetFrictionFactor();
+               dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetFrictionFactor();
                break;
 
             case (GIS_CUMUL_AVG_SHEAR_STRESS) :
-               dTmp = Cell[x][y].pGetSoil()->dGetCumulShearStress() / m_dSimulatedTimeElapsed;
+               dTmp = Cell[nX][nY].pGetSoil()->dGetCumulShearStress() / m_dSimulatedTimeElapsed;
                break;
 
             case (GIS_REYNOLDS_NUMBER) :
-               dTmp = Cell[x][y].pGetSurfaceWater()->dGetReynolds(m_dNu);
+               dTmp = dGetReynolds(nX, nY);
                break;
 
             case (GIS_FROUDE_NUMBER) :
-               dTmp = Cell[x][y].pGetSurfaceWater()->dGetFroude(m_dG);
+               dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetFroude(m_dG);
                break;
 
             case (GIS_TRANSPORT_CAPACITY) :
-               dTmp = Cell[x][y].pGetSurfaceWater()->dGetTransportCapacity();
+               dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetTransportCapacity();
                break;
 
             case (GIS_CUMUL_AVG_OFLOW_DEPTH) :
-               dTmp = Cell[x][y].pGetSurfaceWater()->dGetCumulSurfaceWater() / m_dSimulatedTimeElapsed;
+               dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetCumulSurfaceWater() / m_dSimulatedTimeElapsed;
                break;
 
             case (GIS_CUMUL_AVG_OFLOW_SPEED) :
-               dTmp = Cell[x][y].pGetSurfaceWater()->dCumulFlowSpeed() / m_dSimulatedTimeElapsed;
+               dTmp = Cell[nX][nY].pGetSurfaceWater()->dCumulFlowSpeed() / m_dSimulatedTimeElapsed;
                break;
 
             case (GIS_CUMUL_AVG_OFLOW_DW_SPEED) :
-               dTmp = Cell[x][y].pGetSurfaceWater()->dGetCumulDWFlowSpd() / m_dSimulatedTimeElapsed;
+               dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetCumulDWFlowSpd() / m_dSimulatedTimeElapsed;
                break;
 
             case (GIS_CUMUL_ALL_SIZE_FLOW_DETACH) :
-               dTmp = Cell[x][y].pGetSoil()->dGetCumulAllSizeFlowDetach();
+               dTmp = Cell[nX][nY].pGetSoil()->dGetCumulAllSizeFlowDetach();
                break;
 
             case (GIS_CUMUL_ALL_SIZE_FLOW_DEPOSIT) :
-               dTmp = Cell[x][y].pGetSoil()->dGetCumulAllSizeFlowDeposition();
+               dTmp = Cell[nX][nY].pGetSoil()->dGetCumulAllSizeFlowDeposition();
                break;
 
             case (GIS_SEDIMENT_CONCENTRATION) :
-               dTmp = Cell[x][y].pGetSediment()->dGetAllSizeSedimentConcentration();
+               dTmp = Cell[nX][nY].pGetSediment()->dGetAllSizeSedimentConcentration();
                break;
 
             case (GIS_SEDIMENT_LOAD) :
-               dTmp = Cell[x][y].pGetSediment()->dGetAllSizeSedimentLoad();
+               dTmp = Cell[nX][nY].pGetSediment()->dGetAllSizeSedimentLoad();
                break;
 
             case (GIS_CUMUL_AVG_SEDIMENT_LOAD) :
-               dTmp = Cell[x][y].pGetSediment()->dGetCumulAllSizeSedimentLoad() / m_dSimulatedTimeElapsed;
+               dTmp = Cell[nX][nY].pGetSediment()->dGetCumulAllSizeSedimentLoad() / m_dSimulatedTimeElapsed;
                break;
 
             case (GIS_CUMUL_SLUMP_DETACH) :
-               dTmp = Cell[x][y].pGetSoil()->dGetCumulAllSizeSlumpDetach();
+               dTmp = Cell[nX][nY].pGetSoil()->dGetCumulAllSizeSlumpDetach();
                break;
 
             case (GIS_CUMUL_SLUMP_DEPOSIT) :
-               dTmp = Cell[x][y].pGetSoil()->dGetCumulAllSizeSlumpDeposit();
+               dTmp = Cell[nX][nY].pGetSoil()->dGetCumulAllSizeSlumpDeposit();
                break;
 
             case (GIS_CUMUL_TOPPLE_DETACH) :
-               dTmp = Cell[x][y].pGetSoil()->dGetCumulAllSizeToppleDetach();
+               dTmp = Cell[nX][nY].pGetSoil()->dGetCumulAllSizeToppleDetach();
                break;
 
             case (GIS_CUMUL_TOPPLE_DEPOSIT) :
-               dTmp = Cell[x][y].pGetSoil()->dGetCumulAllSizeToppleDeposit();
+               dTmp = Cell[nX][nY].pGetSoil()->dGetCumulAllSizeToppleDeposit();
                break;
 
             case (GIS_CUMUL_ALL_PROC_SURF_LOWER):
                // Detachment is +ve, deposition is -ve
-               dTmp = Cell[x][y].pGetSoil()->dGetCumulAllSizeLowering();
+               dTmp = Cell[nX][nY].pGetSoil()->dGetCumulAllSizeLowering();
          }
 
          // Write this value to the array
@@ -1198,22 +1198,22 @@ bool CSimulation::bWriteFileInt(int const nDataItem, string const* pstrPlotTitle
    // Fill the array
    int nTmp  = 0;
    int n = 0;
-   for (int y = 0; y < m_nYGridMax; y++)
+   for (int nY = 0; nY < m_nYGridMax; nY++)
    {
-      for (int x = 0; x < m_nXGridMax; x++)
+      for (int nX = 0; nX < m_nXGridMax; nX++)
       {
          switch (nDataItem)
          {
             case (GIS_INUNDATION_REGIME) :
-               nTmp = Cell[x][y].pGetSurfaceWater()->nGetInundation();
+               nTmp = Cell[nX][nY].pGetSurfaceWater()->nGetInundation();
                break;
 
             case (GIS_OFLOW_DIRECTION) :
-               nTmp = Cell[x][y].pGetSurfaceWater()->nGetFlowDirection();
+               nTmp = Cell[nX][nY].pGetSurfaceWater()->nGetFlowDirection();
                break;
 
             case (GIS_CUMUL_BINARY_HEADCUT_RETREAT):
-               nTmp = (Cell[x][y].bHasHadHeadcutRetreat() ? 1 : 0);
+               nTmp = (Cell[nX][nY].bHasHadHeadcutRetreat() ? 1 : 0);
          }
 
          // Write this value to the array
@@ -1955,7 +1955,7 @@ bool CSimulation::bSaveGISFiles(void)
 
 /*========================================================================================================================================
 
- This routine imposes a user-specified overall gradient upon the microtopographic grid. If no overall gradient has been specified, it estimates the grid's pre-existing gradient
+ This routine imposes a user-specified overall gradient upon the microtopographic grid. If no overall gradient has been specified, it crudely estimates the grid's pre-existing gradient
 
 ========================================================================================================================================*/
 void CSimulation::CalcGradient(void)
@@ -1997,7 +1997,7 @@ void CSimulation::CalcGradient(void)
    }
    else
    {
-      // We do not have a user-specified gradient, so estimate the DEM's own gradient. First get the average elevation of the planview top nDistIn rows
+      // We do not have a user-specified gradient, so crudely estimate the DEM's own gradient. First get the average elevation of the planview top nDistIn rows
       int
          nDistIn = 6,
          nTmp = (m_nYGridMax-1) / 8,

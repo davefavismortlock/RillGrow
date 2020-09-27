@@ -256,7 +256,7 @@ void CSimulation::DoCellDeposition(int const nX, int const nY, double const dWat
 {
    // First calculate Reynold's Number, and a drag coefficient
    double
-      dReynoldsNumber = Cell[nX][nY].pGetSurfaceWater()->dGetReynolds(m_dNu),
+      dReynoldsNumber = dGetReynolds(nX, nY),
       dDragCoefficient = 24.0 / dReynoldsNumber;
 
    // Calculate the settling speed for the three sediment size classes using the terminal velocity equation: see https://en.wikipedia.org/wiki/Terminal_velocity

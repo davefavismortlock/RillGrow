@@ -102,7 +102,12 @@ private:
       m_bHaveBaseLevel,
       m_bOutDEMsUsingInputZUnits,
       m_bClosedThisEdge[4],
-      m_bRunOnThisEdge[4];
+      m_bRunOnThisEdge[4],
+      m_bManningEqn,
+      m_bDarcyWeisbachEqn,
+      m_bFrictionFactorConstant,
+      m_bFrictionFactorReynolds,
+      m_bFrictionFactorLawrence;
 
 #if defined _DEBUG
       bool m_bLostSave;
@@ -158,25 +163,19 @@ private:
       m_dRainSpeed,
       m_dPartKE,
       m_VdSplashEffN,
-      m_dSplashVertical,
       m_dClaySplashedError,
       m_dSiltSplashedError,
       m_dSandSplashedError,
       m_dCellSizeKC,
       m_dMeanCellWaterVol,
       m_dStdCellWaterVol,
-      m_dCellSide,
+      m_dCellSide,               // in mm
       m_dCellDiag,
       m_dInvCellSide,
       m_dInvCellDiag,
       m_dCellSquare,
       m_dInvCellSquare,
       m_dInvXGridMax,
-      m_dRoughnessScaling,
-      m_dD50,
-      m_dEpsilon,
-      m_dPr,
-      m_dCd,
       m_dRho,
       m_dG,
       m_dNu,
@@ -190,7 +189,6 @@ private:
       m_dBeta,
       m_dGamma,
       m_dDelta,
-      m_dPrevAdj,
       m_dRunOnLen,
       m_dRunOnSpd,
       m_dCritSSSForSlump,
@@ -289,7 +287,18 @@ private:
       m_dSinceLastTSSandToppleDetach,
       m_dHeadcutRetreatConst,
       m_dOffEdgeConst,
-      m_dSSSPatchSize;
+      m_dSSSPatchSize,
+      m_dOffEdgeParamA,
+      m_dOffEdgeParamB,
+      m_dManningParamA,
+      m_dManningParamB,
+      m_dFFConstant,
+      m_dFFReynoldsParamA,
+      m_dFFReynoldsParamB,
+      m_dFFLawrenceD50,
+      m_dFFLawrenceEpsilon,
+      m_dFFLawrencePr,
+      m_dFFLawrenceCd;
 
    // These grand totals are all long doubles, the aim is to minimize rounding errors when many very small numbers are added to a single much larger number, see e.g. http://www.ddj.com/cpp/184403224
    long double
@@ -461,8 +470,8 @@ private:
    int nFindSteepestEnergySlope(int const, int const, double const, int&, int&, double&, double&, double&);
    void CellMoveWater(int const, int const, int const, int const, double const&, double const&);
    double dTimeToCrossCell(int const, int const, int const, double const, double, double const, C2DVec&, double&);
-   double dCalcHydraulicRadius(int const, int const, int const, double const);
-   double dCalcFrictionFactor(int const, int const, double const, bool const);
+   double dCalcHydraulicRadius(int const, int const);
+   double dCalcLawrenceFrictionFactor(int const, int const, double const, bool const);
    void CalcTransportCapacity(int const, int const, int const, int const, int const, double const, double const, double const, double const, double const, double const);
    void DoCellErosion(int const, int const, int const, int const, int const, double const, double const, double const, double const, double const);
    void DoCellDeposition(int const, int const, double const, double const, double const);
@@ -475,6 +484,7 @@ private:
    void DoCellExfiltration(int const, int const, int const, CLayer*, double const);
    void DoHeadcutRetreatMoveSoil(int const, int const, int const, int const, int const, double const);
    void DoDistributeShearStress(int const, int const, double const);
+   double dGetReynolds(int const, int const);
 
    // Utility
    bool bIsTimeToQuit(void);
@@ -491,7 +501,7 @@ private:
    static string strDispTime(double const, bool const, bool const);
    static char const* pszGetErrorText(int const);
    void WrapLongString(string*);
-   void CheckFF(void);
+   void CheckLawrenceFF(void);
    void CheckSplashEff(void);
    void InitSplashEff(void);
 #if defined RANDCHECK

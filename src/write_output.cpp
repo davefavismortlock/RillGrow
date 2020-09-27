@@ -675,12 +675,11 @@ if (! m_strRainVarMFile.empty())
       m_ofsOut << " Normalised N for splash efficiency                     \t: " << m_VdSplashEffN << " sec**2/mm" << endl;
       m_ofsOut << setprecision(2);
       m_ofsOut << "*Grid size correction                                   \t: " << m_dCellSizeKC * m_dCellSquare << endl;
-      m_ofsOut << " Vertical splash lowering                               \t: " << m_dSplashVertical * 3600 << " mm/hr" << endl;
    }
    m_ofsOut << endl;
 
-   // ------------------------------------------------------------ Run-on ----------------------------------------------------------------
-   m_ofsOut << "RUN ON" << endl;
+   // --------------------------------------------------------- Run-on and run-off -------------------------------------------------------
+   m_ofsOut << "RUN-ON AND RUN-OFF" << endl;
    m_ofsOut << " Upslope run-on area?                                   \t: " << (m_bRunOn ? "y" : "n") << endl;
    if (m_bRunOn)
    {
@@ -698,6 +697,10 @@ if (! m_strRainVarMFile.empty())
       m_ofsOut << " Rain spatial variation multiplier for run-on area      \t: " << m_dRunOnRainVarM << endl;
       m_ofsOut << " Flow speed on run-on area                              \t: " << m_dRunOnSpd << " mm/sec" << endl;
    }
+
+   m_ofsOut << " Off-edge parameter A                                  \t: " << m_dOffEdgeParamA << endl;
+   m_ofsOut << " Off-edge parameter B                                  \t: " << m_dOffEdgeParamB << endl;
+   m_ofsOut << "*Off-edge head constant                                \t: " << m_dOffEdgeConst << endl;
    m_ofsOut << endl;
 
    // ---------------------------------------------------------- Infiltration ------------------------------------------------------------
@@ -708,7 +711,7 @@ if (! m_strRainVarMFile.empty())
       for (int nLayer = 0; nLayer < m_nNumSoilLayers; nLayer++)
       {
          m_ofsOut << "\tName of soil layer " << nLayer+1 << "                                 \t: " << m_VstrInputSoilLayerName[nLayer] << endl;
-         m_ofsOut << "\tAir exit head                                          \t: " << m_VdInputSoilLayerInfiltAirHead[nLayer] << " cm" << endl;
+         m_ofsOut << "\tAir exit head                                       \t: " << m_VdInputSoilLayerInfiltAirHead[nLayer] << " cm" << endl;
          m_ofsOut << " Exponent of Brooks-Corey water retention equation      \t: " << m_VdInputSoilLayerInfiltLambda[nLayer] << endl;
          m_ofsOut << " Saturated volumetric water content                     \t: " << m_VdInputSoilLayerInfiltSatWater[nLayer] << " cm**3/cm**3" << endl;
          m_ofsOut << " Initial volumetric water content                       \t: " << m_VdInputSoilLayerInfiltInitWater[nLayer] << " cm**3/cm**3" << endl;
@@ -719,12 +722,38 @@ if (! m_strRainVarMFile.empty())
 
    // ---------------------------------------------------------- Overland Flow -----------------------------------------------------------
    m_ofsOut << "OVERLAND FLOW" << endl;
-   m_ofsOut << " Roughness scaling                                      \t: " << m_dRoughnessScaling << endl;
-   m_ofsOut << " In the partially-inundated flow regime:" << endl;
-   m_ofsOut << "  D50 of within-cell roughness elements                 \t: " << m_dD50 << " mm" << endl;
-   m_ofsOut << "* Epsilon (0.5 * D50)                                   \t: " << m_dEpsilon << endl;
-   m_ofsOut << "  % of surface covered with roughness elements          \t: " << m_dPr << " %" << endl;
-   m_ofsOut << "  Ratio roughness element drag : ideal situation        \t: " << m_dCd << endl;
+   if (m_bManningEqn)
+   {
+      m_ofsOut << " Using Manning-type flow speed equation" << endl;
+      m_ofsOut << "  Parameter A                                           \t: " << m_dManningParamA << endl;
+      m_ofsOut << "  Parameter B                                           \t: " << m_dManningParamB << endl;
+   }
+   if (m_bDarcyWeisbachEqn)
+   {
+      m_ofsOut << " Using Darcy-Weisbach flow speed equation, with ";
+      if (m_bFrictionFactorConstant)
+      {
+         m_ofsOut << "constant friction factor" << endl;
+         m_ofsOut << "  Friction factor                                       \t: " << m_dFFConstant << endl;
+      }
+
+      if (m_bFrictionFactorReynolds)
+      {
+         m_ofsOut << "Reynolds' number-controlled friction factor" << endl;
+         m_ofsOut << "  Parameter A                                           \t: " << m_dFFReynoldsParamA << endl;
+         m_ofsOut << "  Parameter B                                           \t: " << m_dFFReynoldsParamB << endl;
+      }
+
+      if (m_bFrictionFactorLawrence)
+      {
+         m_ofsOut << "friction factor approach from Lawrence (1997)" << endl;
+         m_ofsOut << " In the partially-inundated flow regime:" << endl;
+         m_ofsOut << "  D50 of within-cell roughness elements                 \t: " << m_dFFLawrenceD50 << " mm" << endl;
+         m_ofsOut << "* Epsilon (0.5 * D50)                                   \t: " << m_dFFLawrenceEpsilon << endl;
+         m_ofsOut << "  % of surface covered with roughness elements          \t: " << m_dFFLawrencePr << " %" << endl;
+         m_ofsOut << "  Ratio roughness element drag : ideal situation        \t: " << m_dFFLawrenceCd << endl;
+      }
+   }
    m_ofsOut << endl;
 
    // ---------------------------------------------------------- Flow detachment ---------------------------------------------------------
@@ -757,10 +786,12 @@ if (! m_strRainVarMFile.empty())
    if (m_bFlowErosion)
    {
       m_ofsOut << " Grain density                                          \t: " << m_dDepositionGrainDensity << " kg/m**3" << endl;
+      m_ofsOut << setprecision(3);
       m_ofsOut << " Clay, minimum size                                     \t: " << m_dClaySizeMin << " mm" << endl;
       m_ofsOut << " Clay-silt threshold size                               \t: " << m_dClaySiltBoundarySize << " mm" << endl;
       m_ofsOut << " Silt-Sand threshold size                               \t: " << m_dSiltSandBoundarySize << " mm" << endl;
       m_ofsOut << " Sand, maximum size                                     \t: " << m_dSandSizeMax << " mm" << endl;
+      m_ofsOut << setprecision(2);
    }
    m_ofsOut << endl;
 

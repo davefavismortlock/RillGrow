@@ -163,7 +163,7 @@ double CSediment::dSetSandSedimentLoadZero(void)
 // Returns this-iteration percentage sediment concentration (all sediment size classes)
 double CSediment::dGetAllSizeSedimentConcentration(void)
 {
-   double dWaterDepth = m_pCell->pGetSurfaceWater()->dGetSurfaceWater();
+   double dWaterDepth = m_pCell->pGetSurfaceWater()->dGetSurfaceWaterDepth();
 
    if (dWaterDepth == 0)
       return 0;

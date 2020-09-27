@@ -100,7 +100,12 @@ CSimulation::CSimulation(void)
    m_bSaveGISThisIter         =
    m_bThisIterRainChange      =
    m_bHaveBaseLevel           =
-   m_bOutDEMsUsingInputZUnits = false;
+   m_bOutDEMsUsingInputZUnits =
+   m_bManningEqn              =
+   m_bDarcyWeisbachEqn        =
+   m_bFrictionFactorConstant  =
+   m_bFrictionFactorReynolds  =
+   m_bFrictionFactorLawrence  = false;
 
    for (int n = 0; n < 4; n++)
    {
@@ -159,7 +164,6 @@ CSimulation::CSimulation(void)
    m_dRainSpeed                     =
    m_dPartKE                        =
    m_VdSplashEffN                   =
-   m_dSplashVertical                =
    m_dClaySplashedError             =
    m_dSiltSplashedError             =
    m_dSandSplashedError             =
@@ -173,11 +177,6 @@ CSimulation::CSimulation(void)
    m_dCellSquare                    =
    m_dInvCellSquare                 =
    m_dInvXGridMax                   =
-   m_dRoughnessScaling              =
-   m_dD50                           =
-   m_dEpsilon                       =
-   m_dPr                            =
-   m_dCd                            =
    m_dRho                           =
    m_dG                             =
    m_dNu                            =
@@ -191,10 +190,9 @@ CSimulation::CSimulation(void)
    m_dBeta                          =
    m_dGamma                         =
    m_dDelta                         =
-   m_dPrevAdj                       =
    m_dRunOnLen                      =
    m_dRunOnSpd                      =
-   m_dCritSSSForSlump          =
+   m_dCritSSSForSlump               =
    m_dSlumpAngleOfRest              =
    m_dSlumpAngleOfRestDiff          =
    m_dSlumpAngleOfRestDiffDiag      =
@@ -288,7 +286,18 @@ CSimulation::CSimulation(void)
    m_dSinceLastTSSandToppleDetach   =
    m_dHeadcutRetreatConst           =
    m_dOffEdgeConst                  =
-   m_dSSSPatchSize                  = 0;
+   m_dSSSPatchSize                  =
+   m_dOffEdgeParamA                 =
+   m_dOffEdgeParamB                 =
+   m_dManningParamA                 =
+   m_dManningParamB                 =
+   m_dFFConstant                    =
+   m_dFFReynoldsParamA              =
+   m_dFFReynoldsParamB              =
+   m_dFFLawrenceD50                 =
+   m_dFFLawrenceEpsilon             =
+   m_dFFLawrencePr                  =
+   m_dFFLawrenceCd                  = 0;
 
    for (int i = 0; i < 6; i++)
       m_dGeoTransform[i] = 0;
@@ -540,6 +549,9 @@ int CSimulation::nDoRun(int nArg, char* pcArgv[])
    if (m_bDoInfiltration)
       InitSoilWater();
 
+   // Calculate the off-edge head constant using the empirical relationship const = m_dOffEdgeParamA * m_dGradient^m_dOffEdgeParamB where m_dGradient is in %
+   m_dOffEdgeConst = m_dOffEdgeParamA * pow(m_dGradient, m_dOffEdgeParamB);
+
    // Start with a guessed-in maximum flow speed
    m_dMaxSpeed = INIT_MAX_SPEED_GUESS;
 
@@ -554,7 +566,7 @@ int CSimulation::nDoRun(int nArg, char* pcArgv[])
 
    // If desired, output friction factor for checking
    if (m_bFFCheck)
-      CheckFF();
+      CheckLawrenceFF();
 
    // If considering slumping, calculate some 'constants' for slumping and toppling
    if (m_bSlumping)
@@ -588,9 +600,6 @@ int CSimulation::nDoRun(int nArg, char* pcArgv[])
 
       // Call initializing routine to calculate second derivatives for cubic spline
       InitSplashEff();
-
-      // Now the vertical lowering, convert from mm/hr to mm/sec
-      m_dSplashVertical /= 3600;
 
       // If desired, output splash efficiency for checking
       if (m_bSplashCheck)

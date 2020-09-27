@@ -139,7 +139,7 @@ using std::to_string;
 #endif
 
 //========================================================== Hard-Wired Constants =========================================================
-string const   PROGNAME                                     = "RillGrow serial (11 September 2020 version)";
+string const   PROGNAME                                     = "RillGrow serial (26 September 2020 version)";
 string const   SHORTNAME                                    = "RG";
 string const   RG_INI                                       = "rg.ini";
 

@@ -59,7 +59,7 @@ void CSoilWater::Infiltrate(double const dInfilt)
 void CSoilWater::InfiltrateAndMakeDry(void)
 {
    double
-      dWaterDepth = m_pCell->pGetSurfaceWater()->dGetSurfaceWater(),
+      dWaterDepth = m_pCell->pGetSurfaceWater()->dGetSurfaceWaterDepth(),
       dClaySediment = m_pCell->pGetSediment()->dGetClaySedimentLoad(),
       dSiltSediment = m_pCell->pGetSediment()->dGetSiltSedimentLoad(),
       dSandSediment = m_pCell->pGetSediment()->dGetSandSedimentLoad();

@@ -132,7 +132,7 @@ void CSimulation::TryCellOutFlow(int const nX, int const nY)
    m_dThisIterTotHead += dHead;
    m_ulNumHead++;
 
-   double dThisDepth = Cell[nX][nY].pGetSurfaceWater()->dGetSurfaceWater();
+   double dThisDepth = Cell[nX][nY].pGetSurfaceWater()->dGetSurfaceWaterDepth();
    if (dThisDepth <= dHead)
    {
       // Even assuming that enough time has passed (see below) there isn't enough water on this cell to level both water surfaces: so just move (at most) what is there
@@ -148,8 +148,8 @@ void CSimulation::TryCellOutFlow(int const nX, int const nY)
       return;
    }
 
-   // Now use the Darcy-Weisbach equation to calculate flowspeed (which may be constrained) and hence the time taken for water to flow from the centroid of this cell to the next
-   double dFlowSpeed = 0;                                   // value to be calculated in dTimeToCrossCell
+   // Now use either a Manning-type equation, or the Darcy-Weisbach equation, to calculate flowspeed (which may be constrained) and hence the time taken for water to flow from the centroid of this cell to the next
+   double dFlowSpeed = 0;                                   // Value to be calculated in dTimeToCrossCell, is in mm/sec
    C2DVec Vec2DFlowVelocity;                                // ditto
    double dOutFlowTime = dTimeToCrossCell(nX, nY, nDir, dTopSlope, dThisDepth, dHLen, Vec2DFlowVelocity, dFlowSpeed);
    if (dOutFlowTime == FOREVER)
@@ -189,7 +189,7 @@ void CSimulation::TryEdgeCellOutFlow(int const nX, int const nY, int const nDir)
    // We need a value for off-edge head: use the average on-grid head during the previous iteration, multiplied by a constant
    double dHead = m_dLastIterAvgHead * m_dOffEdgeConst;
 
-   double dThisDepth = Cell[nX][nY].pGetSurfaceWater()->dGetSurfaceWater();
+   double dThisDepth = Cell[nX][nY].pGetSurfaceWater()->dGetSurfaceWaterDepth();
    if (dThisDepth < dHead)
    {
       // There isn't enough water on this cell to level both water surfaces, so just move what's there
@@ -211,10 +211,10 @@ void CSimulation::TryEdgeCellOutFlow(int const nX, int const nY, int const nDir)
 
    double
       dTopSlope = dHead * m_dInvCellSide,
-      dFlowSpeed = 0;                                                      // Value to be calculated in dTimeToCrossCell
+      dFlowSpeed = 0;                                                      // Value to be calculated in dTimeToCrossCell(), is in mm/sec
    C2DVec Vec2DFlowVelocity;                                               // Ditto
 
-   // Now use the Darcy-Weisbach equation to calculate flowspeed (which may be constrained) and hence the time taken for water to flow from the centroid of this cell to the next
+   // Now use either a Manning-type equation, or the Darcy-Weisbach equation, to calculate flowspeed (which may be constrained) and hence the time taken for water to flow from the centroid of this cell to the next
    double dOutFlowTime = dTimeToCrossCell(nX, nY, nDir, dTopSlope, dThisDepth, m_dCellSide, Vec2DFlowVelocity, dFlowSpeed);
    if (dOutFlowTime == FOREVER)
    {
@@ -278,24 +278,68 @@ void CSimulation::TryEdgeCellOutFlow(int const nX, int const nY, int const nDir)
 
 /*=========================================================================================================================================
 
- Use the Darcy-Weisbach equation to calculate flowspeed and hence the time needed to flow from the centroid of this cell (the wet one) to
+ Use either a Manning-type equation or the Darcy-Weisbach equation to calculate flowspeed and hence the time needed to flow from the centroid of this cell (the wet one) to
  the centroid of the next. If flowspeed is too high, it may be constrained
 
 =========================================================================================================================================*/
 double CSimulation::dTimeToCrossCell(int const nX, int const nY, int const nDir, double const dTopSlope, double dThisDepth, double const dHLen, C2DVec& Vec2DFlowVelocity, double& dFlowSpeed)
 {
-   double const
-      DARCY_WEISBACH_CONST = 0.008,
-      CONV_CONST = 1000;
+   if (m_bManningEqn)
+   {
+      // Using a Manning-type equation
 
-   // Calculate flow speed using the Darcy-Weisbach equation, with its friction factor determined by means of nondimensional boundary roughness (lambda = depth / epsilon), see: Lawrence, D.S.L. (1997). Macroscale surface roughness and frictional resistance in overland flow. Earth Surface Processes and Landforms 22, 365-382. Some changes made to equation because of units
-   dFlowSpeed = CONV_CONST * dCalcFrictionFactor(nX, nY, dThisDepth / m_dEpsilon, false) * sqrt(DARCY_WEISBACH_CONST * m_dG * dCalcHydraulicRadius(nX, nY, nDir, dThisDepth) * dTopSlope);
+      // TODO
+
+
+   }
+
+   if (m_bDarcyWeisbachEqn)
+   {
+      // Using the Darcy-Weisbach equation: flow speed = sqrt((8 G R S) / ff) in SI units. Note that hydraulic radius should be in m, but we calculate it in mm so need to divide R by 1000. Thus the D-W constant 8 becomes 0.008. Also flow speed is calculated by D-W in m/sec, but we need it in mm/sec, so need to multiply flow speed by 1000
+      double const DARCY_WEISBACH_CONST = 0.008;
+      double const FLOW_SPEED_CONST = 1000;
+
+      if (m_bFrictionFactorConstant)
+      {
+         // Calculate flow speed using the Darcy-Weisbach equation, with its friction factor set to a constant value
+         dFlowSpeed = FLOW_SPEED_CONST * sqrt((DARCY_WEISBACH_CONST * m_dG * dCalcHydraulicRadius(nX, nY) * dTopSlope) / m_dFFConstant);
+
+         // Save the value of the friction factor
+         Cell[nX][nY].pGetSurfaceWater()->SetFrictionFactor(m_dFFConstant);
+      }
+
+      if (m_bFrictionFactorReynolds)
+      {
+         // Calculate flow speed using the Darcy-Weisbach equation, with its friction factor related to Reynolds' number by this empirical relationship: ff = A * Re^B
+         double
+            dRe = dGetReynolds(nX, nY),
+            dFF = m_dFFReynoldsParamA * pow(dRe, m_dFFReynoldsParamB);
+
+         dFlowSpeed = FLOW_SPEED_CONST * sqrt((DARCY_WEISBACH_CONST * m_dG * dCalcHydraulicRadius(nX, nY) * dTopSlope) / dFF);
+
+         // Save the value of the friction factor
+         Cell[nX][nY].pGetSurfaceWater()->SetFrictionFactor(dFF);
+      }
+
+      if (m_bFrictionFactorLawrence)
+      {
+         // Calculate flow speed using the Darcy-Weisbach equation, with its friction factor determined by means of nondimensional boundary roughness (lambda = depth / epsilon), see: Lawrence, D.S.L. (1997). Macroscale surface roughness and frictional resistance in overland flow. Earth Surface Processes and Landforms 22, 365-382. Some changes made to equation because of units TODO CHECK UNITS SINCE HYDRAULIC RADIUS IS IN MM
+         double
+            dLambda = dThisDepth / m_dFFLawrenceEpsilon,
+            dFF = dCalcLawrenceFrictionFactor(nX, nY, dLambda, false);
+
+         dFlowSpeed = FLOW_SPEED_CONST * sqrt((DARCY_WEISBACH_CONST * m_dG * dCalcHydraulicRadius(nX, nY) * dTopSlope) / dFF);
+
+         // Save the value of the friction factor
+         Cell[nX][nY].pGetSurfaceWater()->SetFrictionFactor(dFF);
+      }
+   }
 
    // Sometimes depth can be so small that a flow speed of zero gets calculated
    if (dFlowSpeed <= 0)
       return FOREVER;
 
-   // If it is high enough, remember this flow speed when setting the value of m_dTimeStep in the next iteration
+   // If this flow speed is high enough, remember it and use to set the value of m_dTimeStep in the next iteration
    m_dPossibleMaxSpeed = tMax(dFlowSpeed, m_dPossibleMaxSpeed);
    if (dFlowSpeed > m_dMaxSpeed)
       // Flowspeed is too high for this value of m_dTimeStep (due to Courant condition) so constrain it
@@ -362,15 +406,18 @@ double CSimulation::dTimeToCrossCell(int const nX, int const nY, int const nDir,
 }
 
 
-
 /*=========================================================================================================================================
 
- Calculates a cell's hydraulic radius
+ Calculates a cell's hydraulic radius (in mm)
 
 =========================================================================================================================================*/
-double CSimulation::dCalcHydraulicRadius(int const nX, int const nY, int const nDir, double const dDepth)
+double CSimulation::dCalcHydraulicRadius(int const nX, int const nY)
 {
-   int dN = 0;
+   int
+      nN = 0,
+      nDir = Cell[nX][nY].pGetSurfaceWater()->nGetFlowDirection();
+   double
+      dDepth = Cell[nX][nY].pGetSurfaceWater()->dGetSurfaceWaterDepth();
 
    // Check the two cells which are orthogonal to the direction of flow
    int nXAdj, nYAdj;
@@ -381,12 +428,12 @@ double CSimulation::dCalcHydraulicRadius(int const nX, int const nY, int const n
       nXAdj = nX-1;
       nYAdj = nY;
       if ((nXAdj >= 0) && Cell[nXAdj][nYAdj].pGetSurfaceWater()->bIsWet())
-         dN++;
+         nN++;
 
       nXAdj = nX+1;
       nYAdj = nY;
       if ((nXAdj < m_nXGridMax) && Cell[nXAdj][nYAdj].pGetSurfaceWater()->bIsWet())
-         dN++;
+         nN++;
 
       break;
 
@@ -395,12 +442,12 @@ double CSimulation::dCalcHydraulicRadius(int const nX, int const nY, int const n
       nXAdj = nX+1;
       nYAdj = nY-1;
       if ((nXAdj < m_nXGridMax) && (nYAdj > 0) && Cell[nXAdj][nYAdj].pGetSurfaceWater()->bIsWet())
-         dN++;
+         nN++;
 
       nXAdj = nX-1;
       nYAdj = nY+1;
       if ((nXAdj >= 0) && (nYAdj < m_nYGridMax) && Cell[nXAdj][nYAdj].pGetSurfaceWater()->bIsWet())
-         dN++;
+         nN++;
 
       break;
 
@@ -409,12 +456,12 @@ double CSimulation::dCalcHydraulicRadius(int const nX, int const nY, int const n
       nXAdj = nX-1;
       nYAdj = nY-1;
       if ((nXAdj >= 0) && (nYAdj >= 0) && Cell[nXAdj][nYAdj].pGetSurfaceWater()->bIsWet())
-         dN++;
+         nN++;
 
       nXAdj = nX+1;
       nYAdj = nY+1;
       if ((nXAdj < m_nXGridMax) && (nYAdj < m_nYGridMax) && Cell[nXAdj][nYAdj].pGetSurfaceWater()->bIsWet())
-         dN++;
+         nN++;
 
       break;
 
@@ -423,22 +470,22 @@ double CSimulation::dCalcHydraulicRadius(int const nX, int const nY, int const n
       nXAdj = nX;
       nYAdj = nY-1;
       if ((nYAdj >= 0) && Cell[nXAdj][nYAdj].pGetSurfaceWater()->bIsWet())
-         dN++;
+         nN++;
 
       nXAdj = nX;
       nYAdj = nY+1;
       if ((nYAdj < m_nYGridMax) && Cell[nXAdj][nYAdj].pGetSurfaceWater()->bIsWet())
-         dN++;
+         nN++;
 
       break;
    }
 
-   if (2 == dN)
+   if (2 == nN)
    {
       // Both adjacent cells are wet, so R = (w * d / w) = d
       return (dDepth);
    }
-   else if (1 == dN)
+   else if (1 == nN)
    {
       // Only one adjacent cell is wet, so R = w * d / (w + d)
       return (m_dCellSide * dDepth / (m_dCellSide + dDepth));
@@ -451,19 +498,19 @@ double CSimulation::dCalcHydraulicRadius(int const nX, int const nY, int const n
 }
 
 
-
 /*=========================================================================================================================================
 
- Calculates the friction factor, using the notion of relative boundary roughness. Actually returns 1 / sqrt(friction factor)
+ Calculates the Lawrence (1997) friction factor for the Darcy-Weisbach equation, using the notion of relative boundary roughness
 
 =========================================================================================================================================*/
-double CSimulation::dCalcFrictionFactor(int const nX, int const nY, double const dLambda, bool const bJustCheckEquation)
+double CSimulation::dCalcLawrenceFrictionFactor(int const nX, int const nY, double const dLambda, bool const bJustCheckEquation)
 {
    double const
-      LAMBDA_SHALLOW_FLOW_THRESHOLD                = 1,
-      LAMBDA_MARGINALLY_INUNDATED_FLOW_THRESHOLD   = 10;
+      LAMBDA_SHALLOW_FLOW_THRESHOLD              = 1,
+      LAMBDA_MARGINALLY_INUNDATED_FLOW_THRESHOLD = 10;
 
    double const
+      SHALLOW_FLOW_CONST = 8,
       MARGINAL_FLOW_CONST = 10,
       DEEP_FLOW_CONST_A = 1.64,
       DEEP_FLOW_CONST_B = 0.803;
@@ -471,32 +518,28 @@ double CSimulation::dCalcFrictionFactor(int const nX, int const nY, double const
    double dF;
    if (dLambda <= LAMBDA_SHALLOW_FLOW_THRESHOLD)
    {
-      // Shallow flow
-      dF = 1 / sqrt((8/PI) * m_dPr * m_dCd * tMin(PI/4, dLambda));
+      // Shallow flow, equation 19 in Lawrence (1997)
+      dF = (SHALLOW_FLOW_CONST / PI) * m_dFFLawrencePr * m_dFFLawrenceCd * tMin(PI/4, dLambda);
 
       if (! bJustCheckEquation)
          Cell[nX][nY].pGetSurfaceWater()->SetInundation(SHALLOW_FLOW);
    }
    else if (dLambda <= LAMBDA_MARGINALLY_INUNDATED_FLOW_THRESHOLD)
    {
-      // Marginally-inundated flow
-      dF = dLambda / sqrt(MARGINAL_FLOW_CONST);
+      // Marginally-inundated flow, equation 15 in Lawrence (1997)
+      dF = MARGINAL_FLOW_CONST / (dLambda * dLambda);
 
       if (! bJustCheckEquation)
          Cell[nX][nY].pGetSurfaceWater()->SetInundation(MARGINAL_FLOW);
    }
    else
    {
-      // Well-inundated flow
-      dF = DEEP_FLOW_CONST_A + (DEEP_FLOW_CONST_B * log(dLambda));
+      // Well-inundated flow, equation 12 in Lawrence (1997)
+      dF = pow(DEEP_FLOW_CONST_A + (DEEP_FLOW_CONST_B * log(dLambda)), 2);
 
       if (! bJustCheckEquation)
          Cell[nX][nY].pGetSurfaceWater()->SetInundation(DEEP_FLOW);
    }
-
-   if (! bJustCheckEquation)
-      // Save the 'real' value of the friction factor (not just 1 / sqrt(friction factor), which is what this function returns)
-      Cell[nX][nY].pGetSurfaceWater()->SetFrictionFactor(1 / (dF * dF));
 
    return dF;
 }
@@ -672,3 +715,23 @@ void CSimulation::AddThisIterSurfaceWater(double const dDepth)
 {
    m_dThisIterSurfaceWaterStored += dDepth;
 }
+
+
+/*=========================================================================================================================================
+
+ Calculates the Reynolds number for a cell
+
+=========================================================================================================================================*/
+double CSimulation::dGetReynolds(int const nX, int const nY)
+{
+   double
+      dFlowSpeed = Cell[nX][nY].pGetSurfaceWater()->dGetFlowSpd(),
+      dR = dCalcHydraulicRadius(nX, nY);
+
+   // Must divide by 1e6 because velocity and hydraulic radius are in mm/sec and mm, the equations has them in m/sec and m
+   double dRe = (1e-6 * dFlowSpeed * dR) / m_dNu;
+
+   return dRe;
+}
+
+

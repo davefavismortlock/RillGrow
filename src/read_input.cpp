@@ -136,7 +136,7 @@ bool CSimulation::bReadIni(void)
 
          // Check for trailing slash on RG output directory name (is vital)
          if (strRH[strRH.size()-1] != PATH_SEPARATOR)
-            strRH.append(&PATH_SEPARATOR);
+            strRH.push_back(PATH_SEPARATOR);
 
          // Now check for leading slash, or leading Unix home dir symbol, or occurrence of a drive letter
          if ((strRH[0] == PATH_SEPARATOR) || (strRH[0] == '~') || (strRH[1] == ':'))
@@ -224,12 +224,12 @@ bool CSimulation::bReadRunData(void)
 
       // Get the RH bit of the string, after the colon
       strRH = strSplitRH(&strRec);
-      if (strRH.empty())
-      {
-         // Error: badly formatted line (no colon)
-         cerr << ERR << "badly formatted line (no ':') in " << m_strDataPathName << endl << "'" << strRec << "'" << endl;
-         return false;
-      }
+//       if (strRH.empty())
+//       {
+//          // Error: badly formatted line (no colon or nothing after colon)
+//          cerr << ERR << "badly formatted line (no ':' or nothing after ':') in " << m_strDataPathName << endl << "'" << strRec << "'" << endl;
+//          return false;
+//       }
 
       int
          nMultiplier = 0,
@@ -256,12 +256,12 @@ bool CSimulation::bReadRunData(void)
 
          if (nLen == 3)
          {
-            m_dSimulatedRainDuration = atof(VstrItems[0].c_str());
-            m_dSimulationDuration = atof(VstrItems[1].c_str());
+            m_dSimulatedRainDuration = stod(VstrItems[0]);
+            m_dSimulationDuration = stod(VstrItems[1]);
          }
          else
          {
-            m_dSimulationDuration = atof(VstrItems[0].c_str());
+            m_dSimulationDuration = stod(VstrItems[0]);
             m_dSimulatedRainDuration = m_dSimulationDuration;
          }
 
@@ -332,7 +332,7 @@ bool CSimulation::bReadRunData(void)
          {
             // Regular save intervals
             m_bSaveRegular = true;
-            m_dRSaveInterval = atof(VstrItems[0].c_str()) * nMultiplier;
+            m_dRSaveInterval = stod(VstrItems[0]) * nMultiplier;
 
             if (m_dRSaveTime <= 0)
             {
@@ -351,7 +351,7 @@ bool CSimulation::bReadRunData(void)
             m_nUSave = nLen-1;
             for (int n = 0; n < m_nUSave; n++)
             {
-               double dSave = atof(VstrItems[n].c_str());
+               double dSave = stod(VstrItems[n]);
                dSave *= nMultiplier;
 
                m_VdSaveTime.push_back(dSave);
@@ -377,7 +377,7 @@ bool CSimulation::bReadRunData(void)
          for (int n = 0; n < NUMBER_OF_RNGS; n++)
          {
             if (n < nLen)
-               m_ulRandSeed[n] = atoi(VstrItems[n].c_str());
+               m_ulRandSeed[n] = stoi(VstrItems[n]);
             else
                m_ulRandSeed[n] = m_ulRandSeed[0];
          }
@@ -861,14 +861,14 @@ bool CSimulation::bReadRunData(void)
 
       case 14:
          // Gradient to add
-         m_dGradient = atof(strRH.c_str());                                           // in per cent
+         m_dGradient = stod(strRH);                                           // In per cent
          if (m_dGradient < 0)
             strErr = "slope angle";
          break;
 
       case 15:
          // Base level e.g. distance below lowest DEM point to flume lip. Negative values mean no baselevel, i.e. can cut down to unerodible basement
-         m_dPlotEndDiff = atof(strRH.c_str());
+         m_dPlotEndDiff = stod(strRH);
          m_bHaveBaseLevel = true;
 
          if (m_dPlotEndDiff < 0)
@@ -881,14 +881,14 @@ bool CSimulation::bReadRunData(void)
          // ------------------------------------------------------------- Soil -----------------------------------------------------------
       case 16:
          // Number of layers
-         m_nNumSoilLayers = atoi(strRH.c_str());
+         m_nNumSoilLayers = stoi(strRH);
          if (m_nNumSoilLayers < 1)
             strErr = "need at least one soil layer";
          break;
 
       case 17:
          // Elevation of unerodible basement. This is the same as the elevation of the bottom of the lowest soil layer [Z units]
-         m_dBasementElevation = atof(strRH.c_str());
+         m_dBasementElevation = stod(strRH);
 
          if (m_nZUnits == Z_UNIT_M)
             m_dBasementElevation /= 1e3;
@@ -930,8 +930,8 @@ bool CSimulation::bReadRunData(void)
                strRH = strSplitRH(&strRec);
                if (strRH.empty())
                {
-                  // Error: badly formatted line (no colon)
-                  cerr << ERR << "badly formatted line (no ':') in " << m_strDataPathName << endl << "'" << strRec << "'" << endl;
+                  // Error: badly formatted line (no colon or nothing after colon)
+                  cerr << ERR << "badly formatted line (no ':' or nothing after ':') in " << m_strDataPathName << endl << "'" << strRec << "'" << endl;
                   return false;
                }
 
@@ -944,12 +944,12 @@ bool CSimulation::bReadRunData(void)
 
                   case 2:
                      // Thickness (omit for top layer)
-                     m_VdInputSoilLayerThickness.push_back(atof(strRH.c_str()));
+                     m_VdInputSoilLayerThickness.push_back(stod(strRH));
                      break;
 
                   case 3:
                      // % clay
-                     dTmp = atof(strRH.c_str());
+                     dTmp = stod(strRH);
                      if (dTmp < 0)
                      {
                         strErr = "invalid clay % (";
@@ -964,7 +964,7 @@ bool CSimulation::bReadRunData(void)
 
                   case 4:
                      // % silt
-                     dTmp = atof(strRH.c_str());
+                     dTmp = stod(strRH);
                      if (dTmp < 0)
                      {
                         strErr = "invalid silt % (";
@@ -979,7 +979,7 @@ bool CSimulation::bReadRunData(void)
 
                   case 5:
                      // % sand
-                     dTmp = atof(strRH.c_str());
+                     dTmp = stod(strRH);
                      if (dTmp < 0)
                      {
                         strErr = "invalid sand % (";
@@ -1017,7 +1017,7 @@ bool CSimulation::bReadRunData(void)
 
                   case 6:
                      // Bulk density (t/m**3 or g/cm**3)
-                     dTmp = atof(strRH.c_str());
+                     dTmp = stod(strRH);
                      if (dTmp <= 0)
                      {
                         strErr = "bulk density must be greater than zero for soil layer ";
@@ -1034,7 +1034,7 @@ bool CSimulation::bReadRunData(void)
 
                   case 7:
                      // Clay flow erodibility [0-1]
-                     dTmp = atof(strRH.c_str());
+                     dTmp = stod(strRH);
                      if ((dTmp < 0) || (dTmp > 1))
                      {
                         strErr = "invalid clay flow erodibility (";
@@ -1050,7 +1050,7 @@ bool CSimulation::bReadRunData(void)
 
                   case 8:
                      // Silt flow erodibility [0-1]
-                     dTmp = atof(strRH.c_str());
+                     dTmp = stod(strRH);
                      if ((dTmp < 0) || (dTmp > 1))
                      {
                         strErr = "invalid silt flow erodibility (";
@@ -1066,7 +1066,7 @@ bool CSimulation::bReadRunData(void)
 
                   case 9:
                      // Sand flow erodibility [0-1]
-                     dTmp = atof(strRH.c_str());
+                     dTmp = stod(strRH);
                      if ((dTmp < 0) || (dTmp > 1))
                      {
                         strErr = "invalid sand flow erodibility (";
@@ -1082,7 +1082,7 @@ bool CSimulation::bReadRunData(void)
 
                   case 10:
                      // Clay splash erodibility [0-1]
-                     dTmp = atof(strRH.c_str());
+                     dTmp = stod(strRH);
                      if ((dTmp < 0) || (dTmp > 1))
                      {
                         strErr = "invalid clay splash erodibility (";
@@ -1098,7 +1098,7 @@ bool CSimulation::bReadRunData(void)
 
                   case 11:
                      // Silt splash erodibility [0-1]
-                     dTmp = atof(strRH.c_str());
+                     dTmp = stod(strRH);
                      if ((dTmp < 0) || (dTmp > 1))
                      {
                         strErr = "invalid silt splash erodibility (";
@@ -1114,7 +1114,7 @@ bool CSimulation::bReadRunData(void)
 
                   case 12:
                      // Sand splash erodibility [0-1]
-                     dTmp = atof(strRH.c_str());
+                     dTmp = stod(strRH);
                      if ((dTmp < 0) || (dTmp > 1))
                      {
                         strErr = "invalid sand splash erodibility (";
@@ -1130,7 +1130,7 @@ bool CSimulation::bReadRunData(void)
 
                   case 13:
                      // Clay slump erodibility [0-1]
-                     dTmp = atof(strRH.c_str());
+                     dTmp = stod(strRH);
                      if ((dTmp < 0) || (dTmp > 1))
                      {
                         strErr = "invalid clay slump erodibility (";
@@ -1146,7 +1146,7 @@ bool CSimulation::bReadRunData(void)
 
                   case 14:
                      // Silt slump erodibility [0-1]
-                     dTmp = atof(strRH.c_str());
+                     dTmp = stod(strRH);
                      if ((dTmp < 0) || (dTmp > 1))
                      {
                         strErr = "invalid silt slump erodibility (";
@@ -1162,7 +1162,7 @@ bool CSimulation::bReadRunData(void)
 
                   case 15:
                      // Sand slump erodibility [0-1]
-                     dTmp = atof(strRH.c_str());
+                     dTmp = stod(strRH);
                      if ((dTmp < 0) || (dTmp > 1))
                      {
                         strErr = "invalid sand slump erodibility (";
@@ -1189,7 +1189,7 @@ bool CSimulation::bReadRunData(void)
          if (! strRH.empty())
          {
             // First check if it is a floating-point number
-            m_dRainIntensity = atof(strRH.c_str());                                   // in mm/hour
+            m_dRainIntensity = stod(strRH);                                   // in mm/hour
             m_dSpecifiedRainIntensity = m_dRainIntensity;
 
             if (m_dRainIntensity <= 0)
@@ -1217,14 +1217,14 @@ bool CSimulation::bReadRunData(void)
 
       case 20:
          // Standard deviation of rainfall intensity
-         m_dStdRainInt = atof(strRH.c_str());                                                  // in mm/hour
+         m_dStdRainInt = stod(strRH);                                                  // in mm/hour
          if (m_dStdRainInt < 0)
             strErr = "standard deviation of rainfall intensity";
          break;
 
       case 21:
          // Mean raindrop diameter
-         m_dDropDiameter = atof(strRH.c_str());                                                // in mm
+         m_dDropDiameter = stod(strRH);                                                // in mm
          if (m_dDropDiameter <= 0)
             strErr = "mean raindrop diameter";
          else
@@ -1233,7 +1233,7 @@ bool CSimulation::bReadRunData(void)
 
       case 22:
          // Standard deviation of raindrop diameter
-         m_dStdDropDiameter = atof(strRH.c_str());                                             // in mm
+         m_dStdDropDiameter = stod(strRH);                                             // in mm
          if (m_dStdDropDiameter < 0)
             strErr = "standard deviation of raindrop diameter";
          else
@@ -1261,7 +1261,7 @@ bool CSimulation::bReadRunData(void)
 
       case 24:
          // Raindrop fall velocity at soil surface
-         m_dRainSpeed = atof(strRH.c_str());                                                   // in m/sec
+         m_dRainSpeed = stod(strRH);                                                   // in m/sec
          if (m_bSplash)
          {
             if (m_dRainSpeed <= 0)
@@ -1307,20 +1307,13 @@ bool CSimulation::bReadRunData(void)
 
       case 27:
          // N in splash efficiency equation (sec**2/mm)
-         m_VdSplashEffN = atof(strRH.c_str());
+         m_VdSplashEffN = stod(strRH);
          if (m_bSplash && (m_VdSplashEffN < 0))
             strErr = "splash efficiency N";
          break;
 
-      case 28:
-         // Splash vertical lowering constant (mm/hr)
-         m_dSplashVertical = atof(strRH.c_str());
-         if (m_bSplash && (m_dSplashVertical < 0))
-            strErr = "splash vertical lowering";
-         break;
-
          // ---------------------------------------------------- Run-on and run-off ------------------------------------------------------
-      case 29:
+      case 28:
          // Run-on from outside the grid?
          strRH = strToLower(&strRH);
          if (strRH.find('y') != string::npos)
@@ -1331,7 +1324,7 @@ bool CSimulation::bReadRunData(void)
             strErr = "run-on switch";
          break;
 
-      case 30:
+      case 29:
          // Run-on from which edges?
          strRH = strToLower(&strRH);
          if (strRH.find('t') != string::npos)
@@ -1344,34 +1337,40 @@ bool CSimulation::bReadRunData(void)
             m_bRunOnThisEdge[EDGE_LEFT] = true;
          break;
 
-      case 31:
+      case 30:
          // Length of run-on area
-         m_dRunOnLen = atof(strRH.c_str());
+         m_dRunOnLen = stod(strRH);
          if (m_bRunOn && (m_dRunOnLen <= 0))
                strErr = "run-on length";
          break;
 
-      case 32:
+      case 31:
          // Rainfall spatial variation multiplier for run-on area
-         m_dRunOnRainVarM = atof(strRH.c_str());
+         m_dRunOnRainVarM = stod(strRH);
          if (m_bRunOn && (m_dRunOnRainVarM <= 0))
             strErr = "rainfall spatial variation multiplier for run-on area";
          break;
 
-      case 33:
+      case 32:
          // Flow speed on run-on area
-         m_dRunOnSpd = atof(strRH.c_str());
+         m_dRunOnSpd = stod(strRH);
          if (m_bRunOn && (m_dRunOnSpd <= 0))
                strErr = "run-on flow speed";
          break;
 
-      case 34:
-         // Constant for overland flow leaving the grid, must be greater than zero
-         m_dOffEdgeConst = atof(strRH.c_str());
-         if (m_dOffEdgeConst<= 0)
-            strErr = "constant for overland flow leaving the grid must be greater than zero";
+      case 33:
+         // Off-edge param A
+         m_dOffEdgeParamA = stod(strRH);
+         if (m_dOffEdgeParamA <= 0)
+            strErr = "off-edge parameter A";
          break;
 
+      case 34:
+         // Off-edge param B
+         m_dOffEdgeParamB = stod(strRH);
+         if (m_dOffEdgeParamB == 0)
+            strErr = "off-edge parameter B";
+         break;
 
       // ----------------------------------------------------------- Infiltration -----------------------------------------------------
       case 35:
@@ -1413,8 +1412,8 @@ bool CSimulation::bReadRunData(void)
                strRH = strSplitRH(&strRec);
                if (strRH.empty())
                {
-                  // Error: badly formatted line (no colon)
-                  cerr << ERR << "badly formatted line (no ':') in " << m_strDataPathName << endl << "'" << strRec << "'" << endl;
+                  // Error: badly formatted line (no colon or nothing after colon)
+                  cerr << ERR << "badly formatted line (no ':' or nothing after ':') in " << m_strDataPathName << endl << "'" << strRec << "'" << endl;
                   return false;
                }
 
@@ -1424,7 +1423,7 @@ bool CSimulation::bReadRunData(void)
                      // Air entry head, is half of bubbling pressure (cm)
                      if (m_bDoInfiltration)
                      {
-                        dTmp = atof(strRH.c_str());
+                        dTmp = stod(strRH);
                         if (dTmp == 0)
                         {
                            strErr = "air entry head";
@@ -1439,7 +1438,7 @@ bool CSimulation::bReadRunData(void)
                      // Exponent of Brooks-Corey water retention equation
                      if (m_bDoInfiltration)
                      {
-                        dTmp = atof(strRH.c_str());
+                        dTmp = stod(strRH);
                         if (dTmp <= 0)
                         {
                            strErr = "exponent of Brooks-Corey water retention equation";
@@ -1454,7 +1453,7 @@ bool CSimulation::bReadRunData(void)
                      // Saturated volumetric water content (cm3/cm3 or mm/mm3)
                      if (m_bDoInfiltration)
                      {
-                        dTmp = atof(strRH.c_str());
+                        dTmp = stod(strRH);
                         if (dTmp < 0)
                         {
                            strErr = "saturated volumetric water content";
@@ -1469,7 +1468,7 @@ bool CSimulation::bReadRunData(void)
                      // Initial volumetric water content (cm3/cm3 or mm3/mm3)
                      if (m_bDoInfiltration)
                      {
-                        dTmp = atof(strRH.c_str());
+                        dTmp = stod(strRH);
                         if ((dTmp < 0) || (dTmp > m_VdInputSoilLayerInfiltSatWater.back()))
                         {
                            strErr = "initial volumetric water content";
@@ -1484,7 +1483,7 @@ bool CSimulation::bReadRunData(void)
                      // Saturated hydraulic conductivity (cm/h)
                      if (m_bDoInfiltration)
                      {
-                        dTmp = atof(strRH.c_str());
+                        dTmp = stod(strRH);
                         if (dTmp < 0)
                         {
                            strErr = "saturated hydraulic conductivity";
@@ -1500,61 +1499,172 @@ bool CSimulation::bReadRunData(void)
                   break;
             }
          }
+
          break;
 
       // ----------------------------------------------------------- Overland Flow ----------------------------------------------------
       case 37:
-         // In the partially-inundated flow regime, D50 of roughness elements (mm)
-         m_dD50 = atof(strRH.c_str());
-         if (m_dD50 <= 0)
-            strErr = "D50 of roughness elements";
-         else
-            m_dEpsilon = 0.5 * m_dD50;
+         // Manning-type (m) or Darcy-Weisbach (d) flow velocity equation?
+         strRH = strToLower(&strRH);
+
+         if (strRH.find('m') != string::npos)
+            m_bManningEqn = true;
+         if (strRH.find('d') != string::npos)
+            m_bDarcyWeisbachEqn = true;
+
+         if (m_bManningEqn == m_bDarcyWeisbachEqn)
+            strErr = "must choose either Manning or Darcy-Weisbach equation";
+
          break;
 
       case 38:
-         // In the partially-inundated flow regime, % of surface covered with roughness elements
-         m_dPr = atof(strRH.c_str());
-         if ((m_dPr < 0) || (m_dPr > 100))
-            strErr = "% of surface covered with roughness elements";
+         // Parameter A if using Manning-type flow velocity equation
+         if (m_bManningEqn)
+         {
+            m_dManningParamA = stod(strRH);
+
+            if (m_dManningParamA <= 0)
+               strErr = "Manning parameter A must be > 0";
+         }
+
          break;
 
       case 39:
-         // In the partially-inundated flow regime, the ratio between the drag of roughness elements and the ideal situation
-         m_dCd = atof(strRH.c_str());
-         if ((m_dCd < 0) || (m_dCd > 1))
-            strErr = "ratio between the drag of roughness elements and the ideal situation";
+         // Parameter B if using Manning-type flow velocity equation
+         if (m_bManningEqn)
+         {
+            m_dManningParamB = stod(strRH);
+
+            if (m_dManningParamB <= 0)
+               strErr = "Manning parameter B must be > 0";
+         }
+
+         break;
+
+      case 40:
+         // If using Darcy-Weisbach flow velocity equation, then friction factor is a constant (c), is based on Reynolds' number (r), or is calculated using the Lawrence (1997) formulation (l)
+         if (m_bDarcyWeisbachEqn)
+         {
+            strRH = strToLower(&strRH);
+
+            if (strRH.find('c') != string::npos)
+               m_bFrictionFactorConstant = true;
+            if (strRH.find('d') != string::npos)
+               m_bFrictionFactorReynolds = true;
+            if (strRH.find('l') != string::npos)
+               m_bFrictionFactorLawrence = true;
+
+            if ((m_bFrictionFactorConstant && m_bFrictionFactorReynolds) || (m_bFrictionFactorConstant && m_bFrictionFactorLawrence) || (m_bFrictionFactorReynolds && m_bFrictionFactorLawrence))
+               strErr = "must choose only one way of calculating the Darcy-Weisbach friction factor";
+         }
+
+         break;
+
+      case 41:
+         // Constant friction factor for Darcy-Weisbach equation, if using constant friction factor approach
+         if (m_bDarcyWeisbachEqn && m_bFrictionFactorConstant)
+         {
+            m_dFFConstant = stod(strRH);
+
+            if (m_dFFConstant <= 0)
+               strErr = "Constant friction factor for Darcy-Weisbach equation must be > 0";
+         }
+
+         break;
+
+      case 42:
+         // Parameter A if using Reynolds' number-based friction factor
+         if (m_bDarcyWeisbachEqn && m_bFrictionFactorReynolds)
+         {
+            m_dFFReynoldsParamA = stod(strRH);
+
+            if (m_dFFReynoldsParamA <= 0)
+               strErr = "Parameter A for Reynolds' number-based friction factor for Darcy-Weisbach equation must be > 0";
+         }
+
+         break;
+
+      case 43:
+         // Parameter B if using Reynolds' number-based friction factor
+         if (m_bDarcyWeisbachEqn && m_bFrictionFactorReynolds)
+         {
+            m_dFFReynoldsParamB = stod(strRH);
+
+            if (m_dFFReynoldsParamB <= 0)
+               strErr = "Parameter B for Reynolds' number-based friction factor for Darcy-Weisbach equation must be > 0";
+         }
+
+         break;
+
+      case 44:
+         // If using the Lawrence (1997) friction factor approach: D50 of roughness elements (mm) in the partially-inundated flow regime
+         if (m_bDarcyWeisbachEqn && m_bFrictionFactorLawrence)
+         {
+            m_dFFLawrenceD50 = stod(strRH);
+
+            if (m_dFFLawrenceD50 <= 0)
+               strErr = "D50 of roughness elements for Lawrence (1997) friction factor for Darcy-Weisbach equation must be > 0";
+            else
+               m_dFFLawrenceEpsilon = 0.5 * m_dFFLawrenceD50;
+         }
+
+         break;
+
+      case 45:
+         // If using the Lawrence (1997) friction factor approach: % of surface covered with roughness elements in the partially-inundated flow regime
+         if (m_bDarcyWeisbachEqn && m_bFrictionFactorLawrence)
+         {
+            m_dFFLawrencePr = stod(strRH);
+
+            if ((m_dFFLawrencePr < 0) || (m_dFFLawrencePr > 100))
+               strErr = "% of surface covered with roughness elements for Lawrence (1997) friction factor for Darcy-Weisbach equation must be between 0 and 100";
+         }
+
+         break;
+
+      case 46:
+         // If using the Lawrence (1997) friction factor approach: the ratio between the drag of roughness elements and the ideal situation in the partially-inundated flow regime
+         if (m_bDarcyWeisbachEqn && m_bFrictionFactorLawrence)
+         {
+            m_dFFLawrenceCd = stod(strRH);
+
+            if ((m_dFFLawrenceCd < 0) || (m_dFFLawrenceCd > 1))
+               strErr = "ratio between the drag of roughness elements and the ideal situation for Lawrence (1997) friction factor for Darcy-Weisbach equation must be between 0 and 1";
+         }
+
          break;
 
       // ------------------------------------------------------------ Flow Erosion- ---------------------------------------------------
-      case 40:
+      case 47:
          // Simulate flow erosion?
          strRH = strToLower(&strRH);
+
          if (strRH.find('y') != string::npos)
             m_bFlowErosion = true;
          else if (strRH.find('n') != string::npos)
             m_bFlowErosion = false;
          else
             strErr = "flow erosion switch";
+
          break;
 
-      case 41:
+      case 48:
          // K in detachment equation
-         m_dK = atof(strRH.c_str());
+         m_dK = stod(strRH);
          if (m_bFlowErosion && (m_dK <= 0))
             strErr = "constant k for detachment";
          break;
 
-      case 42:
+      case 49:
          // T in detachment equation
-         m_dT = atof(strRH.c_str());
+         m_dT = stod(strRH);
          if (m_bFlowErosion && (m_dT <= 0))
             strErr = "constant T for detachment";
          break;
 
-      case 43:
+      case 50:
          // CV of T in detachment equation
-         m_dCVT = atof(strRH.c_str());
+         m_dCVT = stod(strRH);
          if (m_bFlowErosion)
          {
             if (m_dCVT <= 0)
@@ -1562,80 +1672,80 @@ bool CSimulation::bReadRunData(void)
          }
          break;
 
-      case 44:
+      case 51:
          // CV of tau-b in detachment equation
-         m_dCVTaub = atof(strRH.c_str());
+         m_dCVTaub = stod(strRH);
          if (m_bFlowErosion && (m_dCVTaub <= 0))
             strErr = "CV of tau-b for detachment";
          break;
 
       // -------------------------------------------------------- Transport Capacity --------------------------------------------------
-      case 45:
+      case 52:
          // Alpha in transport capacity equation
-         m_dAlpha = atof(strRH.c_str());
+         m_dAlpha = stod(strRH);
          if (m_bFlowErosion && (m_dAlpha >= 0))
             strErr = "alpha for transport capacity";
          break;
 
-      case 46:
+      case 53:
          // Beta in transport capacity equation
-         m_dBeta = atof(strRH.c_str());
+         m_dBeta = stod(strRH);
          if (m_bFlowErosion && (m_dBeta <= 0))
             strErr = "beta for transport capacity";
          break;
 
-      case 47:
+      case 54:
          // Gamma in transport capacity equation
-         m_dGamma = atof(strRH.c_str());
+         m_dGamma = stod(strRH);
          if (m_bFlowErosion && (m_dGamma <= 0))
             strErr = "gamma for transport capacity";
          break;
 
-      case 48:
+      case 55:
          // Delta in transport capacity equation
-         m_dDelta = atof(strRH.c_str());
+         m_dDelta = stod(strRH);
          if (m_bFlowErosion && (m_dDelta <= 0))
             strErr = "delta for transport capacity";
          break;
 
       // ----------------------------------------------------------- Deposition -------------------------------------------------------
-      case 49:
+      case 56:
          // Grain density (kg/m**3)
-         m_dDepositionGrainDensity = atof(strRH.c_str());
+         m_dDepositionGrainDensity = stod(strRH);
          if (m_bFlowErosion && (m_dDepositionGrainDensity <= 0))
             strErr = "grain density, for deposition";
          break;
 
-      case 50:
+      case 57:
          // Clay minimum size (mm)
-         m_dClaySizeMin = atof(strRH.c_str());
+         m_dClaySizeMin = stod(strRH);
          if (m_bFlowErosion && (m_dClaySizeMin < 0))
             strErr = "clay minimum size, for deposition";
          break;
 
-      case 51:
+      case 58:
          // Clay-silt threshold size (mm)
-         m_dClaySiltBoundarySize = atof(strRH.c_str());
+         m_dClaySiltBoundarySize = stod(strRH);
          if (m_bFlowErosion && (m_dClaySiltBoundarySize <= m_dClaySizeMin))
             strErr = "clay-silt threshold size, for deposition";
          break;
 
-      case 52:
+      case 59:
          // Silt-Sand threshold size (mm)
-         m_dSiltSandBoundarySize = atof(strRH.c_str());
+         m_dSiltSandBoundarySize = stod(strRH);
          if (m_bFlowErosion && (m_dSiltSandBoundarySize <= m_dClaySiltBoundarySize))
             strErr = "silt-sand threshold size, for deposition";
          break;
 
-      case 53:
+      case 60:
          // Sand maximum size (mm)
-         m_dSandSizeMax = atof(strRH.c_str());
+         m_dSandSizeMax = stod(strRH);
          if (m_bFlowErosion && (m_dSandSizeMax <= m_dSiltSandBoundarySize))
             strErr = "sand maximum size, for deposition";
          break;
 
       // -------------------------------------------------------------- Slumping ------------------------------------------------------
-      case 54:
+      case 61:
          // Simulate slumping?
          strRH = strToLower(&strRH);
          if (strRH.find('y') != string::npos)
@@ -1646,30 +1756,30 @@ bool CSimulation::bReadRunData(void)
             strErr = "slumping switch";
          break;
 
-      case 55:
+      case 62:
          // Radius of soil shear stress 'patch'
-         m_dSSSPatchSize = atof(strRH.c_str());                    // mm
+         m_dSSSPatchSize = stod(strRH);                    // mm
          if (m_bSlumping && (m_dSSSPatchSize <= 0))
             strErr = "radius of soil shear stress 'patch', for slumping";
          break;
 
-      case 56:
+      case 63:
          // Threshold shear stress for slumping
-         m_dCritSSSForSlump = atof(strRH.c_str());                    // kg/m s**2 (Pa)
+         m_dCritSSSForSlump = stod(strRH);                    // kg/m s**2 (Pa)
          if (m_bSlumping && (m_dCritSSSForSlump < 0))
             strErr = "threshold shear stress for slumping";
          break;
 
-      case 57:
+      case 64:
          // Angle of rest for saturated slumped soil
-         m_dSlumpAngleOfRest = atof(strRH.c_str());                        // in per cent
+         m_dSlumpAngleOfRest = stod(strRH);                        // in per cent
          if (m_bSlumping && (m_dSlumpAngleOfRest < 0))
             strErr = "angle of rest for slumped soil";
          break;
 
-      case 58:
+      case 65:
          // Critical angle for toppling soil (not saturated)
-         m_dToppleCriticalAngle = atof(strRH.c_str());                     // in per cent
+         m_dToppleCriticalAngle = stod(strRH);                     // in per cent
          if (m_bSlumping)
          {
             if (m_dToppleCriticalAngle < 0)
@@ -1677,9 +1787,9 @@ bool CSimulation::bReadRunData(void)
          }
          break;
 
-      case 59:
+      case 66:
          // Angle of rest for toppled soil (not saturated)
-         m_dToppleAngleOfRest = atof(strRH.c_str());                       // in per cent
+         m_dToppleAngleOfRest = stod(strRH);                       // in per cent
          if (m_bSlumping)
          {
             if (m_dToppleAngleOfRest == 0)
@@ -1691,7 +1801,7 @@ bool CSimulation::bReadRunData(void)
          break;
 
          // ---------------------------------------------------------- Headcut Retreat ---------------------------------------------------
-      case 60:
+      case 67:
          // Simulate headcut retreat?
          strRH = strToLower(&strRH);
          if (strRH.find('y') != string::npos)
@@ -1702,31 +1812,31 @@ bool CSimulation::bReadRunData(void)
             strErr = "headcut retreat switch";
          break;
 
-      case 61:
+      case 68:
          // Headcut retreat constant
-         m_dHeadcutRetreatConst = atof(strRH.c_str());
+         m_dHeadcutRetreatConst = stod(strRH);
          if (m_dHeadcutRetreatConst <= 0)
             strErr = "headcut retreat constant";
          break;
 
          // --------------------------------------------------- Various Physical Constants -----------------------------------------------
-      case 62:
+      case 69:
          // Density of water
-         m_dRho = atof(strRH.c_str());                                    // kg/m**3
+         m_dRho = stod(strRH);                                    // kg/m**3
          if (m_dRho <= 0)
             strErr = "density of water";
          break;
 
-      case 63:
+      case 70:
          // Viscosity of water
-         m_dNu = atof(strRH.c_str());                                     // m**2/sec
+         m_dNu = stod(strRH);                                     // m**2/sec
          if (m_dNu <= 0)
             strErr = "viscosity of water";
          break;
 
-      case 64:
+      case 71:
          // Gravitational acceleration
-         m_dG = atof(strRH.c_str());                                      // m/sec**2
+         m_dG = stod(strRH);                                      // m/sec**2
          if (m_dG <= 0)
             strErr = "gravitational acceleration";
          break;
@@ -1931,7 +2041,7 @@ bool CSimulation::bReadRainfallTimeSeries(void)
             }
 
             // There are two items, so read in rainfall change time (convert to seconds, if necessary)
-            double dRainChangeTime = atof(VstrItems[0].c_str()) * nMultiplier;
+            double dRainChangeTime = stod(VstrItems[0]) * nMultiplier;
 
             // Check for obvious error
             if ((dRainChangeTime <= 0) || (dRainChangeTime > m_dSimulatedRainDuration))
@@ -1958,7 +2068,7 @@ bool CSimulation::bReadRainfallTimeSeries(void)
             }
 
             // Now read in rainfall intensity
-            double dRainChangeIntensity = atof(VstrItems[1].c_str());
+            double dRainChangeIntensity = stod(VstrItems[1]);
 
             // Check for obvious error
             if (dRainChangeIntensity < 0)

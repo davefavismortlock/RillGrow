@@ -132,7 +132,7 @@ void CSimulation::DoCellInfiltration(int const nX, int const nY, int const nLaye
          return;
 
       // Cell is wet, so get the depth of overland flow
-      dWaterDepthAbove = Cell[nX][nY].pGetSurfaceWater()->dGetSurfaceWater();
+      dWaterDepthAbove = Cell[nX][nY].pGetSurfaceWater()->dGetSurfaceWaterDepth();
    }
    else
    {
