@@ -1593,8 +1593,8 @@ bool CSimulation::bReadRunData(void)
          {
             m_dFFReynoldsParamB = stod(strRH);
 
-            if (m_dFFReynoldsParamB <= 0)
-               strErr = "Parameter B for Reynolds' number-based friction factor for Darcy-Weisbach equation must be > 0";
+            if (m_dFFReynoldsParamB == 0)
+               strErr = "Parameter B for Reynolds' number-based friction factor for Darcy-Weisbach equation cannot be 0";
          }
 
          break;
