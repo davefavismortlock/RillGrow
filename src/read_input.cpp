@@ -1549,10 +1549,13 @@ bool CSimulation::bReadRunData(void)
 
             if (strRH.find('c') != string::npos)
                m_bFrictionFactorConstant = true;
-            if (strRH.find('d') != string::npos)
+            if (strRH.find('r') != string::npos)
                m_bFrictionFactorReynolds = true;
             if (strRH.find('l') != string::npos)
                m_bFrictionFactorLawrence = true;
+
+            if (!m_bFrictionFactorConstant && !m_bFrictionFactorReynolds && !m_bFrictionFactorLawrence)
+               strErr = "must choose a way of calculating the Darcy-Weisbach friction factor";
 
             if ((m_bFrictionFactorConstant && m_bFrictionFactorReynolds) || (m_bFrictionFactorConstant && m_bFrictionFactorLawrence) || (m_bFrictionFactorReynolds && m_bFrictionFactorLawrence))
                strErr = "must choose only one way of calculating the Darcy-Weisbach friction factor";
