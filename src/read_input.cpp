@@ -506,10 +506,10 @@ bool CSimulation::bReadRunData(void)
                strRH = strRemoveSubstr(&strRH, &GIS_INUNDATION_REGIME_CODE);
             }
 
-            if (strRH.find(GIS_OFLOW_DIRECTION_CODE) != string::npos)
+            if (strRH.find(GIS_OVERLANDFLOW_DIRECTION_CODE) != string::npos)
             {
                m_bFlowDirSave = true;
-               strRH = strRemoveSubstr(&strRH, &GIS_OFLOW_DIRECTION_CODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_OVERLANDFLOW_DIRECTION_CODE);
             }
 
             if (strRH.find(GIS_STREAMPOWER_CODE) != string::npos)
@@ -530,10 +530,10 @@ bool CSimulation::bReadRunData(void)
                strRH = strRemoveSubstr(&strRH, &GIS_FRICTION_FACTOR_CODE);
             }
 
-            if (strRH.find(GIS_CUMUL_AVG_SHEAR_STRESS_CODE) != string::npos)
+            if (strRH.find(GIS_AVG_SHEAR_STRESS_CODE) != string::npos)
             {
                m_bCumulAvgShearStressSave = true;
-               strRH = strRemoveSubstr(&strRH, &GIS_CUMUL_AVG_SHEAR_STRESS_CODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_AVG_SHEAR_STRESS_CODE);
             }
 
             if (strRH.find(GIS_REYNOLDS_NUMBER_CODE) != string::npos)
@@ -554,22 +554,22 @@ bool CSimulation::bReadRunData(void)
                strRH = strRemoveSubstr(&strRH, &GIS_TRANSPORT_CAPACITY_CODE);
             }
 
-            if (strRH.find(GIS_CUMUL_AVG_OFLOW_DEPTH_CODE) != string::npos)
+            if (strRH.find(GIS_AVG_OVERLANDFLOW_DEPTH_CODE) != string::npos)
             {
                m_bCumulAvgDepthSave = true;
-               strRH = strRemoveSubstr(&strRH, &GIS_CUMUL_AVG_OFLOW_DEPTH_CODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_AVG_OVERLANDFLOW_DEPTH_CODE);
             }
 
-            if (strRH.find(GIS_CUMUL_AVG_OFLOW_SPEED_CODE) != string::npos)
+            if (strRH.find(GIS_AVG_OVERLANDFLOW_SPEED_CODE) != string::npos)
             {
                m_bCumulAvgSpdSave = true;
-               strRH = strRemoveSubstr(&strRH, &GIS_CUMUL_AVG_OFLOW_SPEED_CODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_AVG_OVERLANDFLOW_SPEED_CODE);
             }
 
-            if (strRH.find(GIS_CUMUL_AVG_OFLOW_DW_SPEED_CODE) != string::npos)
+            if (strRH.find(GIS_AVG_OVERLANDFLOW_DW_SPEED_CODE) != string::npos)
             {
                m_bCumulAvgDWSpdSave = true;
-               strRH = strRemoveSubstr(&strRH, &GIS_CUMUL_AVG_OFLOW_DW_SPEED_CODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_AVG_OVERLANDFLOW_DW_SPEED_CODE);
             }
 
             if (strRH.find(GIS_SEDIMENT_CONCENTRATION_CODE) != string::npos)
@@ -584,10 +584,10 @@ bool CSimulation::bReadRunData(void)
                strRH = strRemoveSubstr(&strRH, &GIS_SEDIMENT_LOAD_CODE);
             }
 
-            if (strRH.find(GIS_CUMUL_AVG_SEDIMENT_LOAD_CODE) != string::npos)
+            if (strRH.find(GIS_AVG_SEDIMENT_LOAD_CODE) != string::npos)
             {
                m_bAvgSedLoadSave = true;
-               strRH = strRemoveSubstr(&strRH, &GIS_CUMUL_AVG_SEDIMENT_LOAD_CODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_AVG_SEDIMENT_LOAD_CODE);
             }
 
             if (strRH.find(GIS_CUMUL_ALL_SIZE_FLOW_DEPOSIT_CODE) != string::npos)
@@ -603,10 +603,10 @@ bool CSimulation::bReadRunData(void)
             }
 
 #if defined _DEBUG
-            if (strRH.find(GIS_CUMUL_AVG_OFLOW_FROM_EDGES_CODE) != string::npos)
+            if (strRH.find(GIS_AVG_OVERLANDFLOW_FROM_EDGES_CODE) != string::npos)
             {
                m_bLostSave = true;
-               strRH = strRemoveSubstr(&strRH, &GIS_CUMUL_AVG_OFLOW_FROM_EDGES_CODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_AVG_OVERLANDFLOW_FROM_EDGES_CODE);
             }
 #endif
 
@@ -700,10 +700,10 @@ bool CSimulation::bReadRunData(void)
                strRH = strRemoveSubstr(&strRH, &RUNON_TIME_SERIES_CODE);
             }
 
-            if (strRH.find(OFLOW_TIME_SERIES_CODE) != string::npos)
+            if (strRH.find(OVERLANDFLOW_TIME_SERIES_CODE) != string::npos)
             {
                m_bSurfaceWaterTS = true;
-               strRH = strRemoveSubstr(&strRH, &OFLOW_TIME_SERIES_CODE);
+               strRH = strRemoveSubstr(&strRH, &OVERLANDFLOW_TIME_SERIES_CODE);
             }
 
             if (strRH.find(WATER_LOST_TIME_SERIES_CODE) != string::npos)
@@ -1637,8 +1637,15 @@ bool CSimulation::bReadRunData(void)
 
          break;
 
-      // ------------------------------------------------------------ Flow Erosion- ---------------------------------------------------
       case 47:
+         // Maximum flow speed (mm/sec)
+         m_dFlowSpeedLimit = stod(strRH);
+         if (m_dFlowSpeedLimit <= 0)
+            strErr = "maximum flow speed must be greater than zero";
+         break;
+
+      // ------------------------------------------------------------ Flow Erosion- ---------------------------------------------------
+      case 48:
          // Simulate flow erosion?
          strRH = strToLower(&strRH);
 
@@ -1651,21 +1658,21 @@ bool CSimulation::bReadRunData(void)
 
          break;
 
-      case 48:
+      case 49:
          // K in detachment equation
          m_dK = stod(strRH);
          if (m_bFlowErosion && (m_dK <= 0))
             strErr = "constant k for detachment";
          break;
 
-      case 49:
+      case 50:
          // T in detachment equation
          m_dT = stod(strRH);
          if (m_bFlowErosion && (m_dT <= 0))
             strErr = "constant T for detachment";
          break;
 
-      case 50:
+      case 51:
          // CV of T in detachment equation
          m_dCVT = stod(strRH);
          if (m_bFlowErosion)
@@ -1675,7 +1682,7 @@ bool CSimulation::bReadRunData(void)
          }
          break;
 
-      case 51:
+      case 52:
          // CV of tau-b in detachment equation
          m_dCVTaub = stod(strRH);
          if (m_bFlowErosion && (m_dCVTaub <= 0))
@@ -1683,28 +1690,28 @@ bool CSimulation::bReadRunData(void)
          break;
 
       // -------------------------------------------------------- Transport Capacity --------------------------------------------------
-      case 52:
+      case 53:
          // Alpha in transport capacity equation
          m_dAlpha = stod(strRH);
          if (m_bFlowErosion && (m_dAlpha >= 0))
             strErr = "alpha for transport capacity";
          break;
 
-      case 53:
+      case 54:
          // Beta in transport capacity equation
          m_dBeta = stod(strRH);
          if (m_bFlowErosion && (m_dBeta <= 0))
             strErr = "beta for transport capacity";
          break;
 
-      case 54:
+      case 55:
          // Gamma in transport capacity equation
          m_dGamma = stod(strRH);
          if (m_bFlowErosion && (m_dGamma <= 0))
             strErr = "gamma for transport capacity";
          break;
 
-      case 55:
+      case 56:
          // Delta in transport capacity equation
          m_dDelta = stod(strRH);
          if (m_bFlowErosion && (m_dDelta <= 0))
@@ -1712,35 +1719,35 @@ bool CSimulation::bReadRunData(void)
          break;
 
       // ----------------------------------------------------------- Deposition -------------------------------------------------------
-      case 56:
+      case 57:
          // Grain density (kg/m**3)
          m_dDepositionGrainDensity = stod(strRH);
          if (m_bFlowErosion && (m_dDepositionGrainDensity <= 0))
             strErr = "grain density, for deposition";
          break;
 
-      case 57:
+      case 58:
          // Clay minimum size (mm)
          m_dClaySizeMin = stod(strRH);
          if (m_bFlowErosion && (m_dClaySizeMin < 0))
             strErr = "clay minimum size, for deposition";
          break;
 
-      case 58:
+      case 59:
          // Clay-silt threshold size (mm)
          m_dClaySiltBoundarySize = stod(strRH);
          if (m_bFlowErosion && (m_dClaySiltBoundarySize <= m_dClaySizeMin))
             strErr = "clay-silt threshold size, for deposition";
          break;
 
-      case 59:
+      case 60:
          // Silt-Sand threshold size (mm)
          m_dSiltSandBoundarySize = stod(strRH);
          if (m_bFlowErosion && (m_dSiltSandBoundarySize <= m_dClaySiltBoundarySize))
             strErr = "silt-sand threshold size, for deposition";
          break;
 
-      case 60:
+      case 61:
          // Sand maximum size (mm)
          m_dSandSizeMax = stod(strRH);
          if (m_bFlowErosion && (m_dSandSizeMax <= m_dSiltSandBoundarySize))
@@ -1748,7 +1755,7 @@ bool CSimulation::bReadRunData(void)
          break;
 
       // -------------------------------------------------------------- Slumping ------------------------------------------------------
-      case 61:
+      case 62:
          // Simulate slumping?
          strRH = strToLower(&strRH);
          if (strRH.find('y') != string::npos)
@@ -1759,28 +1766,28 @@ bool CSimulation::bReadRunData(void)
             strErr = "slumping switch";
          break;
 
-      case 62:
+      case 63:
          // Radius of soil shear stress 'patch'
          m_dSSSPatchSize = stod(strRH);                    // mm
          if (m_bSlumping && (m_dSSSPatchSize <= 0))
             strErr = "radius of soil shear stress 'patch', for slumping";
          break;
 
-      case 63:
+      case 64:
          // Threshold shear stress for slumping
          m_dCritSSSForSlump = stod(strRH);                    // kg/m s**2 (Pa)
          if (m_bSlumping && (m_dCritSSSForSlump < 0))
             strErr = "threshold shear stress for slumping";
          break;
 
-      case 64:
+      case 65:
          // Angle of rest for saturated slumped soil
          m_dSlumpAngleOfRest = stod(strRH);                        // in per cent
          if (m_bSlumping && (m_dSlumpAngleOfRest < 0))
             strErr = "angle of rest for slumped soil";
          break;
 
-      case 65:
+      case 66:
          // Critical angle for toppling soil (not saturated)
          m_dToppleCriticalAngle = stod(strRH);                     // in per cent
          if (m_bSlumping)
@@ -1790,7 +1797,7 @@ bool CSimulation::bReadRunData(void)
          }
          break;
 
-      case 66:
+      case 67:
          // Angle of rest for toppled soil (not saturated)
          m_dToppleAngleOfRest = stod(strRH);                       // in per cent
          if (m_bSlumping)
@@ -1804,7 +1811,7 @@ bool CSimulation::bReadRunData(void)
          break;
 
          // ---------------------------------------------------------- Headcut Retreat ---------------------------------------------------
-      case 67:
+      case 68:
          // Simulate headcut retreat?
          strRH = strToLower(&strRH);
          if (strRH.find('y') != string::npos)
@@ -1815,7 +1822,7 @@ bool CSimulation::bReadRunData(void)
             strErr = "headcut retreat switch";
          break;
 
-      case 68:
+      case 69:
          // Headcut retreat constant
          m_dHeadcutRetreatConst = stod(strRH);
          if (m_dHeadcutRetreatConst <= 0)
@@ -1823,21 +1830,21 @@ bool CSimulation::bReadRunData(void)
          break;
 
          // --------------------------------------------------- Various Physical Constants -----------------------------------------------
-      case 69:
+      case 70:
          // Density of water
          m_dRho = stod(strRH);                                    // kg/m**3
          if (m_dRho <= 0)
             strErr = "density of water";
          break;
 
-      case 70:
+      case 71:
          // Viscosity of water
          m_dNu = stod(strRH);                                     // m**2/sec
          if (m_dNu <= 0)
             strErr = "viscosity of water";
          break;
 
-      case 71:
+      case 72:
          // Gravitational acceleration
          m_dG = stod(strRH);                                      // m/sec**2
          if (m_dG <= 0)

@@ -1,6 +1,6 @@
 /*=========================================================================================================================================
 
- This is rg.cpp: the start-up routine for RillGrow. This simulates the growth and development of rills on a bare soil area as a
+ This is rg.cpp: the start-up routine for RillGrow. This software simulates the growth and development of rills on a bare soil area as a
  self-organising complex system.
 
  Copyright (C) 2020 David Favis-Mortlock

@@ -44,7 +44,7 @@ public:
 
    void InitializeRainAndRunon(void);
 
-   void dAddRain(double const);
+   void AddRain(double const);
    double dGetRain(void) const;
    double dGetCumulRain(void) const;
    void SetRainVarM(double const);

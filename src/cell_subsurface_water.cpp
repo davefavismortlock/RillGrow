@@ -45,6 +45,13 @@ void CSoilWater::Infiltrate(double const dInfilt)
 {
    m_pCell->pGetSurfaceWater()->ChangeSurfaceWater(-dInfilt);
 
+   // Is the cell now dry?
+   if (! m_pCell->pGetSurfaceWater()->bIsWet())
+      m_pCell->m_pSim->DecrNumWetCells();
+
+   // Subtract from the this-iteration total depth of overland flow
+   m_pCell->m_pSim->AddSurfaceWater(-dInfilt);
+
    // Get a pointer to the top layer
    CLayer* pLayer = m_pCell->pGetSoil()->pLayerGetLayer(0);
 
@@ -64,7 +71,7 @@ void CSoilWater::InfiltrateAndMakeDry(void)
       dSiltSediment = m_pCell->pGetSediment()->dGetSiltSedimentLoad(),
       dSandSediment = m_pCell->pGetSediment()->dGetSandSedimentLoad();
 
-   // First sort out the water
+   // First remove the surface water (also decrements the surface water total, and count of wet cells)
    m_pCell->pGetSurfaceWater()->SetSurfaceWaterZero();
 
    // Get a pointer to the top layer

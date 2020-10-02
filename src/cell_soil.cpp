@@ -246,9 +246,9 @@ void CSoil::DoFlowDetach(double const dDepthToErode)
    m_dCumulSandFlowDetach += dTotSandDetached;
 
    // Add to the this-iteration totals
-   m_pSim->AddThisIterClayFlowDetach(dTotClayEroded);
-   m_pSim->AddThisIterSiltFlowDetach(dTotSiltDetached);
-   m_pSim->AddThisIterSandFlowDetach(dTotSandDetached);
+   m_pSim->AddClayFlowDetach(dTotClayEroded);
+   m_pSim->AddSiltFlowDetach(dTotSiltDetached);
+   m_pSim->AddSandFlowDetach(dTotSandDetached);
 }
 
 
@@ -312,9 +312,9 @@ void CSoil::DoFlowDeposit(double const dClayFraction, double const dSiltFraction
    m_dCumulSandFlowDeposit += dSandToDeposit;
 
    // Add to the this-iteration totals
-   m_pSim->AddThisIterClayFlowDeposit(dClayToDeposit);
-   m_pSim->AddThisIterSiltFlowDeposit(dSiltToDeposit);
-   m_pSim->AddThisIterSandFlowDeposit(dSandToDeposit);
+   m_pSim->AddClayFlowDeposit(dClayToDeposit);
+   m_pSim->AddSiltFlowDeposit(dSiltToDeposit);
+   m_pSim->AddSandFlowDeposit(dSandToDeposit);
 }
 
 // Returns the this-iteration clay-sized overland flow detachment for this cell
@@ -453,7 +453,7 @@ void CSoil::DoSplashDetach(double const dThickness)
    m_dCumulSandSplashDetach += dTotSandDetached;
 
    // Add to the this-iteration totals
-   m_pSim->AddThisIterSplashDetach(dTotClayEroded, dTotSiltDetached, dTotSandDetached);
+   m_pSim->AddSplashDetach(dTotClayEroded, dTotSiltDetached, dTotSandDetached);
 }
 
 // Set the temporary splash deposition field for this cell
@@ -493,9 +493,9 @@ void CSoil::DoSplashDeposit(double const dClayChangeElev, double const dSiltChan
    m_dCumulSandSplashDeposit += dSandChangeElev;
 
    // Add to the this-iteration totals
-   m_pSim->AddThisIterClaySplashDeposit(dClayChangeElev);
-   m_pSim->AddThisIterSiltSplashDeposit(dSiltChangeElev);
-   m_pSim->AddThisIterSandSplashDeposit(dSandChangeElev);
+   m_pSim->AddClaySplashDeposit(dClayChangeElev);
+   m_pSim->AddSiltSplashDeposit(dSiltChangeElev);
+   m_pSim->AddSandSplashDeposit(dSandChangeElev);
 }
 
 // Returns the depth of clay-sized splash detachment for this iteration on this cell
@@ -632,9 +632,9 @@ void CSoil::DoSlumpDetach(double const dThickness, double& dTotClayDetached, dou
    m_dCumulSandSlumpDetach += dTotSandDetached;
 
    // Add to the this-iteration totals
-   m_pSim->AddThisIterClaySlumpDetach(dTotClayDetached);
-   m_pSim->AddThisIterSiltSlumpDetach(dTotSiltDetached);
-   m_pSim->AddThisIterSandSlumpDetach(dTotSandDetached);
+   m_pSim->AddClaySlumpDetach(dTotClayDetached);
+   m_pSim->AddSiltSlumpDetach(dTotSiltDetached);
+   m_pSim->AddSandSlumpDetach(dTotSandDetached);
 }
 
 
@@ -689,9 +689,9 @@ void CSoil::DoToppleDetach(double const dThickness, double& dTotClayDetached, do
    m_dCumulSandToppleDetach += dTotSandDetached;
 
    // Add to the this-iteration totals
-   m_pSim->AddThisIterClayToppleDetach(dTotClayDetached);
-   m_pSim->AddThisIterSiltToppleDetach(dTotSiltDetached);
-   m_pSim->AddThisIterSandToppleDetach(dTotSandDetached);
+   m_pSim->AddClayToppleDetach(dTotClayDetached);
+   m_pSim->AddSiltToppleDetach(dTotSiltDetached);
+   m_pSim->AddSandToppleDetach(dTotSandDetached);
 }
 
 // Adds sediment to this cell as a result of toppling
@@ -894,9 +894,9 @@ void CSoil::DoInfiltrationDeposit(double const dClayDeposit, double const dSiltD
    m_dSandInfiltDeposit += dSandDeposit;
 
    // Add to the this-iteration totals
-   m_pSim->AddThisIterClayFlowDeposit(dClayDeposit);
-   m_pSim->AddThisIterSiltFlowDeposit(dSiltDeposit);
-   m_pSim->AddThisIterSandFlowDeposit(dSandDeposit);
+   m_pSim->AddClayFlowDeposit(dClayDeposit);
+   m_pSim->AddSiltFlowDeposit(dSiltDeposit);
+   m_pSim->AddSandFlowDeposit(dSandDeposit);
 }
 
 void CSoil::SetInfiltrationDepositionZero(void)
@@ -1023,9 +1023,9 @@ void CSoil::DoHeadcutRetreatDetach(double const dThickness, double& dTotClayDeta
    m_dCumulSandHeadcutRetreatDetach += dTotSandDetached;
 
    // Add to the this-iteration totals
-   m_pSim->AddThisIterClayHeadcutRetreatDetach(dTotClayDetached);
-   m_pSim->AddThisIterSiltHeadcutRetreatDetach(dTotSiltDetached);
-   m_pSim->AddThisIterSandHeadcutRetreatDetach(dTotSandDetached);
+   m_pSim->AddClayHeadcutRetreatDetach(dTotClayDetached);
+   m_pSim->AddSiltHeadcutRetreatDetach(dTotSiltDetached);
+   m_pSim->AddSandHeadcutRetreatDetach(dTotSandDetached);
 }
 
 

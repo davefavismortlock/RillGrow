@@ -125,7 +125,7 @@ CSimulation::CSimulation(void)
    m_nHeaderSize        =
    m_nRainChangeTimeMax =
    m_nNumSoilLayers     =
-   m_nSSSQuadrantSize        = 0;
+   m_nSSSQuadrantSize   = 0;
    m_nZUnits            = Z_UNIT_NONE;
 
    m_ulIter              =
@@ -144,8 +144,9 @@ CSimulation::CSimulation(void)
    m_dMaxX                          =
    m_dMinY                          =
    m_dMaxY                          =
-   m_dMaxSpeed                      =
-   m_dPossibleMaxSpeed              =
+   m_dMaxFlowSpeed                  =
+   m_dPossMaxSpeedNextIter          =
+   m_dFlowSpeedLimit                =
    m_dBasementElevation             =
    m_dAvgElev                       =
    m_dMinElev                       =
@@ -429,7 +430,7 @@ CSimulation::~CSimulation(void)
  Within-file static member variable initialisations
 
 ========================================================================================================================================*/
-CSimulation* CCell::m_pSim = NULL;                    // Initialise m_pSim, the static member of CCell
+CSimulation* CCell::m_pSim = NULL;                    // Initialize m_pSim, the static member of CCell
 CSimulation* CSoil::m_pSim = NULL;                    // Ditto for the CSoil class
 CSimulation* CRainAndRunon::m_pSim = NULL;            // Ditto for the CRainAndRunon class
 CSimulation* CSurfaceWater::m_pSim = NULL;            // Ditto for the CSurfaceWater class
@@ -438,7 +439,7 @@ CSimulation* CSediment::m_pSim = NULL;                // Ditto for the CSediment
 
 /*========================================================================================================================================
 
- This member function of CSimulation sets up and runs the simulation
+ This publicly visible member function of CSimulation sets up and runs the simulation
 
 ========================================================================================================================================*/
 int CSimulation::nDoRun(int nArg, char* pcArgv[])
@@ -553,7 +554,7 @@ int CSimulation::nDoRun(int nArg, char* pcArgv[])
    m_dOffEdgeConst = m_dOffEdgeParamA * pow(m_dGradient, m_dOffEdgeParamB);
 
    // Start with a guessed-in maximum flow speed
-   m_dMaxSpeed = INIT_MAX_SPEED_GUESS;
+   m_dMaxFlowSpeed = INIT_MAX_SPEED_GUESS;
 
    // Calculate a 'constant' for detachment, do this now for efficiency
    m_dST2 = m_dCVT * m_dCVT * m_dT * m_dT;
@@ -684,29 +685,54 @@ void CSimulation::CreateSoilLayers(void)
 ========================================================================================================================================*/
 void CSimulation::CalcTimestep(void)
 {
-   // Increase m_dMaxSpeed if necessary
-   m_dMaxSpeed = tMax(m_dMaxSpeed, m_dPossibleMaxSpeed);
-
-   if (0 == m_dPossibleMaxSpeed)
+   if (m_dPossMaxSpeedNextIter == 0)
    {
-      // No flow occurred. Is it raining?
-      if (m_dRainIntensity > 0)
-         m_dTimeStep = DEFAULT_TIMESTEP_RAIN;
-      else
-         m_dTimeStep = DEFAULT_TIMESTEP_NORAIN;
+      // No flow occurred, so set the timestep for the next iteration based on a guessed-in value for flow speed
+      m_dTimeStep = m_dCellSide / INIT_MAX_SPEED_GUESS;                             // In sec
    }
    else
    {
-      // Some flow occurred: first work out an equivalent of the 'Courant–Friedrichs–Lewy condition' i.e. the time needed for flow to cross a cell at the maximum speed during the last iteration, plus an arbitrary safety margin. COURANT_ALPHA = delta_time / delta_distance See e.g. http://en.wikipedia.org/wiki/Courant%E2%80%93Friedrichs%E2%80%93Lewy_condition
-      double dTmp = COURANT_ALPHA * m_dCellSide / m_dMaxSpeed;                   // in sec
+      // Some flow occurred: calculate the possible next timestep. Start by constraining the max possible flow speed
+      m_dPossMaxSpeedNextIter = tMin(m_dPossMaxSpeedNextIter, m_dFlowSpeedLimit);
 
-      // However, don't want to change timestep too dramatically at the beginning of the simulation. We can get a relatively long timestep as soon as the first, very slow, flow occurs; during which a great deal of splash occurs, probably too much to be comfortably handled by the splash routines). So constrain the newly calculated value
-      if (dTmp > m_dTimeStep)
-         // Timestep getting longer
-         m_dTimeStep = tMin(dTmp, m_dTimeStep * (1 + TIMESTEP_CHANGE_FACTOR));
+      // OK now calculate the possible timestep
+      double dPossNextTimeStep = m_dCellSide / m_dPossMaxSpeedNextIter;             // In sec
 
-      m_dPossibleMaxSpeed = 0;                                                   // reset for next time
+      // Is the timestep increasing or decreasing?
+      if (dPossNextTimeStep > m_dTimeStep)
+      {
+         // Timestep is increasing i.e. flow is slowing down
+         double dTmp = m_dTimeStep / dPossNextTimeStep;
+         if (dTmp > COURANT_ALPHA)
+         {
+            // The change in timestep is small
+            m_dTimeStep = dPossNextTimeStep;
+         }
+         else
+         {
+            // The change in timestep is large, so we need to make a smaller change. This is equivalent to the 'Courant–Friedrichs–Lewy condition' i.e. the time needed for flow to cross a cell at the maximum speed during the last iteration, plus an arbitrary safety margin. COURANT_ALPHA = delta_time / delta_distance See e.g. http://en.wikipedia.org/wiki/Courant%E2%80%93Friedrichs%E2%80%93Lewy_condition
+            m_dTimeStep = m_dTimeStep / COURANT_ALPHA;
+         }
+      }
+      else
+      {
+         // Timestep is decreasing i.e. flow is speeding up
+         double dTmp = dPossNextTimeStep / m_dTimeStep;
+         if (dTmp > COURANT_ALPHA)
+         {
+            // The change in timestep is small
+            m_dTimeStep = dPossNextTimeStep;
+         }
+         else
+         {
+            // The change in timestep is large, so we need to make a smaller change. This is equivalent to the 'Courant–Friedrichs–Lewy condition' i.e. the time needed for flow to cross a cell at the maximum speed during the last iteration, plus an arbitrary safety margin. COURANT_ALPHA = delta_time / delta_distance See e.g. http://en.wikipedia.org/wiki/Courant%E2%80%93Friedrichs%E2%80%93Lewy_condition
+            m_dTimeStep = m_dTimeStep * COURANT_ALPHA;
+         }
+      }
    }
+
+   // Set max flow speed for the next iteration
+   m_dMaxFlowSpeed = m_dCellSide / m_dTimeStep;
 }
 
 
@@ -1146,10 +1172,9 @@ int CSimulation::nDoSimulation(void)
    return (RTN_OK);
 }
 
-
 /*==============================================================================================================================
 
- Returns the current timestep
+ Publicly visible, returns the current timestep
 
 ==============================================================================================================================*/
 double CSimulation::dGetTimeStep(void) const
@@ -1157,23 +1182,32 @@ double CSimulation::dGetTimeStep(void) const
    return m_dTimeStep;
 }
 
-
 /*==============================================================================================================================
 
- Increments the this-iteration total of wet cells
+ Publicly visible, increments the this-iteration total of wet cells
 
 ==============================================================================================================================*/
-void CSimulation::IncrThisIterNumWetCells(void)
+void CSimulation::IncrNumWetCells(void)
 {
    m_ulNWet++;
 }
 
 /*==============================================================================================================================
 
- Decrements the this-iteration total of wet cells
+ Publicly visible, decrements the this-iteration total of wet cells
 
  ==============================================================================================================================*/
-void CSimulation::DecrThisIterNumWetCells(void)
+void CSimulation::DecrNumWetCells(void)
 {
    m_ulNWet--;
+}
+
+/*==============================================================================================================================
+
+ Publicly-visible wrapper around dGetRand0Gaussian(), needed for cell surface water initialisation
+
+==============================================================================================================================*/
+double CSimulation::dGetRandGaussian(void)
+{
+   return dGetRand0Gaussian();
 }

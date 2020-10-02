@@ -76,4 +76,3 @@ ostream& operator<< (ostream& ostr, const FillToWidth& args)
 
    return ostr;
 }
-

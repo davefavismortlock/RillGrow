@@ -141,8 +141,9 @@ private:
       m_dMaxX,
       m_dMinY,
       m_dMaxY,
-      m_dMaxSpeed,
-      m_dPossibleMaxSpeed,
+      m_dMaxFlowSpeed,
+      m_dPossMaxSpeedNextIter,
+      m_dFlowSpeedLimit,
       m_dBasementElevation,
       m_dAvgElev,
       m_dMinElev,
@@ -412,7 +413,7 @@ private:
       m_ofsSoilWaterTS;
 
    CCell** Cell;                       // Pointer to 2D array of soil cell objects
-   double** m_SSSWeightQuadrant;       // Pointer to 2D array for weights for soil shear stress spatial distribution
+   double** m_SSSWeightQuadrant;       // Pointer to 2D array for weights for soil shear stress spatial distribution, used for slumping
 
 private:
    // Initialization
@@ -545,41 +546,42 @@ public:
    double dGetCellSide(void) const;
    double dGetCellSideDiag(void) const;
 
-   void IncrThisIterNumWetCells(void);
-   void DecrThisIterNumWetCells(void);
+   void IncrNumWetCells(void);
+   void DecrNumWetCells(void);
 
-   void AddThisIterSurfaceWater(double const);
+   void AddSurfaceWater(double const);
 
-   void AddThisIterClaySedimentLoad(double const);
-   void AddThisIterSiltSedimentLoad(double const);
-   void AddThisIterSandSedimentLoad(double const);
+   void AddClaySedimentLoad(double const);
+   void AddSiltSedimentLoad(double const);
+   void AddSandSedimentLoad(double const);
 
-   void AddThisIterClayFlowDetach(double const);
-   void AddThisIterSiltFlowDetach(double const);
-   void AddThisIterSandFlowDetach(double const);
+   void AddClayFlowDetach(double const);
+   void AddSiltFlowDetach(double const);
+   void AddSandFlowDetach(double const);
 
-   void AddThisIterClayFlowDeposit(double const);
-   void AddThisIterSiltFlowDeposit(double const);
-   void AddThisIterSandFlowDeposit(double const);
+   void AddClayFlowDeposit(double const);
+   void AddSiltFlowDeposit(double const);
+   void AddSandFlowDeposit(double const);
 
-   void AddThisIterSplashDetach(double const, double const, double const);
+   void AddSplashDetach(double const, double const, double const);
 
-   void AddThisIterClaySplashDeposit(double const);
-   void AddThisIterSiltSplashDeposit(double const);
-   void AddThisIterSandSplashDeposit(double const);
+   void AddClaySplashDeposit(double const);
+   void AddSiltSplashDeposit(double const);
+   void AddSandSplashDeposit(double const);
 
-   void AddThisIterClaySlumpDetach(double const);
-   void AddThisIterSiltSlumpDetach(double const);
-   void AddThisIterSandSlumpDetach(double const);
+   void AddClaySlumpDetach(double const);
+   void AddSiltSlumpDetach(double const);
+   void AddSandSlumpDetach(double const);
 
-   void AddThisIterClayToppleDetach(double const);
-   void AddThisIterSiltToppleDetach(double const);
-   void AddThisIterSandToppleDetach(double const);
+   void AddClayToppleDetach(double const);
+   void AddSiltToppleDetach(double const);
+   void AddSandToppleDetach(double const);
 
-   void AddThisIterClayHeadcutRetreatDetach(double const);
-   void AddThisIterSiltHeadcutRetreatDetach(double const);
-   void AddThisIterSandHeadcutRetreatDetach(double const);
+   void AddClayHeadcutRetreatDetach(double const);
+   void AddSiltHeadcutRetreatDetach(double const);
+   void AddSandHeadcutRetreatDetach(double const);
 
+   double dGetRandGaussian(void);
 };
 
 #endif                  // __SIMULATION_H__

@@ -51,7 +51,7 @@ void CRainAndRunon::InitializeRainAndRunon(void)
 }
 
 // Increments rainfall for this cell, also adds to the overland flow in the cell
-void CRainAndRunon::dAddRain(double const dRain)
+void CRainAndRunon::AddRain(double const dRain)
 {
    // Add rain to this cell
    m_dRain      += dRain;
@@ -60,18 +60,21 @@ void CRainAndRunon::dAddRain(double const dRain)
    // Was the cell previously dry?
    if (! m_pCell->pGetSurfaceWater()->bIsWet())
    {
-      // It was, so increment the number of wet cells
-      m_pSim->IncrThisIterNumWetCells();
+      // It was, so increment the count of wet cells
+      m_pSim->IncrNumWetCells();
 
-      // And initialize flow velocity on this cell
+      // And initialize flow velocities on this cell
       m_pCell->pGetSurfaceWater()->InitializeAllFlowVelocity();
 
       // Initialize sediment load
       m_pCell->pGetSediment()->InitializeAllSizeSedimentLoad();
    }
 
-   // Increase the depth of overland flow
+   // Increase the depth of overland flow on the cell
    m_pCell->pGetSurfaceWater()->ChangeSurfaceWater(dRain);
+
+   // Add to the this-iteration surface water total
+   m_pSim->AddSurfaceWater(dRain);
 }
 
 // Returns the this-timestep rainfall on this cell
@@ -110,10 +113,10 @@ void CRainAndRunon::AddRunOn(double const dRunOn)
    // Was the cell previously dry?
    if (! m_pCell->pGetSurfaceWater()->bIsWet())
    {
-      // It was, so increment this this-iteration count of wet cells
-      m_pSim->IncrThisIterNumWetCells();
+      // It was, so increment the count of wet cells
+      m_pSim->IncrNumWetCells();
 
-      // And initialize flow velocity for this cell
+      // And initialize flow velocities for this cell
       m_pCell->pGetSurfaceWater()->InitializeAllFlowVelocity();
 
       // Initialize sediment load
@@ -122,6 +125,9 @@ void CRainAndRunon::AddRunOn(double const dRunOn)
 
    // Increase the depth of overland flow
    m_pCell->pGetSurfaceWater()->ChangeSurfaceWater(dRunOn);
+
+   // Add to the this-iteration surface water total
+   m_pSim->AddSurfaceWater(dRunOn);
 }
 
 // Returns the this-timestep run-on on this cell

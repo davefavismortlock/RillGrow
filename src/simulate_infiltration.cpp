@@ -248,6 +248,14 @@ void CSimulation::DoCellExfiltration(int const nX, int const nY, int const nLaye
 
       // Remove water from this layer and add it to the overland flow
       pLayer->ChangeSoilWater(-dExcess);
+
+      // Was the cell previously dry?
+      if (! Cell[nX][nY].pGetSurfaceWater()->bIsWet())
+         m_ulNWet++;
+
+      // Add to the this-iteration total depth of overland flow
+      AddSurfaceWater(dExcess);
+
       Cell[nX][nY].pGetSurfaceWater()->ChangeSurfaceWater(dExcess);
 
       m_dThisIterExfiltration += dExcess;

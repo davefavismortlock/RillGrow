@@ -64,7 +64,7 @@ void CSurfaceWater::SetInundation(int const nNewInundation)
    m_nInundationClass = nNewInundation;
 }
 
-// Returns the inundation class
+// Returns the inundation class when using the Lawrence flow speed approach
 int CSurfaceWater::nGetInundation(void) const
 {
    return m_nInundationClass;
@@ -84,28 +84,28 @@ int CSurfaceWater::nGetFlowDirection(void) const
 }
 
 
-// Changes this cell's overland flow depth. Assumes that cell is already wet (or that chahes to number of wet cells etc. have already been taken care of.) Note no checks here to see if new depth is sensible (e.g. non-negative)
+// Changes this cell's overland flow depth. Assumes that cell is already wet (and does not change the count of wet cells)
 void CSurfaceWater::ChangeSurfaceWater(double const dNewWater)
 {
-   m_pSim->AddThisIterSurfaceWater(dNewWater);
-
    m_dSurfaceWaterDepth += dNewWater;
    m_dCumulSurfaceWaterDepth += dNewWater;
+
+   assert(m_dSurfaceWaterDepth >= 0);
 }
 
-// Sets this cell's overland flow depth to zero
+// Sets this cell's overland flow depth to zero, also decrements the count of wet cells and removes from the this-iteration surface water total
 void CSurfaceWater::SetSurfaceWaterZero(void)
 {
+   // Subtract from the this-iteration total depth of overland flow
+   m_pSim->AddSurfaceWater(-m_dSurfaceWaterDepth);
+
+   // Decrement the count of wet cells
+   m_pSim->DecrNumWetCells();
+
    m_dCumulSurfaceWaterDepth -= m_dSurfaceWaterDepth;
    m_dSurfaceWaterDepth = 0;
 
-   this->InitializeAllFlowVelocity();
-
-   // Subtract from the this-iteration total depth of overland flow
-   m_pSim->AddThisIterSurfaceWater(-m_dSurfaceWaterDepth);
-
-   // Decrement the this-iteration total of wet cells
-   m_pSim->DecrThisIterNumWetCells();
+   this->ZeroAllFlowVelocity();
 }
 
 // Returns the depth of overland flow (in mm) on this cell
@@ -144,6 +144,18 @@ double CSurfaceWater::dGetCumulSurfaceWaterLost(void) const
 
 // Initialize flow velocities
 void CSurfaceWater::InitializeAllFlowVelocity(void)
+{
+   // Need to make this small +ve or -Ve random to seed Reynolds' number calculations if using Darcy-Weisbach/Reynolds' flow speed calcs. Could be zero for other approaches, but does no harm
+   m_vFlowVelocity.x = m_pSim->dGetRandGaussian() * INIT_MAX_SPEED_GUESS;
+   m_vFlowVelocity.y = m_pSim->dGetRandGaussian() * INIT_MAX_SPEED_GUESS;
+
+   // Set these to zero
+   m_vDWFlowVelocity.x =
+   m_vDWFlowVelocity.y = 0;
+}
+
+// Zero all flow velocities
+void CSurfaceWater::ZeroAllFlowVelocity(void)
 {
    m_vFlowVelocity.x =
    m_vFlowVelocity.y =
@@ -315,4 +327,3 @@ double CSurfaceWater::dGetFroude(double const dG) const
    // Divide by 1e3 in each case because in mm/sec and mm, need them in m/sec and m
    return ((m_dSurfaceWaterDepth > 0) ? m_vFlowVelocity.dToScalar() * 1e-3 / sqrt(m_dSurfaceWaterDepth * dG * 1e-3) : 0);
 }
-

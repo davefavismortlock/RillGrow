@@ -186,9 +186,9 @@ void CSimulation::DoAllRain(void)
       double dTmpDpth = dGetRand0GaussPos(m_dMeanCellWaterVol, m_dStdCellWaterVol) * m_dInvCellSquare * Cell[nX][nY].pGetRainAndRunon()->dGetRainVarM();
 
       // Add to rainfall amount and water depth for this cell on the Cell array
-      Cell[nX][nY].pGetRainAndRunon()->dAddRain(dTmpDpth);
+      Cell[nX][nY].pGetRainAndRunon()->AddRain(dTmpDpth);
 
-      // Also add to the this-iteration total
+      // Also add to the this-iteration total of rain
       m_dThisIterRain += dTmpDpth;
    }
 }

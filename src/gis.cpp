@@ -362,7 +362,6 @@ void CSimulation::MarkEdgeCells(void)
 }
 
 
-
 /*========================================================================================================================================
 
  Reads the spatial rainfall variation data into the Cell array
@@ -623,8 +622,8 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
          strFilDat.append(GIS_DETREND_ELEVATION_FILENAME);
          break;
 
-      case (GIS_OFLOW_DEPTH) :
-         strFilDat.append(GIS_OFLOW_DEPTH_FILENAME);
+      case (GIS_OVERLANDFLOW_DEPTH) :
+         strFilDat.append(GIS_OVERLANDFLOW_DEPTH_FILENAME);
          break;
 
       case (GIS_ALL_SIZE_FLOW_DETACH) :
@@ -663,18 +662,17 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
          strFilDat.append(GIS_CUMUL_SPLASH_FILENAME);
          break;
 
-      case (GIS_OFLOW_SPEED) :
-         strFilDat.append(GIS_OFLOW_SPEED_FILENAME);
+      case (GIS_OVERLANDFLOW_SPEED) :
+         strFilDat.append(GIS_OVERLANDFLOW_SPEED_FILENAME);
          break;
 
-      case (GIS_OFLOW_DW_SPEED) :
-         strFilDat.append(GIS_OFLOW_DW_SPEED_FILENAME);
+      case (GIS_OVERLANDFLOW_DW_SPEED) :
+         strFilDat.append(GIS_OVERLANDFLOW_DW_SPEED_FILENAME);
          break;
 
 #if defined _DEBUG
-
-      case (GIS_CUMUL_AVG_OFLOW_FROM_EDGES) :
-         strFilDat.append(GIS_CUMUL_AVG_OFLOW_FROM_EDGES_FILENAME);
+      case (GIS_AVG_OVERLANDFLOW_FROM_EDGES) :
+         strFilDat.append(GIS_AVG_OVERLANDFLOW_FROM_EDGES_FILENAME);
          break;
 #endif
 
@@ -690,8 +688,8 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
          strFilDat.append(GIS_FRICTION_FACTOR_FILENAME);
          break;
 
-      case (GIS_CUMUL_AVG_SHEAR_STRESS) :
-         strFilDat.append(GIS_CUMUL_AVG_SHEAR_STRESS_FILENAME);
+      case (GIS_AVG_SHEAR_STRESS) :
+         strFilDat.append(GIS_AVG_SHEAR_STRESS_FILENAME);
          break;
 
       case (GIS_REYNOLDS_NUMBER) :
@@ -706,16 +704,16 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
          strFilDat.append(GIS_TRANSPORT_CAPACITY_FILENAME);
          break;
 
-      case (GIS_CUMUL_AVG_OFLOW_DEPTH) :
-         strFilDat.append(GIS_CUMUL_AVG_OFLOW_DEPTH_FILENAME);
+      case (GIS_AVG_OVERLANDFLOW_DEPTH) :
+         strFilDat.append(GIS_AVG_OVERLANDFLOW_DEPTH_FILENAME);
          break;
 
-      case (GIS_CUMUL_AVG_OFLOW_SPEED) :
-         strFilDat.append(GIS_CUMUL_AVG_OFLOW_SPEED_FILENAME);
+      case (GIS_AVG_OVERLANDFLOW_SPEED) :
+         strFilDat.append(GIS_AVG_OVERLANDFLOW_SPEED_FILENAME);
          break;
 
-      case (GIS_CUMUL_AVG_OFLOW_DW_SPEED) :
-         strFilDat.append(GIS_CUMUL_AVG_OFLOW_DW_SPEED_FILENAME);
+      case (GIS_AVG_OVERLANDFLOW_DW_SPEED) :
+         strFilDat.append(GIS_AVG_OVERLANDFLOW_DW_SPEED_FILENAME);
          break;
 
       case (GIS_CUMUL_ALL_SIZE_FLOW_DETACH) :
@@ -734,8 +732,8 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
          strFilDat.append(GIS_SEDIMENT_LOAD_FILENAME);
          break;
 
-      case (GIS_CUMUL_AVG_SEDIMENT_LOAD) :
-         strFilDat.append(GIS_CUMUL_AVG_SEDIMENT_LOAD_FILENAME);
+      case (GIS_AVG_SEDIMENT_LOAD) :
+         strFilDat.append(GIS_AVG_SEDIMENT_LOAD_FILENAME);
          break;
 
       case (GIS_CUMUL_SLUMP_DETACH) :
@@ -860,7 +858,7 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
                }
                break;
 
-            case (GIS_OFLOW_DEPTH) :
+            case (GIS_OVERLANDFLOW_DEPTH) :
                dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetSurfaceWaterDepth();
                break;
 
@@ -912,16 +910,16 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
                dTmp = Cell[nX][nY].pGetSoil()->dGetCumulAllSizeSplashDetach() - Cell[nX][nY].pGetSoil()->dGetCumulAllSizeSplashDeposit();
                break;
 
-            case (GIS_OFLOW_SPEED) :
+            case (GIS_OVERLANDFLOW_SPEED) :
                dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetFlowSpd();
                break;
 
-            case (GIS_OFLOW_DW_SPEED) :
+            case (GIS_OVERLANDFLOW_DW_SPEED) :
                dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetDWFlowSpd();
                break;
 
 #if defined _DEBUG
-            case (GIS_CUMUL_AVG_OFLOW_FROM_EDGES) :
+            case (GIS_AVG_OVERLANDFLOW_FROM_EDGES) :
                dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetCumulSurfaceWaterLost() / m_dSimulatedTimeElapsed;
                break;
 #endif
@@ -942,7 +940,7 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
                dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetFrictionFactor();
                break;
 
-            case (GIS_CUMUL_AVG_SHEAR_STRESS) :
+            case (GIS_AVG_SHEAR_STRESS) :
                dTmp = Cell[nX][nY].pGetSoil()->dGetCumulShearStress() / m_dSimulatedTimeElapsed;
                break;
 
@@ -958,15 +956,15 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
                dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetTransportCapacity();
                break;
 
-            case (GIS_CUMUL_AVG_OFLOW_DEPTH) :
+            case (GIS_AVG_OVERLANDFLOW_DEPTH) :
                dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetCumulSurfaceWater() / m_dSimulatedTimeElapsed;
                break;
 
-            case (GIS_CUMUL_AVG_OFLOW_SPEED) :
+            case (GIS_AVG_OVERLANDFLOW_SPEED) :
                dTmp = Cell[nX][nY].pGetSurfaceWater()->dCumulFlowSpeed() / m_dSimulatedTimeElapsed;
                break;
 
-            case (GIS_CUMUL_AVG_OFLOW_DW_SPEED) :
+            case (GIS_AVG_OVERLANDFLOW_DW_SPEED) :
                dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetCumulDWFlowSpd() / m_dSimulatedTimeElapsed;
                break;
 
@@ -986,7 +984,7 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
                dTmp = Cell[nX][nY].pGetSediment()->dGetAllSizeSedimentLoad();
                break;
 
-            case (GIS_CUMUL_AVG_SEDIMENT_LOAD) :
+            case (GIS_AVG_SEDIMENT_LOAD) :
                dTmp = Cell[nX][nY].pGetSediment()->dGetCumulAllSizeSedimentLoad() / m_dSimulatedTimeElapsed;
                break;
 
@@ -1046,8 +1044,8 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
       case (GIS_DETREND_ELEVATION) :
       case (GIS_CUMUL_RAIN) :
       case (GIS_CUMUL_RUNON) :
-      case (GIS_OFLOW_DEPTH) :
-      case (GIS_CUMUL_AVG_OFLOW_DEPTH) :
+      case (GIS_OVERLANDFLOW_DEPTH) :
+      case (GIS_AVG_OVERLANDFLOW_DEPTH) :
       case (GIS_INFILT) :
       case (GIS_CUMUL_INFILT) :
       case (GIS_SOIL_WATER) :
@@ -1055,7 +1053,7 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
       case (GIS_CUMUL_INFILT_DEPOSIT) :
       case (GIS_TOP_SURFACE) :
       case (GIS_SEDIMENT_LOAD) :
-      case (GIS_CUMUL_AVG_SEDIMENT_LOAD) :
+      case (GIS_AVG_SEDIMENT_LOAD) :
       case (GIS_SPLASH) :
       case (GIS_CUMUL_SPLASH) :
       case (GIS_ALL_SIZE_FLOW_DETACH) :
@@ -1068,15 +1066,15 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
       case (GIS_CUMUL_ALL_SIZE_FLOW_DEPOSIT) :
       case (GIS_CUMUL_ALL_PROC_SURF_LOWER) :
 #if defined _DEBUG
-      case (GIS_CUMUL_AVG_OFLOW_FROM_EDGES) :
+      case (GIS_AVG_OVERLANDFLOW_FROM_EDGES) :
 #endif
          strUnits = "mm";
          break;
 
-      case (GIS_OFLOW_SPEED) :
-      case (GIS_CUMUL_AVG_OFLOW_SPEED) :
-      case (GIS_OFLOW_DW_SPEED) :
-      case (GIS_CUMUL_AVG_OFLOW_DW_SPEED) :
+      case (GIS_OVERLANDFLOW_SPEED) :
+      case (GIS_AVG_OVERLANDFLOW_SPEED) :
+      case (GIS_OVERLANDFLOW_DW_SPEED) :
+      case (GIS_AVG_OVERLANDFLOW_DW_SPEED) :
          strUnits = "mm/sec";
          break;
 
@@ -1085,7 +1083,7 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
          break;
 
       case (GIS_SHEAR_STRESS) :
-      case (GIS_CUMUL_AVG_SHEAR_STRESS) :
+      case (GIS_AVG_SHEAR_STRESS) :
          strUnits = "kg/m s**2";
          break;
 
@@ -1143,8 +1141,8 @@ bool CSimulation::bWriteFileInt(int const nDataItem, string const* pstrPlotTitle
          strFilDat.append(GIS_INUNDATION_REGIME_FILENAME);
          break;
 
-      case (GIS_OFLOW_DIRECTION) :
-         strFilDat.append(GIS_OFLOW_DIRECTION_FILENAME);
+      case (GIS_OVERLANDFLOW_DIRECTION) :
+         strFilDat.append(GIS_OVERLANDFLOW_DIRECTION_FILENAME);
          break;
 
       case (GIS_CUMUL_BINARY_HEADCUT_RETREAT) :
@@ -1208,7 +1206,7 @@ bool CSimulation::bWriteFileInt(int const nDataItem, string const* pstrPlotTitle
                nTmp = Cell[nX][nY].pGetSurfaceWater()->nGetInundation();
                break;
 
-            case (GIS_OFLOW_DIRECTION) :
+            case (GIS_OVERLANDFLOW_DIRECTION) :
                nTmp = Cell[nX][nY].pGetSurfaceWater()->nGetFlowDirection();
                break;
 
@@ -1246,7 +1244,7 @@ bool CSimulation::bWriteFileInt(int const nDataItem, string const* pstrPlotTitle
    switch (nDataItem)
    {
       case (GIS_INUNDATION_REGIME):
-      case (GIS_OFLOW_DIRECTION):
+      case (GIS_OVERLANDFLOW_DIRECTION):
       case (GIS_CUMUL_BINARY_HEADCUT_RETREAT) :
          strUnits = "none";
    }
@@ -1280,7 +1278,7 @@ bool CSimulation::bWriteFileInt(int const nDataItem, string const* pstrPlotTitle
          papszCategoryNames = CSLAddString(papszCategoryNames, "Well inundated");
          break;
 
-      case (GIS_OFLOW_DIRECTION) :
+      case (GIS_OVERLANDFLOW_DIRECTION) :
          papszCategoryNames = CSLAddString(papszCategoryNames, "None");
          papszCategoryNames = CSLAddString(papszCategoryNames, "Top");
          papszCategoryNames = CSLAddString(papszCategoryNames, "Top right");
@@ -1733,13 +1731,13 @@ bool CSimulation::bSaveGISFiles(void)
    if (! bWriteFileFloat(GIS_CUMUL_SPLASH, &GIS_CUMUL_SPLASH_TITLE))
       return (false);
 
-   if (! bWriteFileFloat(GIS_OFLOW_DEPTH, &GIS_OFLOW_DEPTH_TITLE))
+   if (! bWriteFileFloat(GIS_OVERLANDFLOW_DEPTH, &GIS_OVERLANDFLOW_DEPTH_TITLE))
       return (false);
 
-   if (! bWriteFileFloat(GIS_OFLOW_SPEED, &GIS_OFLOW_SPEED_TITLE))
+   if (! bWriteFileFloat(GIS_OVERLANDFLOW_SPEED, &GIS_OVERLANDFLOW_SPEED_TITLE))
       return (false);
 
-   if (! bWriteFileFloat(GIS_OFLOW_DW_SPEED, &GIS_OFLOW_DW_SPEED_TITLE))
+   if (! bWriteFileFloat(GIS_OVERLANDFLOW_DW_SPEED, &GIS_OVERLANDFLOW_DW_SPEED_TITLE))
       return (false);
 
    // These are optional
@@ -1787,7 +1785,7 @@ bool CSimulation::bSaveGISFiles(void)
 
    if (m_bFlowDirSave)
    {
-      if (! bWriteFileInt(GIS_OFLOW_DIRECTION, &GIS_OFLOW_DIRECTION_TITLE))
+      if (! bWriteFileInt(GIS_OVERLANDFLOW_DIRECTION, &GIS_OVERLANDFLOW_DIRECTION_TITLE))
          return (false);
    }
 
@@ -1830,7 +1828,7 @@ bool CSimulation::bSaveGISFiles(void)
 #if defined _DEBUG
    if (m_bLostSave)
    {
-      if (! bWriteFileFloat(GIS_CUMUL_AVG_OFLOW_FROM_EDGES, &GIS_CUMUL_AVG_OFLOW_FROM_EDGES_TITLE))
+      if (! bWriteFileFloat(GIS_AVG_OVERLANDFLOW_FROM_EDGES, &GIS_AVG_OVERLANDFLOW_FROM_EDGES_TITLE))
          return (false);
    }
 #endif
@@ -1855,7 +1853,7 @@ bool CSimulation::bSaveGISFiles(void)
 
    if (m_bCumulAvgShearStressSave)
    {
-      if (! bWriteFileFloat(GIS_CUMUL_AVG_SHEAR_STRESS, &GIS_CUMUL_AVG_SHEAR_STRESS_TITLE))
+      if (! bWriteFileFloat(GIS_AVG_SHEAR_STRESS, &GIS_AVG_SHEAR_STRESS_TITLE))
          return (false);
    }
 
@@ -1879,19 +1877,19 @@ bool CSimulation::bSaveGISFiles(void)
 
    if (m_bCumulAvgDepthSave)
    {
-      if (! bWriteFileFloat(GIS_CUMUL_AVG_OFLOW_DEPTH, &GIS_CUMUL_AVG_OFLOW_DEPTH_TITLE))
+      if (! bWriteFileFloat(GIS_AVG_OVERLANDFLOW_DEPTH, &GIS_AVG_OVERLANDFLOW_DEPTH_TITLE))
          return (false);
    }
 
    if (m_bCumulAvgSpdSave)
    {
-      if (! bWriteFileFloat(GIS_CUMUL_AVG_OFLOW_SPEED, &GIS_CUMUL_AVG_OFLOW_SPEED_TITLE))
+      if (! bWriteFileFloat(GIS_AVG_OVERLANDFLOW_SPEED, &GIS_AVG_OVERLANDFLOW_SPEED_TITLE))
          return (false);
    }
 
    if (m_bCumulAvgDWSpdSave)
    {
-      if (! bWriteFileFloat(GIS_CUMUL_AVG_OFLOW_DW_SPEED, &GIS_CUMUL_AVG_OFLOW_DW_SPEED_TITLE))
+      if (! bWriteFileFloat(GIS_AVG_OVERLANDFLOW_DW_SPEED, &GIS_AVG_OVERLANDFLOW_DW_SPEED_TITLE))
          return (false);
    }
 
@@ -1909,7 +1907,7 @@ bool CSimulation::bSaveGISFiles(void)
 
    if (m_bAvgSedLoadSave)
    {
-      if (! bWriteFileFloat(GIS_CUMUL_AVG_SEDIMENT_LOAD, &GIS_CUMUL_AVG_SEDIMENT_LOAD_TITLE))
+      if (! bWriteFileFloat(GIS_AVG_SEDIMENT_LOAD, &GIS_AVG_SEDIMENT_LOAD_TITLE))
          return (false);
    }
 

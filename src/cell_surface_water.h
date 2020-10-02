@@ -80,6 +80,7 @@ public:
 #endif
 
    void InitializeAllFlowVelocity(void);
+   void ZeroAllFlowVelocity(void);
    void SetFlowVelocity(const C2DVec&);
    void SetFlowVelocity(const C2DVec*);
    void SetFlowVelocity(double const, double const);

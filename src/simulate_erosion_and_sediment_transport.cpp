@@ -161,9 +161,13 @@ void CSimulation::DoCellErosion(int const nX, int const nY, int const nLowX, int
       dTaub = TAUB_CONST * dTau,
       dSTaub = m_dCVTaub * dTaub;
 
-   // Save the shear stress (both this-operation and cumulative total)
-   // TODO Use m_SSSWeightQuadrant to allocate shear stress to this and adjacent cells
-   DoDistributeShearStress(nX, nY, dTau);
+   // Save the shear stress
+   if (m_bSlumping)
+      // Allocate shear stress to this and adjacent cells
+      DoDistributeShearStress(nX, nY, dTau);
+   else
+      // Just write the shear stress (both this-iteration and cumulative) to this cell
+      Cell[nX][nY].pGetSoil()->IncShearStress(dTau);
 
 /*
    // TESTING
@@ -291,7 +295,7 @@ void CSimulation::DoCellDeposition(int const nX, int const nY, double const dWat
  Adds to the this-iteration flow detachment value for clay-sized sediment
 
 =========================================================================================================================================*/
-void CSimulation::AddThisIterClayFlowDetach(double const dDetach)
+void CSimulation::AddClayFlowDetach(double const dDetach)
 {
    m_dThisIterClayFlowDetach += dDetach;
 }
@@ -301,7 +305,7 @@ void CSimulation::AddThisIterClayFlowDetach(double const dDetach)
  Adds to the this-iteration flow detachment value for silt-sized sediment
 
 =========================================================================================================================================*/
-void CSimulation::AddThisIterSiltFlowDetach(double const dDetach)
+void CSimulation::AddSiltFlowDetach(double const dDetach)
 {
    m_dThisIterSiltFlowDetach += dDetach;
 }
@@ -311,7 +315,7 @@ void CSimulation::AddThisIterSiltFlowDetach(double const dDetach)
  Adds to the this-iteration flow detachment value for sand-sized sediment
 
 =========================================================================================================================================*/
-void CSimulation::AddThisIterSandFlowDetach(double const dDetach)
+void CSimulation::AddSandFlowDetach(double const dDetach)
 {
    m_dThisIterSandFlowDetach += dDetach;
 }
@@ -321,7 +325,7 @@ void CSimulation::AddThisIterSandFlowDetach(double const dDetach)
  Adds to the this-iteration flow deposition value for clay-sized sediment
 
 =========================================================================================================================================*/
-void CSimulation::AddThisIterClayFlowDeposit(double const dDeposit)
+void CSimulation::AddClayFlowDeposit(double const dDeposit)
 {
    m_dThisIterClayFlowDeposit += dDeposit;
 }
@@ -331,7 +335,7 @@ void CSimulation::AddThisIterClayFlowDeposit(double const dDeposit)
  Adds to the this-iteration flow deposition value for silt-sized sediment
 
 =========================================================================================================================================*/
-void CSimulation::AddThisIterSiltFlowDeposit(double const dDeposit)
+void CSimulation::AddSiltFlowDeposit(double const dDeposit)
 {
    m_dThisIterSiltFlowDeposit += dDeposit;
 }
@@ -341,7 +345,7 @@ void CSimulation::AddThisIterSiltFlowDeposit(double const dDeposit)
  Adds to the this-iteration flow deposition value for sand-sized sediment
 
 =========================================================================================================================================*/
-void CSimulation::AddThisIterSandFlowDeposit(double const dDeposit)
+void CSimulation::AddSandFlowDeposit(double const dDeposit)
 {
    m_dThisIterSandFlowDeposit += dDeposit;
 }
@@ -352,7 +356,7 @@ void CSimulation::AddThisIterSandFlowDeposit(double const dDeposit)
  Adds to the this-iteration clay-sized sediment load
 
 =========================================================================================================================================*/
-void CSimulation::AddThisIterClaySedimentLoad(double const dChange)
+void CSimulation::AddClaySedimentLoad(double const dChange)
 {
    m_dThisIterClaySedLoad += dChange;
 }
@@ -362,7 +366,7 @@ void CSimulation::AddThisIterClaySedimentLoad(double const dChange)
  Adds to the this-iteration silt-sized sediment load
 
 =========================================================================================================================================*/
-void CSimulation::AddThisIterSiltSedimentLoad(double const dChange)
+void CSimulation::AddSiltSedimentLoad(double const dChange)
 {
    m_dThisIterSiltSedLoad += dChange;
 }
@@ -372,7 +376,7 @@ void CSimulation::AddThisIterSiltSedimentLoad(double const dChange)
  Adds to the this-iteration sand-sized sediment load
 
 =========================================================================================================================================*/
-void CSimulation::AddThisIterSandSedimentLoad(double const dChange)
+void CSimulation::AddSandSedimentLoad(double const dChange)
 {
    m_dThisIterSandSedimentLoad += dChange;
 }

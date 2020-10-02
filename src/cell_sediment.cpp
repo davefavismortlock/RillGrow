@@ -75,9 +75,9 @@ void CSediment::ChangeSedimentLoad(double const dClayDepth, double const dSiltDe
    m_dCumulSiltSedimentLoad += dSiltDepth;
    m_dCumulSandSedimentLoad += dSandDepth;
 
-   m_pSim->AddThisIterClaySedimentLoad(dClayDepth);
-   m_pSim->AddThisIterSiltSedimentLoad(dSiltDepth);
-   m_pSim->AddThisIterSandSedimentLoad(dSandDepth);
+   m_pSim->AddClaySedimentLoad(dClayDepth);
+   m_pSim->AddSiltSedimentLoad(dSiltDepth);
+   m_pSim->AddSandSedimentLoad(dSandDepth);
 }
 
 // Adds to this cell's clay-sized sediment load
@@ -86,7 +86,7 @@ void CSediment::DoChangeClaySedimentLoad(double const dDepth)
    m_dClaySedimentLoad += dDepth;
    m_dCumulClaySedimentLoad += dDepth;
 
-   m_pSim->AddThisIterClaySedimentLoad(dDepth);
+   m_pSim->AddClaySedimentLoad(dDepth);
 }
 
 double CSediment::dGetClaySedimentLoad(void) const
@@ -101,7 +101,7 @@ double CSediment::dSetClaySedLoadZero(void)
    m_dClaySedimentLoad = 0;
 
    // Note do not change cumulative value
-   m_pSim->AddThisIterClaySedimentLoad(-dSedimentLoad);
+   m_pSim->AddClaySedimentLoad(-dSedimentLoad);
 
    return dSedimentLoad;
 }
@@ -113,7 +113,7 @@ void CSediment::DoChangeSiltSedimentLoad(double const dDepth)
    m_dSiltSedimentLoad += dDepth;
    m_dCumulSiltSedimentLoad += dDepth;
 
-   m_pSim->AddThisIterSiltSedimentLoad(dDepth);
+   m_pSim->AddSiltSedimentLoad(dDepth);
 }
 
 double CSediment::dGetSiltSedimentLoad(void) const
@@ -128,7 +128,7 @@ double CSediment::dSetSiltSedLoadZero(void)
    m_dSiltSedimentLoad = 0;
 
    // Note do not change cumulative value
-   m_pSim->AddThisIterSiltSedimentLoad(-dSedimentLoad);
+   m_pSim->AddSiltSedimentLoad(-dSedimentLoad);
 
    return dSedimentLoad;
 }
@@ -140,7 +140,7 @@ void CSediment::DoChangeSandSedimentLoad(double const dDepth)
    m_dSandSedimentLoad += dDepth;
    m_dCumulSandSedimentLoad += dDepth;
 
-   m_pSim->AddThisIterSandSedimentLoad(dDepth);
+   m_pSim->AddSandSedimentLoad(dDepth);
 }
 
 double CSediment::dGetSandSedimentLoad(void) const
@@ -155,7 +155,7 @@ double CSediment::dSetSandSedimentLoadZero(void)
    m_dSandSedimentLoad = 0;
 
    // Note do not change cumulative value
-   m_pSim->AddThisIterSandSedimentLoad(-dSedimentLoad);
+   m_pSim->AddSandSedimentLoad(-dSedimentLoad);
 
    return dSedimentLoad;
 }

@@ -461,7 +461,7 @@ bool CSimulation::bReadSplashEffData(void)
 Adds to the this-operation splash detachment value
 
 =========================================================================================================================================*/
-void CSimulation::AddThisIterSplashDetach(double const dClayDetach, double const dSiltDetach, double const dSandDetach)
+void CSimulation::AddSplashDetach(double const dClayDetach, double const dSiltDetach, double const dSandDetach)
 {
    m_dThisIterClaySplashDetach += dClayDetach;
    m_dThisIterSiltSplashDetach += dSiltDetach;
@@ -474,7 +474,7 @@ void CSimulation::AddThisIterSplashDetach(double const dClayDetach, double const
 Adds to the this-operation splash deposition value for clay-sized sediment
 
 =========================================================================================================================================*/
-void CSimulation::AddThisIterClaySplashDeposit(double const dDeposit)
+void CSimulation::AddClaySplashDeposit(double const dDeposit)
 {
    m_dThisIterClaySplashDeposit += dDeposit;
 }
@@ -484,7 +484,7 @@ void CSimulation::AddThisIterClaySplashDeposit(double const dDeposit)
 Adds to the this-operation splash deposition value for silt-sized sediment
 
 =========================================================================================================================================*/
-void CSimulation::AddThisIterSiltSplashDeposit(double const dDeposit)
+void CSimulation::AddSiltSplashDeposit(double const dDeposit)
 {
    m_dThisIterSiltSplashDeposit += dDeposit;
 }
@@ -494,7 +494,7 @@ void CSimulation::AddThisIterSiltSplashDeposit(double const dDeposit)
 Adds to the this-operation splash deposition value for sand-sized sediment
 
 =========================================================================================================================================*/
-void CSimulation::AddThisIterSandSplashDeposit(double const dDeposit)
+void CSimulation::AddSandSplashDeposit(double const dDeposit)
 {
    m_dThisIterSandSplashDeposit += dDeposit;
 }

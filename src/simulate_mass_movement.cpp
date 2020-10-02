@@ -141,7 +141,7 @@ int CSimulation::nInitSlumping(void)
 void CSimulation::DoDistributeShearStress(int const nX, int const nY, double const dTau)
 {
    Cell[nX][nY].pGetSoil()->IncShearStress(dTau * m_SSSWeightQuadrant[0][0]);
-//    m_ofsLog << "[" << nX << "][" << nY << "] " << m_SSSWeightQuadrant[0][0] << endl << endl;
+//    cerr << "[" << nX << "][" << nY << "] " << m_SSSWeightQuadrant[0][0] << endl << endl;
 
    for (int m = 1; m < m_nSSSQuadrantSize; m++)
    {
@@ -154,7 +154,7 @@ void CSimulation::DoDistributeShearStress(int const nX, int const nY, double con
          if ((nXTmp < m_nXGridMax) && (nYTmp < m_nYGridMax) && (! Cell[nXTmp][nYTmp].bIsMissingValue()))
          {
             Cell[nX][nY].pGetSoil()->IncShearStress(dThisTau);
-//             m_ofsLog << "[" << nXTmp << "][" << nYTmp << "] " << m_SSSWeightQuadrant[m][n] << endl;
+//             cerr << "[" << nXTmp << "][" << nYTmp << "] " << m_SSSWeightQuadrant[m][n] << endl;
          }
 
          nXTmp = nX - m;
@@ -162,7 +162,7 @@ void CSimulation::DoDistributeShearStress(int const nX, int const nY, double con
          if ((nXTmp >= 0) && (nYTmp >= 0) && (! Cell[nXTmp][nYTmp].bIsMissingValue()))
          {
             Cell[nX][nY].pGetSoil()->IncShearStress(dThisTau);
-//             m_ofsLog << "[" << nXTmp << "][" << nYTmp << "] " << m_SSSWeightQuadrant[m][n] << endl;
+//             cerr << "[" << nXTmp << "][" << nYTmp << "] " << m_SSSWeightQuadrant[m][n] << endl;
          }
 
          nXTmp = nX + n;
@@ -170,7 +170,7 @@ void CSimulation::DoDistributeShearStress(int const nX, int const nY, double con
          if ((nXTmp < m_nXGridMax) && (nYTmp >= 0) && (! Cell[nXTmp][nYTmp].bIsMissingValue()))
          {
             Cell[nX][nY].pGetSoil()->IncShearStress(dThisTau);
-//             m_ofsLog << "[" << nXTmp << "][" << nYTmp << "] " << m_SSSWeightQuadrant[m][n] << endl;
+//             cerr << "[" << nXTmp << "][" << nYTmp << "] " << m_SSSWeightQuadrant[m][n] << endl;
          }
 
          nXTmp = nX - n;
@@ -178,12 +178,12 @@ void CSimulation::DoDistributeShearStress(int const nX, int const nY, double con
          if ((nXTmp >= 0) && (nYTmp < m_nYGridMax) && (! Cell[nXTmp][nYTmp].bIsMissingValue()))
          {
             Cell[nX][nY].pGetSoil()->IncShearStress(dThisTau);
-//             m_ofsLog << "[" << nXTmp << "][" << nYTmp << "] " << m_SSSWeightQuadrant[m][n] << endl << endl;
+//             cerr << "[" << nXTmp << "][" << nYTmp << "] " << m_SSSWeightQuadrant[m][n] << endl << endl;
          }
       }
    }
 
-//    m_ofsLog << "-------------------------------------" << endl;
+//    cerr << "-------------------------------------" << endl;
 }
 
 
@@ -633,7 +633,7 @@ void CSimulation::DoToppleCells(int const nX, int const nY, int const nXTmp, int
  Adds to the this-operation slump detachment value for clay-sized sediment
 
 =========================================================================================================================================*/
-void CSimulation::AddThisIterClaySlumpDetach(double const dDetach)
+void CSimulation::AddClaySlumpDetach(double const dDetach)
 {
    m_dThisIterClaySlumpDetach += dDetach;
 }
@@ -643,7 +643,7 @@ void CSimulation::AddThisIterClaySlumpDetach(double const dDetach)
 Adds to the this-operation slump detachment value for silt-sized sediment
 
 =========================================================================================================================================*/
-void CSimulation::AddThisIterSiltSlumpDetach(double const dDetach)
+void CSimulation::AddSiltSlumpDetach(double const dDetach)
 {
    m_dThisIterSiltSlumpDetach += dDetach;
 }
@@ -653,7 +653,7 @@ void CSimulation::AddThisIterSiltSlumpDetach(double const dDetach)
 Adds to the this-operation slump detachment value for sand-sized sediment
 
 =========================================================================================================================================*/
-void CSimulation::AddThisIterSandSlumpDetach(double const dDetach)
+void CSimulation::AddSandSlumpDetach(double const dDetach)
 {
    m_dThisIterSandSlumpDetach += dDetach;
 }
@@ -663,7 +663,7 @@ void CSimulation::AddThisIterSandSlumpDetach(double const dDetach)
 Adds to the this-operation toppling detachment value for clay-sized sediment
 
 =========================================================================================================================================*/
-void CSimulation::AddThisIterClayToppleDetach(double const dDetach)
+void CSimulation::AddClayToppleDetach(double const dDetach)
 {
    m_dThisIterClayToppleDetach += dDetach;
 }
@@ -673,7 +673,7 @@ void CSimulation::AddThisIterClayToppleDetach(double const dDetach)
 Adds to the this-operation toppling detachment value for silt-sized sediment
 
 =========================================================================================================================================*/
-void CSimulation::AddThisIterSiltToppleDetach(double const dDetach)
+void CSimulation::AddSiltToppleDetach(double const dDetach)
 {
    m_dThisIterSiltToppleDetach += dDetach;
 }
@@ -683,7 +683,7 @@ void CSimulation::AddThisIterSiltToppleDetach(double const dDetach)
 Adds to the this-operation toppling detachment value for sand-sized sediment
 
 =========================================================================================================================================*/
-void CSimulation::AddThisIterSandToppleDetach(double const dDetach)
+void CSimulation::AddSandToppleDetach(double const dDetach)
 {
    m_dThisIterSandToppleDetach += dDetach;
 }
@@ -836,7 +836,7 @@ void CSimulation::DoHeadcutRetreatMoveSoil(int const nDir, int const nFromX, int
  Adds to the this-operation headcut retreat detachment value for clay-sized sediment
 
 =========================================================================================================================================*/
-void CSimulation::AddThisIterClayHeadcutRetreatDetach(double const dDetach)
+void CSimulation::AddClayHeadcutRetreatDetach(double const dDetach)
 {
    m_dThisIterClayHeadcutRetreatDetach += dDetach;
 }
@@ -847,7 +847,7 @@ void CSimulation::AddThisIterClayHeadcutRetreatDetach(double const dDetach)
  Adds to the this-operation headcut retreat detachment value for silt-sized sediment
 
 =========================================================================================================================================*/
-void CSimulation::AddThisIterSiltHeadcutRetreatDetach(double const dDetach)
+void CSimulation::AddSiltHeadcutRetreatDetach(double const dDetach)
 {
    m_dThisIterSiltHeadcutRetreatDetach += dDetach;
 }
@@ -858,7 +858,7 @@ void CSimulation::AddThisIterSiltHeadcutRetreatDetach(double const dDetach)
  Adds to the this-operation headcut retreat detachment value for sand-sized sediment
 
 =========================================================================================================================================*/
-void CSimulation::AddThisIterSandHeadcutRetreatDetach(double const dDetach)
+void CSimulation::AddSandHeadcutRetreatDetach(double const dDetach)
 {
    m_dThisIterSandHeadcutRetreatDetach += dDetach;
 }

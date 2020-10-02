@@ -449,7 +449,7 @@ void CSimulation::CalcTime(double const dRunLength)
 
 /*========================================================================================================================================
 
-strDispTime returns a string formatted as ddd:hh:mm:ss given a parameter in seconds, with rounding and fractions of a second if desired
+ strDispTime returns a string formatted as ddd:hh:mm:ss given a parameter in seconds, with rounding and fractions of a second if desired
 
 ========================================================================================================================================*/
 string CSimulation::strDispTime(double const dTimeIn, bool const bRound, bool const bFrac)
@@ -940,7 +940,7 @@ char const* CSimulation::pszGetErrorText(int const nErr)
 
 /*========================================================================================================================================
 
- Notifies the user that the simulation has ended, asks for keypress if necessary, and if compiled under GNU can send an email
+ Publicly visible: notifies the user that the simulation has ended, asks for keypress if necessary, and if compiled under GNU can send an email
 
 ========================================================================================================================================*/
 void CSimulation::DoEndRun(int const nRtn)
@@ -1047,7 +1047,7 @@ void CSimulation::DoEndRun(int const nRtn)
 
 /*========================================================================================================================================
 
- Returns the simulation-wide missing-value value
+ Publicly visible, returns the simulation-wide missing-value value
 
 ========================================================================================================================================*/
 double CSimulation::dGetMissingValue(void) const
@@ -1058,7 +1058,7 @@ double CSimulation::dGetMissingValue(void) const
 
 /*========================================================================================================================================
 
- Returns the simulation-wide cell side value
+ Publicly visible, returns the simulation-wide cell side value
 
 ========================================================================================================================================*/
 double CSimulation::dGetCellSide(void) const
@@ -1069,9 +1069,9 @@ double CSimulation::dGetCellSide(void) const
 
 /*========================================================================================================================================
 
- Returns the simulation-wide cell diagonal value
+ Publicly visible, returns the simulation-wide cell diagonal value
 
- ========================================================================================================================================*/
+========================================================================================================================================*/
 double CSimulation::dGetCellSideDiag(void) const
 {
    return m_dCellDiag;
@@ -1080,7 +1080,7 @@ double CSimulation::dGetCellSideDiag(void) const
 
 /*========================================================================================================================================
 
- Returns the reverse (opposite) direction
+Publicly visible, returns the reverse (opposite) direction of flow
 
 ========================================================================================================================================*/
 int CSimulation::nCalcOppositeDirection(int const nDir) const
