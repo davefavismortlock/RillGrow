@@ -46,9 +46,9 @@ int CSimulation::nHandleCommandLineParams(int nArg, char* pcArgv[])
          cout << GDALDRIVERS << endl << endl;
 
          string strDriverLong, strDriverShort;
-         for (int i = 0; i < GDALGetDriverCount(); i++ )
+         for (int j = 0; j < GDALGetDriverCount(); j++ )
          {
-            GDALDriverH hDriver = GDALGetDriver(i);
+            GDALDriverH hDriver = GDALGetDriver(j);
 
             strDriverShort = GDALGetDriverShortName(hDriver);
             strDriverShort.append("          ");

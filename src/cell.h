@@ -33,7 +33,7 @@ public:
    static CSimulation* m_pSim;
 
 private:
-   bool m_bHasHadHeadcutRetreat;
+   bool m_bHadHeadcutRetreat;
    int m_nEdgeCell;
    double
       m_dBasementElevationation,                            // Elevation of bottom of lowest soil layer, in mm
@@ -67,12 +67,12 @@ public:
    void SetSoilSurfaceElevation(double const);
    double dGetSoilSurfaceElevation(void);
 
-   double dGetStoredRetreat(int const);
+   double dGetStoredRetreat(int const) const;
    void SetStoredRetreat(int const, double const);
    void AddToStoredRetreat(int const, double const);
-   bool bIsReadyForHeadcutRetreat(int const, double const);
+   bool bIsReadyForHeadcutRetreat(int const, double const) const;
    void SetHasHadHeadcutRetreat(void);
-   bool bHasHadHeadcutRetreat(void);
+   bool bHasHadHeadcutRetreat(void) const;
 
    CSoil* pGetSoil(void);
    CRainAndRunon* pGetRainAndRunon(void);

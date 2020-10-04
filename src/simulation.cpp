@@ -572,7 +572,7 @@ int CSimulation::nDoRun(int nArg, char* pcArgv[])
    // If considering slumping, calculate some 'constants' for slumping and toppling
    if (m_bSlumping)
    {
-      int nRet = nInitSlumping();
+      nRet = nInitSlumping();
       if (nRet != RTN_OK)
          return (nRet);
    }

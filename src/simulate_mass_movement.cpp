@@ -461,7 +461,7 @@ int CSimulation::nFindSteepestSoilSurface(int const nX, int const nY, double con
    if ((nYTmp >= 0) && (! Cell[nXTmp][nYTmp].bIsMissingValue()) && Cell[nXTmp][nYTmp].pGetSurfaceWater()->bIsWet() && ((dTmpDiff = dThisElev - Cell[nXTmp][nYTmp].pGetSoil()->dGetSoilSurfaceElevation()) > 0) && ((dTanX = dTmpDiff * m_dInvCellSide) > dSlope))
    {
       // It's wet and the steepest so far
-//       dSlope = dTanX;                                                                           // is tan(top slope)
+      dSlope = dTanX;                                                                           // is tan(top slope)
       nLowX = nXTmp;
       nLowY = nYTmp;
       dDiff = dTmpDiff;

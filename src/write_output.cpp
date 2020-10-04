@@ -966,10 +966,6 @@ int CSimulation::nWriteFilesAtEnd(void)
       if (! bWriteFileFloat(GIS_SEDIMENT_CONCENTRATION, &GIS_SEDIMENT_CONCENTRATION_TITLE))
          return (RTN_ERR_GISFILEWRITE);
 
-   if (m_bSedConcSave)
-      if (! bWriteFileFloat(GIS_SEDIMENT_CONCENTRATION, &GIS_SEDIMENT_CONCENTRATION_TITLE))
-         return (RTN_ERR_GISFILEWRITE);
-
    if (m_bSedLoadSave)
       if (! bWriteFileFloat(GIS_SEDIMENT_LOAD, &GIS_SEDIMENT_LOAD_TITLE))
          return (RTN_ERR_GISFILEWRITE);

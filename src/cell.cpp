@@ -24,7 +24,7 @@
 
 CCell::CCell(void)
 :
-   m_bHasHadHeadcutRetreat(false),
+   m_bHadHeadcutRetreat(false),
    m_nEdgeCell(DIRECTION_NONE),
    m_dBasementElevationation(0),
    m_dInitialSoilSurfaceElevation(0)
@@ -128,7 +128,7 @@ double CCell::dGetSoilSurfaceElevation(void)
 
 
 // Sets this cell's retreat for one of the eight directions
-double CCell::dGetStoredRetreat(int const nDirection)
+double CCell::dGetStoredRetreat(int const nDirection) const
 {
    // Note does not check for valid nDirection
    return m_dStoredRetreat[nDirection];
@@ -146,7 +146,7 @@ void CCell::AddToStoredRetreat(int const nDirection, double const dInc)
    m_dStoredRetreat[nDirection] += dInc;
 }
 
-bool CCell::bIsReadyForHeadcutRetreat(int const nDirection, double const dSize)
+bool CCell::bIsReadyForHeadcutRetreat(int const nDirection, double const dSize) const
 {
    if (m_dStoredRetreat[nDirection] >= dSize)
       return true;
@@ -156,12 +156,12 @@ bool CCell::bIsReadyForHeadcutRetreat(int const nDirection, double const dSize)
 
 void CCell::SetHasHadHeadcutRetreat(void)
 {
-   m_bHasHadHeadcutRetreat = true;
+   m_bHadHeadcutRetreat = true;
 }
 
-bool CCell::bHasHadHeadcutRetreat(void)
+bool CCell::bHasHadHeadcutRetreat(void) const
 {
-   return m_bHasHadHeadcutRetreat;
+   return m_bHadHeadcutRetreat;
 }
 
 

@@ -171,7 +171,7 @@ int CSimulation::nReadMicrotopographyDEMData(void)
             else if (m_nZUnits == Z_UNIT_M)
                strDispUserDEMZUnits = "m";
 
-            cerr << WARN << "microtography Z units in DEM are '" << strDispDEMZUnits << "' but Z units in DEM are '" << strDispDEMZUnits << "'" << endl;
+            cerr << WARN << "Z units in DEM are '" << strDispDEMZUnits << "' but Z units in " << m_strDataPathName << " are '" << strDispUserDEMZUnits << "'" << endl;
          }
       }
 
@@ -798,7 +798,7 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
    {
       // Error, can't allocate memory
       cerr << ERR << "cannot allocate memory for " << m_nXGridMax * m_nYGridMax << " x 1D floating-point array for " << m_strGISOutFormat << " file named " << strFilDat << endl;
-      return RTN_ERR_MEMALLOC;
+      return false;
    }
 
    int n = 0;
@@ -1190,7 +1190,7 @@ bool CSimulation::bWriteFileInt(int const nDataItem, string const* pstrPlotTitle
    {
       // Error, can't allocate memory
       cerr << ERR << "cannot allocate memory for " << m_nXGridMax * m_nYGridMax << " x 1D floating-point array for " << m_strGISOutFormat << " file named " << strFilDat << endl;
-      return RTN_ERR_MEMALLOC;
+      return false;
    }
 
    // Fill the array
