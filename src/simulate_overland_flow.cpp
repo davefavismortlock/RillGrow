@@ -156,17 +156,21 @@ void CSimulation::TryCellOutFlow(int const nX, int const nY)
       return;
    }
 
-   // Constrain the flow speed
-   double dMinTime = m_dCellSide / m_dFlowSpeedLimit;
-   dOutFlowTime = tMax(dOutFlowTime, dMinTime);
+   // Constrain the flow speed: this is necessary TODO SAY MORE
+   if (dFlowSpeed > m_dFlowSpeedLimit)
+   {
+      Vec2DFlowVelocity = Vec2DFlowVelocity * (m_dFlowSpeedLimit / dFlowSpeed);     // Note can't use *=, get const conversion error
+      dOutFlowTime *= dFlowSpeed / m_dFlowSpeedLimit;
+      dFlowSpeed = m_dFlowSpeedLimit;
+   }
+
+   // If the outflow time is greater than the timestep, there will not have been enough time for the whole of the head to move from the centroid of one cell to the centroid of the next. Assume a linear relationship, so that depth_to_move = head * (timestep) / outflowtime)
+   double dDepthToMove = dHead;
+   if (dOutFlowTime > m_dTimeStep)
+      dDepthToMove = dHead * (m_dTimeStep / dOutFlowTime);
 
    // Save the flow velocity
    Cell[nX][nY].pGetSurfaceWater()->SetFlowVelocity(Vec2DFlowVelocity);
-
-   // If the timestep is less than the outflow time, there will not have been enough time for the whole of the head to move from the centroid of one cell to the centroid of the next. Assume a linear relationship, so that depth_to_move = (head * timestep) / outflowtime
-   double
-      dFractionOfTimestep = tMin(m_dTimeStep / dOutFlowTime, 1.0),
-      dDepthToMove = dHead * dFractionOfTimestep;
 
    // Set the depth-averaged velocity. This is less than the normal velocity if only a part of the depth is moved; same as the normal velocity if the the whole depth is moved
    double dFractionToMove = tMin(dDepthToMove / dThisDepth, 1.0);
