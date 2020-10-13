@@ -207,11 +207,11 @@ double const   SEDIMENT_TOLERANCE                           = 1e-5;             
 
 double const   ERROR_FLOW_DETACH_MAX                        = 10;                // In mm, is max avg depth per timestep before aborting run
 double const   ERROR_FLOW_DEPOSIT_MAX                       = 10;                // Ditto
-double const   ERROR_SEDIMENT_TRANSPORT_MAX                 = 10;                // Ditto
 double const   ERROR_SPLASH_DETACH_MAX                      = 10;                // Ditto
 double const   ERROR_SPLASH_DEPOSIT_MAX                     = 10;                // Ditto
 double const   ERROR_SLUMP_DETACH_MAX                       = 100;               // Ditto
 double const   ERROR_TOPPLE_DETACH_MAX                      = 100;               // Ditto
+
 double const   FOREVER                                      = 0;
 
 string const   ERR                                          = "ERROR: ";
@@ -547,11 +547,10 @@ int const   RTN_ERR_TSFILEWRITE                             = 18;
 int const   RTN_ERR_SPLASHEFF                               = 19;
 int const   RTN_ERR_FLOWDETACHMAX                           = 20;
 int const   RTN_ERR_SEDLOADDEPOSITMAX                       = 21;
-int const   RTN_ERR_SEDLOADMAX                              = 22;
-int const   RTN_ERR_SPLASHDETMAX                            = 23;
-int const   RTN_ERR_SPLASHDEPMAX                            = 24;
-int const   RTN_ERR_SLUMPDETMAX                             = 25;
-int const   RTN_ERR_TOPPLEDETMAX                            = 26;
+int const   RTN_ERR_SPLASHDETMAX                            = 22;
+int const   RTN_ERR_SPLASHDEPMAX                            = 23;
+int const   RTN_ERR_SLUMPDETMAX                             = 24;
+int const   RTN_ERR_TOPPLEDETMAX                            = 25;
 
 
 //===================================================== globally-available functions ======================================================

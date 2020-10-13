@@ -251,9 +251,11 @@ void CSimulation::DoCellErosion(int const nX, int const nY, int const nLowX, int
 =========================================================================================================================================*/
 void CSimulation::DoCellSedLoadDeposit(int const nX, int const nY, double const dWaterDepth, double const dSedimentLoad, double const dTransportCapacity)
 {
-   // Cheng equation
+   // Deposition is a linear function of the difference between sediment load and transport capacity: see equation 12 in Lei et al. (1998)
+   double dTCFrac = 1.0 - ((dTransportCapacity - dSedimentLoad) / dTransportCapacity);
+   dTCFrac = tMin(dTCFrac, 1.0);
 
-   // Calc density of sediment - density of water
+   // Cheng equation. First calc density of sediment - density of water
    double dDelta = m_dDepositionGrainDensity - m_dRho;
 
    double
@@ -269,18 +271,6 @@ void CSimulation::DoCellSedLoadDeposit(int const nX, int const nY, double const 
       dSandSettlingSpeed = 1000 * pow(sqrt(25.0 + 1.2 * (dDStarSand * dDStarSand)) - 5.0, 1.5) * m_dNu / dSandDiameter;    // in mm/sec
 
 
-//    // First calculate Reynold's Number, and a drag coefficient
-//    double
-//       dReynoldsNumber = dGetReynolds(nX, nY),
-//       dDragCoefficient = 24.0 / dReynoldsNumber;
-//
-//    // Calculate the settling speed for the three sediment size classes using the terminal velocity equation: see https://en.wikipedia.org/wiki/Terminal_velocity
-//    double const DFUDGEFACTOR = 1;     // was 0.01;      // was 1.5;    // was 2
-//    double
-//       dClaySettlingSpeed = DFUDGEFACTOR * 1000 * sqrt((4 * m_dG * m_dClayDiameter) * m_dDensityDiffExpression / ( 3 * dDragCoefficient)),     // in mm/sec
-//       dSiltSettlingSpeed = DFUDGEFACTOR * 1000 * sqrt((4 * m_dG * m_dSiltDiameter) * m_dDensityDiffExpression / ( 3 * dDragCoefficient)),
-//       dSandSettlingSpeed = DFUDGEFACTOR * 1000 * sqrt((4 * m_dG * m_dSandDiameter) * m_dDensityDiffExpression / ( 3 * dDragCoefficient));
-
    // Now calculate the distance fallen during this timestep by a grain of each sediment size class
    double
       dClayDistance = m_dTimeStep * dClaySettlingSpeed,
@@ -290,39 +280,28 @@ void CSimulation::DoCellSedLoadDeposit(int const nX, int const nY, double const 
       dSiltFrac = 0,
       dSandFrac = 0;
 
-      if (dClayDistance >= dWaterDepth)
-         dClayFrac = 1;
-      else
-         dClayFrac = dClayDistance / dWaterDepth;
+   if (dClayDistance >= dWaterDepth)
+      dClayFrac = 1;
+   else
+      dClayFrac = dClayDistance / dWaterDepth;
 
-      if (dSiltDistance >= dWaterDepth)
-         dSiltFrac = 1;
-      else
-         dSiltFrac = dSiltDistance / dWaterDepth;
+   if (dSiltDistance >= dWaterDepth)
+      dSiltFrac = 1;
+   else
+      dSiltFrac = dSiltDistance / dWaterDepth;
 
-      if (dSandDistance >= dWaterDepth)
-         dSandFrac = 1;
-      else
-         dSandFrac = dSandDistance / dWaterDepth;
+   if (dSandDistance >= dWaterDepth)
+      dSandFrac = 1;
+   else
+      dSandFrac = dSandDistance / dWaterDepth;
 
-      assert(dClayFrac <= 1);
-      assert(dSiltFrac <= 1);
-      assert(dSandFrac <= 1);
+   dClayFrac *= dTCFrac;
+   dSiltFrac *= dTCFrac;
+   dSandFrac *= dTCFrac;
 
-
-//    // Assume that, for all sediment size classes, deposition is a linear function of the difference between sediment load and transport capacity: see equation 12 in Lei et al. (1998)
-//    double dDiff = dSedimentLoad - dTransportCapacity;
-//
-//    // Assume that the fraction deposited is proportional to distance fallen divided by water depth (implies is well mixed) TODO need constant here?
-//    double
-//       dClayFrac = dClayDistance * dDiff / dWaterDepth,
-//       dSiltFrac = dSiltDistance * dDiff / dWaterDepth,
-//       dSandFrac = dSandDistance * dDiff / dWaterDepth;
-
-//    // Make sure fraction deposited remains below 1
-//    dClayFrac = tMin(1.0, dClayFrac);
-//    dSiltFrac = tMin(1.0, dSiltFrac);
-//    dSandFrac = tMin(1.0, dSandFrac);
+   assert(dClayFrac <= 1);
+   assert(dSiltFrac <= 1);
+   assert(dSandFrac <= 1);
 
    // Finally, deposit these fractions of each sediment size class. Note that if there isn't enough being transported, then we will reduce the amount (= depth) which gets deposited. Note too that what is implied here is that deposited sediment becomes indistinguishable from the original soil. TODO To be considered in a later version
    Cell[nX][nY].pGetSoil()->DoSedLoadDeposit(dClayFrac, dSiltFrac, dSandFrac);
