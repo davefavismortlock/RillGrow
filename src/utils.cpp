@@ -572,11 +572,11 @@ int CSimulation::nCheckForInstability(void)
 
    // If an absurd per-cell average depth of sediment has been deposited by flow during this iteration, then abort the run
    if (tAbs(m_dThisIterClayFlowDeposit + m_dThisIterSiltFlowDeposit + m_dThisIterSandFlowDeposit) / m_ulNActiveCells > ERROR_FLOW_DEPOSIT_MAX)
-      return (RTN_ERR_FLOWDEPOSITMAX);
+      return (RTN_ERR_SEDLOADDEPOSITMAX);
 
    // If an absurd per-cell average depth of sediment is being transported by flow during this iteration, then abort the run
-   if (tAbs(m_dThisIterClaySedLoad + m_dThisIterSiltSedLoad + m_dThisIterSandSedimentLoad) / m_ulNActiveCells > ERROR_SEDIMENT_TRANSPORT_MAX)
-      return (RTN_ERR_TRANSPORTMAX);
+   if (tAbs(m_dThisIterClaySedLoad + m_dThisIterSiltSedLoad + m_dThisIterSandSedLoad) / m_ulNActiveCells > ERROR_SEDIMENT_TRANSPORT_MAX)
+      return (RTN_ERR_SEDLOADMAX);
 
    if (m_bSplashThisIter)
    {
@@ -585,7 +585,7 @@ int CSimulation::nCheckForInstability(void)
          return (RTN_ERR_SPLASHDETMAX);
 
       // If an absurd per-cell average splash deposition has occurred this iteration, then abort the run
-      if (tAbs(m_dThisIterClaySplashDeposit + m_dThisIterSiltSplashDeposit + m_dThisIterSandSplashDeposit) / m_ulNActiveCells > ERROR_SPLASH_DEPOSIT_MAX)
+      if (tAbs(m_dThisIterClaySplashDepositAndSedLoad + m_dThisIterSiltSplashDepositAndSedLoad + m_dThisIterSandSplashDepositAndSedLoad) / m_ulNActiveCells > ERROR_SPLASH_DEPOSIT_MAX)
          return (RTN_ERR_SPLASHDEPMAX);
    }
 
@@ -908,10 +908,10 @@ char const* CSimulation::pszGetErrorText(int const nErr)
    case RTN_ERR_FLOWDETACHMAX:
       strErr = "unstable simulation, unrealistically high flow detachment";
       break;
-   case RTN_ERR_FLOWDEPOSITMAX:
+   case RTN_ERR_SEDLOADDEPOSITMAX:
       strErr = "unstable simulation, unrealistically high flow deposition";
       break;
-   case RTN_ERR_TRANSPORTMAX:
+   case RTN_ERR_SEDLOADMAX:
       strErr = "unstable simulation, unrealistically high sediment transport";
       break;
    case RTN_ERR_SPLASHDETMAX:

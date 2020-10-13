@@ -1,6 +1,6 @@
 /*=========================================================================================================================================
 
-This is cell_subsurface_water.cpp: implementations of the RillGrow class used to represent suboverland flow
+This is cell_subsurface_water.cpp: implementations of the RillGrow class used to represent subsurface water
 
  Copyright (C) 2020 David Favis-Mortlock
 
@@ -21,7 +21,7 @@ This is cell_subsurface_water.cpp: implementations of the RillGrow class used to
 #include "cell_subsurface_water.h"
 
 
-CSoilWater::CSoilWater(void)
+CCellSubsurfaceWater::CCellSubsurfaceWater(void)
 :
    m_dInfiltWaterLost(0),
    m_dCumulInfiltWaterLost(0)
@@ -29,53 +29,47 @@ CSoilWater::CSoilWater(void)
    m_pCell = NULL;
 }
 
-CSoilWater::~CSoilWater(void)
+CCellSubsurfaceWater::~CCellSubsurfaceWater(void)
 {
 }
 
 
-void CSoilWater::SetParent(CCell* const pParent)
+void CCellSubsurfaceWater::SetParent(CCell* const pParent)
 {
    m_pCell = pParent;
 }
 
 
-// Loses overland flow to infiltration
-void CSoilWater::Infiltrate(double const dInfilt)
+// Loses surface water to infiltration
+void CCellSubsurfaceWater::DoInfiltration(double& dInfilt)
 {
-   m_pCell->pGetSurfaceWater()->ChangeSurfaceWater(-dInfilt);
-
-   // Is the cell now dry?
-   if (! m_pCell->pGetSurfaceWater()->bIsWet())
-      m_pCell->m_pSim->DecrNumWetCells();
-
-   // Subtract from the this-iteration total depth of overland flow
-   m_pCell->m_pSim->AddSurfaceWater(-dInfilt);
+   // If there is insufficient surface water depth to remove the whole of dInfilt, dInfilt gets reduced
+   m_pCell->pGetSurfaceWater()->RemoveSurfaceWater(dInfilt);
 
    // Get a pointer to the top layer
-   CLayer* pLayer = m_pCell->pGetSoil()->pLayerGetLayer(0);
+   CCellSoilLayer* pLayer = m_pCell->pGetSoil()->pLayerGetLayer(0);
 
    // And add water to this layer
    pLayer->ChangeSoilWater(dInfilt);
 
-   m_dInfiltWaterLost    += dInfilt;
+   m_dInfiltWaterLost += dInfilt;
    m_dCumulInfiltWaterLost += dInfilt;
 }
 
-// Loses all this cell's overland flow to infiltration, and increases the cell's elevation with any sediment that was being transported
-void CSoilWater::InfiltrateAndMakeDry(void)
+// Loses all this cell's surface water to infilt, and increases the cell's elevation with any sediment that was being transported
+void CCellSubsurfaceWater::InfiltrateAndMakeDry(void)
 {
    double
       dWaterDepth = m_pCell->pGetSurfaceWater()->dGetSurfaceWaterDepth(),
-      dClaySediment = m_pCell->pGetSediment()->dGetClaySedimentLoad(),
-      dSiltSediment = m_pCell->pGetSediment()->dGetSiltSedimentLoad(),
-      dSandSediment = m_pCell->pGetSediment()->dGetSandSedimentLoad();
+      dClaySediment = m_pCell->pGetSediment()->dGetClaySedLoad(),
+      dSiltSediment = m_pCell->pGetSediment()->dGetSiltSedLoad(),
+      dSandSediment = m_pCell->pGetSediment()->dGetSandSedLoad();
 
    // First remove the surface water (also decrements the surface water total, and count of wet cells)
    m_pCell->pGetSurfaceWater()->SetSurfaceWaterZero();
 
    // Get a pointer to the top layer
-   CLayer* pLayer = m_pCell->pGetSoil()->pLayerGetLayer(0);
+   CCellSoilLayer* pLayer = m_pCell->pGetSoil()->pLayerGetLayer(0);
 
    // And add water to this layer
    pLayer->ChangeSoilWater(dWaterDepth);
@@ -87,31 +81,31 @@ void CSoilWater::InfiltrateAndMakeDry(void)
    m_pCell->pGetSoil()->DoInfiltrationDeposit(dClaySediment, dSiltSediment, dSandSediment);
 }
 
-// Zeros the values (they are kept over several iterations) values for water lost to infiltration and sediment deposited due to infiltration
-void CSoilWater::SetZeroThisIterInfiltration(void)
+// Zeros the values (they are kept over several iterations) values for water lost to infilt and sediment deposited due to infilt
+void CCellSubsurfaceWater::SetZeroThisIterInfiltration(void)
 {
    m_dInfiltWaterLost = 0;
    m_pCell->pGetSoil()->SetInfiltrationDepositionZero();
 }
 
-// Returns the depth of water lost by infiltration
-double CSoilWater::dGetInfiltration(void) const
+// Returns the depth of water lost by infilt
+double CCellSubsurfaceWater::dGetInfiltration(void) const
 {
    return m_dInfiltWaterLost;
 }
 
-// Returns the cumulative depth of water lost by infiltration
-double CSoilWater::dGetCumulInfiltration(void) const
+// Returns the cumulative depth of water lost by infilt
+double CCellSubsurfaceWater::dGetCumulInfiltration(void) const
 {
    return m_dCumulInfiltWaterLost;
 }
 
 
 // Returns the depth of soil water in the top soil layer
-double CSoilWater::dGetTopLayerSoilWater(void)
+double CCellSubsurfaceWater::dGetTopLayerSoilWater(void)
 {
    // Get a pointer to the top layer
-   CLayer* pLayer = m_pCell->pGetSoil()->pLayerGetLayer(0);
+   CCellSoilLayer* pLayer = m_pCell->pGetSoil()->pLayerGetLayer(0);
 
    return pLayer->dGetSoilWater();
 }

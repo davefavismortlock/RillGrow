@@ -21,7 +21,7 @@
 class CCell;                                 // Forward declaration
 
 
-class CRainAndRunon
+class CCellRainAndRunon
 {
 public:
    static CSimulation* m_pSim;
@@ -37,8 +37,8 @@ private:
    CCell* m_pCell;
 
 public:
-   CRainAndRunon(void);
-   ~CRainAndRunon(void);
+   CCellRainAndRunon(void);
+   ~CCellRainAndRunon(void);
 
    void SetParent(CCell* const);
 

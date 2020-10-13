@@ -40,11 +40,11 @@ private:
       m_dInitialSoilSurfaceElevation,                       // Initial elevation of soil surface, in mm
       m_dStoredRetreat[8];                                  // Stored (i.e. within-cell) headcut retreat along directions 1 to 8
 
-   CSoil m_Soil;
-   CRainAndRunon m_RainAndRunon;
-   CSurfaceWater m_SurfaceWater;
-   CSediment m_Sediment;
-   CSoilWater m_SoilWater;
+   CCellSoil m_Soil;
+   CCellRainAndRunon m_RainAndRunon;
+   CCellSurfaceWater m_SurfaceWater;
+   CCellSedimentLoad m_Sediment;
+   CCellSubsurfaceWater m_SoilWater;
 
 public:
    // ============================================================ Constructor ============================================================
@@ -74,11 +74,11 @@ public:
    void SetHasHadHeadcutRetreat(void);
    bool bHasHadHeadcutRetreat(void) const;
 
-   CSoil* pGetSoil(void);
-   CRainAndRunon* pGetRainAndRunon(void);
-   CSurfaceWater* pGetSurfaceWater(void);
-   CSediment* pGetSediment(void);
-   CSoilWater* pGetSoilWater(void);
+   CCellSoil* pGetSoil(void);
+   CCellRainAndRunon* pGetRainAndRunon(void);
+   CCellSurfaceWater* pGetSurfaceWater(void);
+   CCellSedimentLoad* pGetSediment(void);
+   CCellSubsurfaceWater* pGetSoilWater(void);
 
    void InitializeAtStartOfIteration(bool const);
 };

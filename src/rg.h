@@ -139,7 +139,7 @@ using std::to_string;
 #endif
 
 //========================================================== Hard-Wired Constants =========================================================
-string const   PROGNAME                                     = "RillGrow serial (4 October 2020 version)";
+string const   PROGNAME                                     = "RillGrow serial (13 October 2020 version)";
 string const   SHORTNAME                                    = "RG";
 string const   RG_INI                                       = "rg.ini";
 
@@ -189,7 +189,7 @@ int const      BUFFER_SIZE                                  = 2048;             
 int const      MAX_GIS_FILENAME_SAVE_DIGITS                 = 3;                 // Maximum number of digits for GIS save number
 int const      CLOCK_CHECK_ITERATIONS                       = 5000;
 int const      NUMBER_OF_RNGS                               = 2;                 // Might add more RNGs in later version
-int const      CALC_INFILT_INTERVAL                         = 4;                 // Number of iterations between infiltration calculations
+int const      CALC_INFILT_INTERVAL                         = 4;                 // Number of iterations between infilt calculations
 int const      CALC_SLUMP_INTERVAL                          = 10;                // Number of iterations between slump calculations
 int const      CALC_HEADCUT_RETREAT_INTERVAL                = 7;                 // Number of iterations between headcut retreat calculations
 int const      OUTPUT_WIDTH                                 = 90;                // Width of rh bit of .out file, wrap after this
@@ -201,11 +201,10 @@ const unsigned long  MASK                                   = 0xfffffffful;
 double const   PI                                           = 3.141592653589793238462643;
 double const   INIT_MAX_SPEED_GUESS                         = 10;                // mm/sec
 double const   COURANT_ALPHA                                = 0.95;              // i.e. 5% margin
-double const   TIMESTEP_CHANGE_FACTOR                       = 0.01;              // Maximum of 1% change
-double const   TOLERANCE                                    = 1e-6;              // In mm, relative difference for bFPIsEqual, if too small (e.g. 1e-10), get spurious "rounding" errors
-double const   RAIN_MIN_CONSIDERED                          = 1e-2;              // In mm, don't bother calculating various things if relative diff in rain depth less than this
-double const   FLOW_MIN_CONSIDERED                          = 1e-2;              // In mm, don't bother calculating flow if relative diff in head less than this
-double const   SEDIMENT_MIN_CONSIDERED                      = 1e-2;              // In mm, don't bother calculating various things if relative diff sediment difference less than this
+double const   TOLERANCE                                    = 1e-6;              // In mm. If too small (e.g. 1e-10), get spurious "rounding" errors
+double const   WATER_TOLERANCE                              = 1e-6;              // In mm, ditto
+double const   SEDIMENT_TOLERANCE                           = 1e-5;              // In mm, ditto
+
 double const   ERROR_FLOW_DETACH_MAX                        = 10;                // In mm, is max avg depth per timestep before aborting run
 double const   ERROR_FLOW_DEPOSIT_MAX                       = 10;                // Ditto
 double const   ERROR_SEDIMENT_TRANSPORT_MAX                 = 10;                // Ditto
@@ -219,10 +218,9 @@ string const   ERR                                          = "ERROR: ";
 string const   WARN                                         = "WARNING: ";
 
 string const      PERITERHEAD1 =
-   "                  <-------------- HYDROLOGY -------------><--- FLOW EROSION & DEPOSITION ---><-SPLASH-><--SLUMP-><-TOPPLE-><-INFILT->";
+   "                  <-------------- HYDROLOGY -------------><FLOW EROSION/DEPOSITION><---- SPLASH --->          <--SLUMP-><-TOPPLE-><-INFILT-><HEADCUT>";
 string const      PERITERHEAD2 =
-   "Iteration  Elapsed   Rain Runon  Infilt     Stored OffEdge   Eroded   Sedload Deposit OffEdge    Redist    Redist    Redist   Deposit   Deposit";
-// 9999999 99999.99999 999999 99999 9999999 9999999999 9999999  9999999 999999999 9999999 9999999   9999999 999999999 999999999  99999999  99999999
+   "Iteration  Elapsed   Rain Runon Infilt OffEdge  SurfaceWtr   Detach Deposit OffEdge   Detach Deposit   Sedload    Redist    Redist   Deposit   Detach";
 string const      PERITERHEAD   =
    "PER-ITERATION RESULTS ======================================================================================================================================";
 string const      ENDRAINHEAD   =
@@ -291,22 +289,22 @@ string const   GIS_INITIAL_ELEVATION_CODE                   = "elevinit";
 string const   GIS_DETREND_ELEVATION_FILENAME               = "elevation_detrend";
 string const   GIS_DETREND_ELEVATION_CODE                   = "elevdetrend";
 
-string const   GIS_INFILT_FILENAME                          = "infiltration";
+string const   GIS_INFILT_FILENAME                          = "infilt";
 string const   GIS_INFILT_CODE                              = "infilt";
-string const   GIS_CUMUL_INFILT_FILENAME                    = "cumul_infiltration";
+string const   GIS_CUMUL_INFILT_FILENAME                    = "cumul_infilt";
 string const   GIS_CUMUL_INFILT_CODE                        = "c_infilt";
 
 string const   GIS_SOIL_WATER_FILENAME                      = "soil_water";
 string const   GIS_SOIL_WATER_CODE                          = "soilwater";
 
-string const   GIS_INFILT_DEPOSIT_FILENAME                  = "infiltration_deposition";
+string const   GIS_INFILT_DEPOSIT_FILENAME                  = "infilt_deposit";
 string const   GIS_INFILT_DEPOSIT_CODE                      = "infiltdeposit";
-string const   GIS_CUMUL_INFILT_DEPOSIT_FILENAME            = "cumul_infiltration_deposition";
+string const   GIS_CUMUL_INFILT_DEPOSIT_FILENAME            = "cumul_infilt_deposit";
 string const   GIS_CUMUL_INFILT_DEPOSIT_CODE                = "c_infiltdeposit";
 
-string const   GIS_OVERLANDFLOW_DEPTH_FILENAME              = "water_depth";
-string const   GIS_AVG_OVERLANDFLOW_DEPTH_FILENAME          = "avg_water_depth";
-string const   GIS_AVG_OVERLANDFLOW_DEPTH_CODE              = "avg_water_depth";
+string const   GIS_SURFACE_WATER_DEPTH_FILENAME              = "water_depth";
+string const   GIS_AVG_SURFACE_WATER_DEPTH_FILENAME          = "avg_water_depth";
+string const   GIS_AVG_SURFACE_WATER_DEPTH_CODE              = "avg_water_depth";
 
 string const   GIS_TOP_SURFACE_FILENAME                     = "top_surface";
 string const   GIS_TOP_SURFACE_CODE                         = "topsurf";
@@ -320,20 +318,20 @@ string const   GIS_CUMUL_SPLASH_CODE                        = "c_splash";
 string const   GIS_INUNDATION_REGIME_FILENAME               = "inundation_regime";
 string const   GIS_INUNDATION_REGIME_CODE                   = "inund";
 
-string const   GIS_OVERLANDFLOW_DIRECTION_FILENAME          = "flow_direction";
-string const   GIS_OVERLANDFLOW_DIRECTION_CODE              = "flowdir";
+string const   GIS_SURFACE_WATER_DIRECTION_FILENAME          = "flow_direction";
+string const   GIS_SURFACE_WATER_DIRECTION_CODE              = "flowdir";
 
-string const   GIS_OVERLANDFLOW_SPEED_FILENAME              = "flow_speed";
-string const   GIS_AVG_OVERLANDFLOW_SPEED_FILENAME          = "avg_flow_speed";
-string const   GIS_AVG_OVERLANDFLOW_SPEED_CODE              = "avg_flowspeed";
+string const   GIS_SURFACE_WATER_SPEED_FILENAME              = "flow_speed";
+string const   GIS_AVG_SURFACE_WATER_SPEED_FILENAME          = "avg_flow_speed";
+string const   GIS_AVG_SURFACE_WATER_SPEED_CODE              = "avg_flowspeed";
 
-string const   GIS_OVERLANDFLOW_DW_SPEED_FILENAME           = "flow_speed_dw";
-string const   GIS_AVG_OVERLANDFLOW_DW_SPEED_FILENAME       = "avg_flow_speed_dw";
-string const   GIS_AVG_OVERLANDFLOW_DW_SPEED_CODE           = "avg_flowspeed_dw";
+string const   GIS_SURFACE_WATER_DW_SPEED_FILENAME           = "flow_speed_dw";
+string const   GIS_AVG_SURFACE_WATER_DW_SPEED_FILENAME       = "avg_flow_speed_dw";
+string const   GIS_AVG_SURFACE_WATER_DW_SPEED_CODE           = "avg_flowspeed_dw";
 
 #if defined _DEBUG
-string const   GIS_AVG_OVERLANDFLOW_FROM_EDGES_FILENAME     = "lost_from_edge";
-string const   GIS_AVG_OVERLANDFLOW_FROM_EDGES_CODE         = "fromedge";
+string const   GIS_AVG_SURFACE_WATER_FROM_EDGES_FILENAME     = "lost_from_edge";
+string const   GIS_AVG_SURFACE_WATER_FROM_EDGES_CODE         = "fromedge";
 #endif
 
 string const   GIS_STREAMPOWER_FILENAME                     = "stream_power";
@@ -357,26 +355,26 @@ string const   GIS_FROUDE_NUMBER_CODE                       = "froude";
 string const   GIS_TRANSPORT_CAPACITY_FILENAME              = "transport_capacity";
 string const   GIS_TRANSPORT_CAPACITY_CODE                  = "transcap";
 
-string const   GIS_ALL_SIZE_FLOW_DETACH_FILENAME            = "flow_detachment";
+string const   GIS_ALL_SIZE_FLOW_DETACH_FILENAME            = "flow_detach";
 string const   GIS_ALL_SIZE_FLOW_DETACH_CODE                = "flowdetach";
 
-string const   GIS_CUMUL_ALL_SIZE_FLOW_DETACH_FILENAME      = "cumul_flow_detachment";
+string const   GIS_CUMUL_ALL_SIZE_FLOW_DETACH_FILENAME      = "cumul_flow_detach";
 string const   GIS_CUMUL_ALL_SIZE_FLOW_DETACH_CODE          = "c_flowdeposit";
 
-string const   GIS_CUMUL_ALL_SIZE_FLOW_DEPOSIT_FILENAME     = "cumul_flow_deposition";
+string const   GIS_CUMUL_ALL_SIZE_FLOW_DEPOSIT_FILENAME     = "cumul_sedload_deposit";
 string const   GIS_CUMUL_ALL_SIZE_FLOW_DEPOSIT_CODE         = "c_flowdetach";
 
 string const   GIS_SEDIMENT_CONCENTRATION_FILENAME          = "sediment_concentration";
 string const   GIS_SEDIMENT_CONCENTRATION_CODE              = "sedconc";
-string const   GIS_SEDIMENT_LOAD_FILENAME                   = "sediment_load";
+string const   GIS_SEDIMENT_LOAD_FILENAME                   = "sedload";
 string const   GIS_SEDIMENT_LOAD_CODE                       = "sedload";
-string const   GIS_AVG_SEDIMENT_LOAD_FILENAME               = "avg_sediment_load";
+string const   GIS_AVG_SEDIMENT_LOAD_FILENAME               = "avg_sedload";
 string const   GIS_AVG_SEDIMENT_LOAD_CODE                   = "avg_sedload";
 
-string const   GIS_CUMUL_SLUMP_DETACH_FILENAME              = "cumul_slump_detachment";
+string const   GIS_CUMUL_SLUMP_DETACH_FILENAME              = "cumul_slump_detach";
 string const   GIS_CUMUL_SLUMP_DEPOSIT_FILENAME             = "cumul_slump_deposition";
 string const   GIS_CUMUL_SLUMP_CODE                         = "c_slump";
-string const   GIS_CUMUL_TOPPLE_DETACH_FILENAME             = "cumul_toppling_detachment";
+string const   GIS_CUMUL_TOPPLE_DETACH_FILENAME             = "cumul_toppling_detach";
 string const   GIS_CUMUL_TOPPLE_DEPOSIT_FILENAME            = "cumul_toppling_deposition";
 string const   GIS_CUMUL_TOPPLE_CODE                        = "c_topple";
 
@@ -401,59 +399,59 @@ string const  GIS_CUMUL_RUNON_TITLE                         = "Cumulative runon"
 int const     GIS_INFILT                                    = 7;
 string const  GIS_INFILT_TITLE                              = "Infiltration";
 int const     GIS_CUMUL_INFILT                              = 8;
-string const  GIS_CUMUL_INFILT_TITLE                        = "Cumulative infiltration depth";
+string const  GIS_CUMUL_INFILT_TITLE                        = "Cumulative infilt depth";
 int const     GIS_SOIL_WATER                                = 9;
 string const  GIS_SOIL_WATER_TITLE                          = "Soil water content";
 int const     GIS_INFILT_DEPOSIT                            = 10;
 string const  GIS_INFILT_DEPOSIT_TITLE                      = "Infiltration deposition";
 int const     GIS_CUMUL_INFILT_DEPOSIT                      = 11;
-string const  GIS_CUMUL_INFILT_DEPOSIT_TITLE                = "Cumulative infiltration deposition";
+string const  GIS_CUMUL_INFILT_DEPOSIT_TITLE                = "Cumulative infilt deposition";
 int const     GIS_SPLASH                                    = 12;
 string const  GIS_SPLASH_TITLE                              = "Splash lowering";
 int const     GIS_CUMUL_SPLASH                              = 13;
 string const  GIS_CUMUL_SPLASH_TITLE                        = "Cumulative splash lowering";
-int const     GIS_OVERLANDFLOW_DEPTH                        = 14;
-string const  GIS_OVERLANDFLOW_DEPTH_TITLE                  = "Overland flow depth";
-int const     GIS_AVG_OVERLANDFLOW_DEPTH                    = 15;
-string const  GIS_AVG_OVERLANDFLOW_DEPTH_TITLE              = "Cumulative average overland flow depth";
+int const     GIS_SURFACE_WATER_DEPTH                       = 14;
+string const  GIS_SURFACE_WATER_DEPTH_TITLE                 = "Surface water depth";
+int const     GIS_AVG_SURFACE_WATER_DEPTH                   = 15;
+string const  GIS_AVG_SURFACE_WATER_DEPTH_TITLE             = "Cumulative average surface water depth";
 int const     GIS_INUNDATION_REGIME                         = 16;
-string const  GIS_INUNDATION_REGIME_TITLE                   = "Overland flow inundation regime";
-int const     GIS_OVERLANDFLOW_DIRECTION                    = 17;
-string const  GIS_OVERLANDFLOW_DIRECTION_TITLE              = "Overland flow direction";
-int const     GIS_OVERLANDFLOW_SPEED                        = 18;
-string const  GIS_OVERLANDFLOW_SPEED_TITLE                  = "Overland flow speed";
-int const     GIS_OVERLANDFLOW_DW_SPEED                     = 19;
-string const  GIS_OVERLANDFLOW_DW_SPEED_TITLE               = "Overland flow depth-weighted speed";
-int const     GIS_AVG_OVERLANDFLOW_SPEED                    = 20;
-string const  GIS_AVG_OVERLANDFLOW_SPEED_TITLE              = "Overland flow cumulative average speed";
-int const     GIS_AVG_OVERLANDFLOW_DW_SPEED                 = 21;
-string const  GIS_AVG_OVERLANDFLOW_DW_SPEED_TITLE           = "Overland flow cumulative average depth-weighted flow speed";
+string const  GIS_INUNDATION_REGIME_TITLE                   = "Surface water inundation regime";
+int const     GIS_SURFACE_WATER_DIRECTION                   = 17;
+string const  GIS_SURFACE_WATER_DIRECTION_TITLE             = "Surface water direction";
+int const     GIS_SURFACE_WATER_SPEED                       = 18;
+string const  GIS_SURFACE_WATER_SPEED_TITLE                 = "Surface water speed";
+int const     GIS_SURFACE_WATER_DW_SPEED                    = 19;
+string const  GIS_SURFACE_WATER_DW_SPEED_TITLE              = "Surface water depth-weighted speed";
+int const     GIS_AVG_SURFACE_WATER_SPEED                   = 20;
+string const  GIS_AVG_SURFACE_WATER_SPEED_TITLE             = "Surface water cumulative average speed";
+int const     GIS_AVG_SURFACE_WATER_DW_SPEED                = 21;
+string const  GIS_AVG_SURFACE_WATER_DW_SPEED_TITLE          = "Surface water cumulative average depth-weighted flow speed";
 int const     GIS_STREAMPOWER                               = 22;
-string const  GIS_STREAMPOWER_TITLE                         = "Overland flow stream power";
+string const  GIS_STREAMPOWER_TITLE                         = "Surface water stream power";
 int const     GIS_SHEAR_STRESS                              = 23;
-string const  GIS_SHEAR_STRESS_TITLE                        = "Shear stress due to overland flow";
+string const  GIS_SHEAR_STRESS_TITLE                        = "Shear stress due to surface water";
 int const     GIS_FRICTION_FACTOR                           = 24;
-string const  GIS_FRICTION_FACTOR_TITLE                     = "Friction factor for overland flow";
+string const  GIS_FRICTION_FACTOR_TITLE                     = "Friction factor for surface water";
 int const     GIS_AVG_SHEAR_STRESS                          = 25;
-string const  GIS_AVG_SHEAR_STRESS_TITLE                    = "Cumulative average shear stress due to overland flow";
+string const  GIS_AVG_SHEAR_STRESS_TITLE                    = "Cumulative average shear stress due to surface water";
 int const     GIS_REYNOLDS_NUMBER                           = 26;
-string const  GIS_REYNOLDS_NUMBER_TITLE                     = "Overland flow Reynolds number";
+string const  GIS_REYNOLDS_NUMBER_TITLE                     = "Surface water Reynolds number";
 int const     GIS_FROUDE_NUMBER                             = 27;
-string const  GIS_FROUDE_NUMBER_TITLE                       = "Overland flow Froude number";
+string const  GIS_FROUDE_NUMBER_TITLE                       = "Surface water Froude number";
 int const     GIS_TRANSPORT_CAPACITY                        = 28;
-string const  GIS_TRANSPORT_CAPACITY_TITLE                  = "Overland flow transport capacity";
+string const  GIS_TRANSPORT_CAPACITY_TITLE                  = "Surface water transport capacity";
 int const     GIS_ALL_SIZE_FLOW_DETACH                      = 29;
-string const  GIS_ALL_SIZE_FLOW_DETACH_TITLE                = "Detachment due to overland flow, all size classes";
+string const  GIS_ALL_SIZE_FLOW_DETACH_TITLE                = "Detachment due to surface water, all size classes";
 int const     GIS_CUMUL_ALL_SIZE_FLOW_DETACH                = 30;
-string const  GIS_CUMUL_ALL_SIZE_FLOW_DETACH_TITLE          = "Cumulative detachment due to overland flow, all size classes";
+string const  GIS_CUMUL_ALL_SIZE_FLOW_DETACH_TITLE          = "Cumulative detachment due to surface water, all size classes";
 int const     GIS_SEDIMENT_CONCENTRATION                    = 31;
-string const  GIS_SEDIMENT_CONCENTRATION_TITLE              = "Sediment concentration in overland flow, all size classes";
+string const  GIS_SEDIMENT_CONCENTRATION_TITLE              = "Sediment concentration in surface water, all size classes";
 int const     GIS_SEDIMENT_LOAD                             = 32;
-string const  GIS_SEDIMENT_LOAD_TITLE                       = "Sediment load of overland flow, all size classes";
+string const  GIS_SEDIMENT_LOAD_TITLE                       = "Sediment load of surface water, all size classes";
 int const     GIS_AVG_SEDIMENT_LOAD                         = 33;
-string const  GIS_AVG_SEDIMENT_LOAD_TITLE                   = "Cumulative average sediment load of overland flow, all size classes";
+string const  GIS_AVG_SEDIMENT_LOAD_TITLE                   = "Cumulative average sediment load of surface water, all size classes";
 int const     GIS_CUMUL_ALL_SIZE_FLOW_DEPOSIT               = 34;
-string const  GIS_CUMUL_ALL_SIZE_FLOW_DEPOSIT_TITLE         = "Cumulative deposition due to overland flow, all size classes";
+string const  GIS_CUMUL_ALL_SIZE_FLOW_DEPOSIT_TITLE         = "Cumulative deposition due to surface water, all size classes";
 int const     GIS_CUMUL_SLUMP_DETACH                        = 35;
 string const  GIS_CUMUL_SLUMP_DETACH_TITLE                  = "Cumulative detachment due to slumping, all size classes";
 int const     GIS_CUMUL_SLUMP_DEPOSIT                       = 36;
@@ -467,8 +465,8 @@ string const  GIS_CUMUL_BINARY_HEADCUT_RETREAT_TITLE        = "Cumulative binary
 int const     GIS_CUMUL_ALL_PROC_SURF_LOWER                 = 40;
 string const  GIS_CUMUL_ALL_PROC_SURF_LOWER_TITLE           = "Cumulative surface lowering, all processes";
 #if defined _DEBUG
-int const     GIS_AVG_OVERLANDFLOW_FROM_EDGES               = 201;
-string const  GIS_AVG_OVERLANDFLOW_FROM_EDGES_TITLE         = "Total lost from edges";
+int const     GIS_AVG_SURFACE_WATER_FROM_EDGES              = 201;
+string const  GIS_AVG_SURFACE_WATER_FROM_EDGES_TITLE        = "Total lost from edges";
 #endif
 
 // Time series codes
@@ -481,47 +479,47 @@ string const  AREA_WET_TIME_SERIES_CODE                     = "area_wet";
 string const  RAIN_TIME_SERIES_NAME                         = "rain";
 string const  RAIN_TIME_SERIES_CODE                         = "rain";
 
-string const  INFILT_TIME_SERIES_NAME                       = "infiltration";
-string const  INFILT_TIME_SERIES_CODE                       = "infiltration";
+string const  INFILT_TIME_SERIES_NAME                       = "infilt";
+string const  INFILT_TIME_SERIES_CODE                       = "infilt";
 
-string const  EXFILTRATION_TIME_SERIES_NAME                 = "exfiltration";
-string const  EXFILTRATION_TIME_SERIES_CODE                 = "exfiltration";
+string const  EXFILT_TIME_SERIES_NAME                       = "exfilt";
+string const  EXFILT_TIME_SERIES_CODE                       = "exfilt";
 
 string const  RUNON_TIME_SERIES_NAME                        = "run_on";
 string const  RUNON_TIME_SERIES_CODE                        = "run_on";
 
-string const  OVERLANDFLOW_TIME_SERIES_NAME                 = "surface_water";
-string const  OVERLANDFLOW_TIME_SERIES_CODE                 = "surface_water";
+string const  SURFACE_WATER_TIME_SERIES_NAME                 = "surface_water";
+string const  SURFACE_WATER_TIME_SERIES_CODE                = "surface_water";
 
 string const  WATER_LOST_TIME_SERIES_NAME                   = "discharge";
 string const  WATER_LOST_TIME_SERIES_CODE                   = "discharge";
 
-string const  FLOW_DETACH_TIME_SERIES_NAME                  = "flow_detachment";
-string const  FLOW_DETACH_TIME_SERIES_CODE                  = "flow_detachment";
+string const  FLOW_DETACH_TIME_SERIES_NAME                  = "flow_detach";
+string const  FLOW_DETACH_TIME_SERIES_CODE                  = "flow_detach";
 
-string const  SLUMP_DETACHMENT_TIME_SERIES_NAME             = "slump_detachment";
-string const  SLUMP_DETACHMENT_TIME_SERIES_CODE             = "slump_detachment";
+string const  SLUMP_DETACH_TIME_SERIES_NAME                 = "slump_detach";
+string const  SLUMP_DETACH_TIME_SERIES_CODE                 = "slump_detach";
 
-string const  TOPPLE_DETACHMENT_TIME_SERIES_NAME            = "topple_detachment";
-string const  TOPPLE_DETACHMENT_TIME_SERIES_CODE            = "topple_detachment";
+string const  TOPPLE_DETACH_TIME_SERIES_NAME                = "topple_detach";
+string const  TOPPLE_DETACH_TIME_SERIES_CODE                = "topple_detach";
 
-string const  FLOW_DEPOSIT_TIME_SERIES_NAME                 = "flow_deposition";
-string const  FLOW_DEPOSIT_TIME_SERIES_CODE                 = "flow_deposition";
+string const  SEDLOAD_DEPOSIT_TIME_SERIES_NAME              = "sedload_deposit";
+string const  SEDLOAD_DEPOSIT_TIME_SERIES_CODE              = "sedload_deposit";
 
-string const  SEDIMENT_LOST_TIME_SERIES_NAME                = "sediment_lost";
-string const  SEDIMENT_LOST_TIME_SERIES_CODE                = "sediment_lost";
+string const  SEDLOAD_LOST_TIME_SERIES_NAME                 = "sedload_lost";
+string const  SEDLOAD_LOST_TIME_SERIES_CODE                 = "sedload_lost";
 
-string const  SEDIMENT_LOAD_TIME_SERIES_NAME                = "sediment_load";
-string const  SEDIMENT_LOAD_TIME_SERIES_CODE                = "sedload_load";
+string const  SEDLOAD_TIME_SERIES_NAME                      = "sedload";
+string const  SEDLOAD_TIME_SERIES_CODE                      = "sedload";
 
-string const  INFILT_DEPOSIT_TIME_SERIES_NAME               = "infiltration_deposition";
-string const  INFILT_DEPOSIT_TIME_SERIES_CODE               = "infiltration_deposition";
+string const  INFILT_DEPOSIT_TIME_SERIES_NAME               = "infilt_deposit";
+string const  INFILT_DEPOSIT_TIME_SERIES_CODE               = "infilt_deposit";
 
-string const  SPLASH_REDISTRIBUTION_TIME_SERIES_NAME        = "splash_redistribution";
-string const  SPLASH_REDISTRIBUTION_TIME_SERIES_CODE        = "splash_redistribution";
+string const  SPLASH_REDIST_TIME_SERIES_NAME                = "splash_redist";
+string const  SPLASH_REDIST_TIME_SERIES_CODE                = "splash_redist";
 
-string const  SPLASH_KINETIC_ENERGY_TIME_SERIES_NAME        = "kinetic_energy";
-string const  SPLASH_KINETIC_ENERGY_TIME_SERIES_CODE        = "kinetic_energy";
+string const  SPLASH_KE_TIME_SERIES_NAME                    = "splash_KE";
+string const  SPLASH_KE_TIME_SERIES_CODE                    = "splash_KE";
 
 string const  SOIL_WATER_TIME_SERIES_NAME                   = "soil_water";
 string const  SOIL_WATER_TIME_SERIES_CODE                   = "soil_water";
@@ -548,8 +546,8 @@ int const   RTN_ERR_GISFILEWRITE                            = 17;
 int const   RTN_ERR_TSFILEWRITE                             = 18;
 int const   RTN_ERR_SPLASHEFF                               = 19;
 int const   RTN_ERR_FLOWDETACHMAX                           = 20;
-int const   RTN_ERR_FLOWDEPOSITMAX                          = 21;
-int const   RTN_ERR_TRANSPORTMAX                            = 22;
+int const   RTN_ERR_SEDLOADDEPOSITMAX                       = 21;
+int const   RTN_ERR_SEDLOADMAX                              = 22;
 int const   RTN_ERR_SPLASHDETMAX                            = 23;
 int const   RTN_ERR_SPLASHDEPMAX                            = 24;
 int const   RTN_ERR_SLUMPDETMAX                             = 25;

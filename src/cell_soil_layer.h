@@ -22,7 +22,7 @@
 using std::string;
 
 
-class CLayer
+class CCellSoilLayer
 {
 private:
    string m_strName;
@@ -43,8 +43,8 @@ private:
       m_dSoilWater;
 
 public:
-   CLayer(void);
-   ~CLayer(void);
+   CCellSoilLayer(void);
+   ~CCellSoilLayer(void);
 
    void SetName(string const*);
    string* pstrGetName(void);

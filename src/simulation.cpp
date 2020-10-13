@@ -94,8 +94,8 @@ CSimulation::CSimulation(void)
    m_bSplashRedistTS          =
    m_bInfiltDepositTS         =
    m_bSedLoadTS               =
-   m_bSedLostTS               =
-   m_bDoFlowDepositionTS      =
+   m_bSedLoadLostTS               =
+   m_bDoSedLoadDepositTS      =
    m_bSoilWaterTS             =
    m_bSaveGISThisIter         =
    m_bThisIterRainChange      =
@@ -146,7 +146,6 @@ CSimulation::CSimulation(void)
    m_dMaxY                          =
    m_dMaxFlowSpeed                  =
    m_dPossMaxSpeedNextIter          =
-   m_dFlowSpeedLimit                =
    m_dBasementElevation             =
    m_dAvgElev                       =
    m_dMinElev                       =
@@ -206,7 +205,7 @@ CSimulation::CSimulation(void)
    m_dThisIterSurfaceWaterStored    =
    m_dThisIterClaySedLoad           =
    m_dThisIterSiltSedLoad           =
-   m_dThisIterSandSedimentLoad      =
+   m_dThisIterSandSedLoad           =
    m_dThisIterRain                  =
    m_dThisIterRunOn                 =
    m_dThisIterKE                    =
@@ -223,9 +222,12 @@ CSimulation::CSimulation(void)
    m_dThisIterClaySplashDetach      =
    m_dThisIterSiltSplashDetach      =
    m_dThisIterSandSplashDetach      =
-   m_dThisIterClaySplashDeposit     =
-   m_dThisIterSiltSplashDeposit     =
-   m_dThisIterSandSplashDeposit     =
+   m_dThisIterClaySplashDepositOnly =
+   m_dThisIterSiltSplashDepositOnly =
+   m_dThisIterSandSplashDepositOnly =
+   m_dThisIterClaySplashDepositAndSedLoad     =
+   m_dThisIterSiltSplashDepositAndSedLoad     =
+   m_dThisIterSandSplashDepositAndSedLoad     =
    m_dThisIterClaySlumpDetach       =
    m_dThisIterSiltSlumpDetach       =
    m_dThisIterSandSlumpDetach       =
@@ -431,10 +433,10 @@ CSimulation::~CSimulation(void)
 
 ========================================================================================================================================*/
 CSimulation* CCell::m_pSim = NULL;                    // Initialize m_pSim, the static member of CCell
-CSimulation* CSoil::m_pSim = NULL;                    // Ditto for the CSoil class
-CSimulation* CRainAndRunon::m_pSim = NULL;            // Ditto for the CRainAndRunon class
-CSimulation* CSurfaceWater::m_pSim = NULL;            // Ditto for the CSurfaceWater class
-CSimulation* CSediment::m_pSim = NULL;                // Ditto for the CSediment class
+CSimulation* CCellSoil::m_pSim = NULL;                    // Ditto for the CCellSoil class
+CSimulation* CCellRainAndRunon::m_pSim = NULL;            // Ditto for the CCellRainAndRunon class
+CSimulation* CCellSurfaceWater::m_pSim = NULL;            // Ditto for the CCellSurfaceWater class
+CSimulation* CCellSedimentLoad::m_pSim = NULL;                // Ditto for the CellSediment class
 
 
 /*========================================================================================================================================
@@ -496,10 +498,10 @@ int CSimulation::nDoRun(int nArg, char* pcArgv[])
 
    // Set the shared pointers to the CSimulation object
    CCell::m_pSim = this;
-   CSoil::m_pSim = this;
-   CRainAndRunon::m_pSim = this;
-   CSurfaceWater::m_pSim = this;
-   CSediment::m_pSim = this;
+   CCellSoil::m_pSim = this;
+   CCellRainAndRunon::m_pSim = this;
+   CCellSurfaceWater::m_pSim = this;
+   CCellSedimentLoad::m_pSim = this;
 
    // Mark edge cells
    MarkEdgeCells();
@@ -507,7 +509,7 @@ int CSimulation::nDoRun(int nArg, char* pcArgv[])
    // Create soil layers
    CreateSoilLayers();
 
-   // If we are simulating infiltration, then create the this-operation and time series soil water variables
+   // If we are simulating infilt, then create the this-operation and time series soil water variables
    if (m_bDoInfiltration)
    {
       for (int nLayer = 0; nLayer < m_nNumSoilLayers; nLayer++)
@@ -546,15 +548,12 @@ int CSimulation::nDoRun(int nArg, char* pcArgv[])
    m_dInvCos45      = 1 / cos(PI/4);
    m_dInvXGridMax   = 1 / static_cast<double>(m_nXGridMax);
 
-   // If necessary, set up some initial values for infiltration, write to the Cell array
+   // If necessary, set up some initial values for infilt, write to the Cell array
    if (m_bDoInfiltration)
       InitSoilWater();
 
    // Calculate the off-edge head constant using the empirical relationship const = m_dOffEdgeParamA * m_dGradient^m_dOffEdgeParamB where m_dGradient is in %
    m_dOffEdgeConst = m_dOffEdgeParamA * pow(m_dGradient, m_dOffEdgeParamB);
-
-   // Start with a guessed-in maximum flow speed
-   m_dMaxFlowSpeed = INIT_MAX_SPEED_GUESS;
 
    // Calculate a 'constant' for detachment, do this now for efficiency
    m_dST2 = m_dCVT * m_dCVT * m_dT * m_dT;
@@ -693,7 +692,7 @@ void CSimulation::CalcTimestep(void)
    else
    {
       // Some flow occurred: calculate the possible next timestep. Start by constraining the max possible flow speed
-      m_dPossMaxSpeedNextIter = tMin(m_dPossMaxSpeedNextIter, m_dFlowSpeedLimit);
+      m_dPossMaxSpeedNextIter = tMin(m_dPossMaxSpeedNextIter, m_dMaxFlowSpeed);
 
       // OK now calculate the possible timestep
       double dPossNextTimeStep = m_dCellSide / m_dPossMaxSpeedNextIter;             // In sec
@@ -729,45 +728,41 @@ void CSimulation::CalcTimestep(void)
             m_dTimeStep = m_dTimeStep * COURANT_ALPHA;
          }
       }
-   }
 
-   // Set max flow speed for the next iteration
-   m_dMaxFlowSpeed = m_dCellSide / m_dTimeStep;
+      // Reset for the coming interation
+      m_dPossMaxSpeedNextIter = 0;
+   }
 }
 
-
+#if defined _DEBUG
 /*========================================================================================================================================
 
- Calculate and checks the mass balance (water and sediment) for this iteration in order to remove rounding errors, which always accumulate when many small values are summed using finite-precision arithmetic (see e.g. "Floating-Point Summation" http://www.ddj.com/cpp/184403224#REF1). Even after a few iterations, mass-balance errors will start to appear here, unless a correction is made every iteration
+ Calculate and checks the mass balance of water and of sediment) for this iteration in order to remove rounding errors. These always accumulate when many small values are summed using finite-precision arithmetic (see e.g. "Floating-Point Summation" http://www.ddj.com/cpp/184403224#REF1). Even after a few iterations, mass-balance errors will start to appear here, unless a correction is made every iteration
 
 ========================================================================================================================================*/
-void CSimulation::RemoveCumulativeRoundingErrors(void)
+void CSimulation::CheckMassBalance(void)
 {
-   static double
-      sdWaterStoredLast = 0,
-      sdWaterCorrection = 0;
-   double
-      dDeltaWaterStored = m_dThisIterSurfaceWaterStored - sdWaterStoredLast;       // Note can be -ve
+   // Check the this-iteration water balance: start by calculating the change in surface water since the last iteration
+   static double sdWaterStoredLast = 0;
+   double dDeltaWaterStored = m_dThisIterSurfaceWaterStored - sdWaterStoredLast;       // Note can be -ve
 
-   // Next calculate LHS = rain + run-on + correction, RHS = infiltration + outflow + change in storage
+   // Calculate LHS = rain + run-on + correction, RHS = infilt + outflow + change in storage
    double
-      dTotWaterLHS = m_dThisIterRain + m_dThisIterRunOn + sdWaterCorrection,
+      dTotWaterLHS = m_dThisIterRain + m_dThisIterRunOn,
       dTotWaterRHS = m_dThisIterInfiltration + m_dThisIterWaterLost + dDeltaWaterStored;
 
-   // Force mass balance by correcting dWaterCorrection each iteration
-   sdWaterCorrection += (dTotWaterRHS - dTotWaterLHS);
-
-#if defined _DEBUG
-   // Recalculate dTotWaterLHS (since dWaterCorrection was changed) and check
-   dTotWaterLHS = m_dThisIterRain + m_dThisIterRunOn + sdWaterCorrection;
-   if (! bFPIsEqual(dTotWaterLHS, dTotWaterRHS, TOLERANCE))
+   if (! bFPIsEqual(dTotWaterLHS, dTotWaterRHS, WATER_TOLERANCE))
    {
+      m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << setprecision(6);
+
       m_ofsLog << m_ulIter << " " << WARN << "water balance, LHS = " << dTotWaterLHS << " RHS = " << dTotWaterRHS << endl;
       m_ofsLog << "\tm_dThisIterRain           = " << m_dThisIterRain << endl;
       m_ofsLog << "\tm_dThisIterRunOn          = " << m_dThisIterRunOn << endl;
       m_ofsLog << "\t\tm_dThisIterInfiltration = " << m_dThisIterInfiltration << endl;
       m_ofsLog << "\t\tm_dThisIterWaterLost    = " << m_dThisIterWaterLost << endl;
       m_ofsLog << "\t\tfDeltaWaterStored       = " << dDeltaWaterStored << endl;
+
+      m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::scientific) << setprecision(6);
    } /*
    else
    {
@@ -778,26 +773,25 @@ void CSimulation::RemoveCumulativeRoundingErrors(void)
       m_ofsLog << "\t\tm_dThisIterWaterLost    = " << m_dThisIterWaterLost << endl;
       m_ofsLog << "\t\tfDeltaWaterStored       = " << fDeltaWaterStored << endl;
    } */
-#endif
 
    // Store for next iteration
    sdWaterStoredLast = m_dThisIterSurfaceWaterStored;
 
-   // Now calculate this-iteration sediment balance. Again, must deal with accumulation of rounding errors due to summation of many small values. Therefore mass balance for sediment (all as depths) must be corrected here. First calculate change in sediment storage, between this and last iteration
-   static double
-      sdSedimentLoadDepthLast = 0,
-      sdSedCorrection = 0;
+   // Now check the this-iteration sediment balance: start by ca;lculating the change in sediment load since the last iteration
+   static double sdSedimentLoadDepthLast = 0;
 
-   double dDeltaSedLoadStored = (m_dThisIterClaySedLoad + m_dThisIterSiltSedLoad + m_dThisIterSandSedimentLoad) - sdSedimentLoadDepthLast;
+   double
+      dTotSedStored = m_dThisIterClaySedLoad + m_dThisIterSiltSedLoad + m_dThisIterSandSedLoad,
+      dDeltaSedLoadStored = dTotSedStored - sdSedimentLoadDepthLast;
 
-   // LHS = flow detachment + slump and topple detachment + correction, RHS = flow deposition + slump and topple deposition + sediment lost + change in storage. Note cannot include deposition resulting from cells drying up due to infiltration, because doing so results in double-counting of this depth of sediment
+   // LHS = flow detachment + slump and topple detachment + correction, RHS = flow deposition + slump and topple deposition + sediment lost + change in storage. Note cannot include deposition resulting from cells drying up due to infilt, because doing so results in double-counting of this depth of sediment
    double
       dThisIterFlowDetach = m_dThisIterClayFlowDetach + m_dThisIterSiltFlowDetach + m_dThisIterSandFlowDetach,
       dThisIterFlowDeposit = m_dThisIterClayFlowDeposit + m_dThisIterSiltFlowDeposit + m_dThisIterSandFlowDeposit;
 
    double
       dThisIterSplashDetach = m_dThisIterClaySplashDetach + m_dThisIterSiltSplashDetach + m_dThisIterSandSplashDetach,
-      dThisIterSplashDeposit = m_dThisIterClaySplashDeposit + m_dThisIterSiltSplashDeposit + m_dThisIterSandSplashDeposit;
+      dThisIterSplashDepositOnly = m_dThisIterClaySplashDepositOnly + m_dThisIterSiltSplashDepositOnly + m_dThisIterSandSplashDepositOnly;
 
    double
       dThisIterSlumpDetach = m_dThisIterClaySlumpDetach + m_dThisIterSiltSlumpDetach  + m_dThisIterSandSlumpDetach,
@@ -811,26 +805,27 @@ void CSimulation::RemoveCumulativeRoundingErrors(void)
       dThisIterSedLost = m_dThisIterClaySedLost + m_dThisIterSiltSedLost + m_dThisIterSandSedLost;
 
    double
-      dTotSedLHS = dThisIterFlowDetach + dThisIterSplashDetach + dThisIterSlumpDetach + dThisIterToppleDetach + sdSedCorrection,
-      dTotSedRHS = dThisIterFlowDeposit + dThisIterSplashDeposit + dThisIterSlumpDeposit + dThisIterToppleDeposit + dThisIterSedLost + dDeltaSedLoadStored;
+      dTotSedLHS = dThisIterFlowDetach + dThisIterSplashDetach + dThisIterSlumpDetach + dThisIterToppleDetach,
+      dTotSedRHS = dThisIterFlowDeposit + dThisIterSplashDepositOnly + dThisIterSlumpDeposit + dThisIterToppleDeposit + dThisIterSedLost + dDeltaSedLoadStored;
 
-   // Force mass balance by correcting dSedCorrection each iteration
-   sdSedCorrection += dTotSedRHS - dTotSedLHS;
-
-#if defined _DEBUG
-   // Recalculate dTotSedLHS (since dSedCorrection was changed) and check
-   dTotSedLHS = dThisIterFlowDetach + dThisIterSplashDetach + dThisIterSlumpDetach + dThisIterToppleDetach + sdSedCorrection;
-   if (! bFPIsEqual(dTotSedLHS, dTotSedRHS, TOLERANCE))
+   if (! bFPIsEqual(dTotSedLHS, dTotSedRHS, SEDIMENT_TOLERANCE))
    {
+      m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << setprecision(6);
+
       m_ofsLog << m_ulIter << " " << WARN << "sediment balance, LHS = " << dTotSedLHS << " RHS = " << dTotSedRHS << endl;
+      m_ofsLog << "\tLHS (detach) - RHS (losses + storage) = " << dTotSedLHS - dTotSedRHS << endl;
       m_ofsLog << "\tdThisIterFlowDetach           = " << dThisIterFlowDetach << endl;
+      m_ofsLog << "\tdThisIterSplashDetach         = " << dThisIterSplashDetach << endl;
       m_ofsLog << "\tdThisIterSlumpDetach          = " << dThisIterSlumpDetach << endl;
       m_ofsLog << "\tdThisIterToppleDetach         = " << dThisIterToppleDetach << endl;
       m_ofsLog << "\t\tdThisIterFlowDeposit           = " << dThisIterFlowDeposit << endl;
+      m_ofsLog << "\t\tdThisIterSplashDepositOnly     = " << dThisIterSplashDepositOnly << endl;
       m_ofsLog << "\t\tdThisIterSlumpDeposit          = " << dThisIterSlumpDeposit << endl;
       m_ofsLog << "\t\tdThisIterToppleDeposit         = " << dThisIterToppleDeposit << endl;
       m_ofsLog << "\t\tdThisIterSedLost               = " << dThisIterSedLost << endl;
       m_ofsLog << "\t\tdDeltaSedLoadStored              = " << dDeltaSedLoadStored << endl;
+
+      m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::scientific) << setprecision(6);
    } /*
    else
    {
@@ -842,11 +837,11 @@ void CSimulation::RemoveCumulativeRoundingErrors(void)
    m_ofsLog << "\t\tdThisIterSedLost               = " << dThisIterSedLost << endl;
    m_ofsLog << "\t\tdDeltaSedLoadStored              = " << dDeltaSedLoadStored << endl;
    } */
-#endif
 
    // Store for next iteration
-   sdSedimentLoadDepthLast = (m_dThisIterClaySedLoad + m_dThisIterSiltSedLoad + m_dThisIterSandSedimentLoad);
+   sdSedimentLoadDepthLast = (m_dThisIterClaySedLoad + m_dThisIterSiltSedLoad + m_dThisIterSandSedLoad);
 }
+#endif
 
 
 /*========================================================================================================================================
@@ -909,7 +904,7 @@ void CSimulation::UpdateGrandTotals(void)
    if (m_bSplashThisIter)
    {
       m_ldGTotSplashDetach  += (m_dThisIterClaySplashDetach + m_dThisIterSiltSplashDetach + m_dThisIterSandSplashDetach) * m_dCellSquare;
-      m_ldGTotSplashDeposit += (m_dThisIterClaySplashDeposit + m_dThisIterSiltSplashDeposit + m_dThisIterSandSplashDeposit) * m_dCellSquare;
+      m_ldGTotSplashDeposit += (m_dThisIterClaySplashDepositAndSedLoad + m_dThisIterSiltSplashDepositAndSedLoad + m_dThisIterSandSplashDepositAndSedLoad) * m_dCellSquare;
    }
 
    if (m_bSlumpThisIter)
@@ -934,11 +929,11 @@ int CSimulation::nDoSimulation(void)
 #endif
 
    // If requested, write an initial microtopography file (not detrended)
-   if (m_bInitElevSave && (! bWriteFileFloat(GIS_ELEVATION, &GIS_ELEVATION_TITLE)))
+   if (m_bInitElevSave && (! bWriteGISFileFloat(GIS_ELEVATION, &GIS_ELEVATION_TITLE)))
       return (RTN_ERR_GISFILEWRITE);
 
    // If requested, write out the rainfall variation multiplier file
-   if ((m_bRainVarMSave) && (! bWriteFileFloat(GIS_RAIN_SPATIAL_VARIATION, &GIS_RAIN_SPATIAL_VARIATION_TITLE)))
+   if ((m_bRainVarMSave) && (! bWriteGISFileFloat(GIS_RAIN_SPATIAL_VARIATION, &GIS_RAIN_SPATIAL_VARIATION_TITLE)))
       return (RTN_ERR_GISFILEWRITE);
 
    // ========================================================== The main loop ===========================================================
@@ -959,7 +954,7 @@ int CSimulation::nDoSimulation(void)
          for (int nY = 0; nY < m_nYGridMax; nY++)
             Cell[nX][nY].InitializeAtStartOfIteration(m_bSlumpThisIter);
 
-      // If we are simulating infiltration then do some more initialization
+      // If we are simulating infilt then do some more initialization
       if (m_bDoInfiltration)
       {
          for (int nLayer = 0; nLayer < m_nNumSoilLayers; nLayer++)
@@ -986,9 +981,10 @@ int CSimulation::nDoSimulation(void)
          DoAllRain();                                    // Do rainfall
       }
 
-      // Route all flow from wet cells
+      // Initialise ready for flow routing
       m_ulNumHead = 0;
 
+      // Note that m_dThisIterClaySedLoad, m_dThisIterSiltSedLoad, m_dThisIterSandSedLoad do not get initialised every timestep, they are rfunning totals
       m_dThisIterTotHead         =
       m_dThisIterWaterLost       =
       m_dThisIterClayFlowDetach  =
@@ -1001,6 +997,7 @@ int CSimulation::nDoSimulation(void)
       m_dThisIterSiltSedLost     =
       m_dThisIterSandSedLost     = 0;
 
+      // Route all flow from wet cells
       DoAllFlowRouting();
 
       // When representing flow off an edge of the grid, we need a value for the off-edge head. Save this iteration's maximum and minimum on-grid values of head for this
@@ -1016,9 +1013,9 @@ int CSimulation::nDoSimulation(void)
       m_dThisIterSiltInfiltDeposit =
       m_dThisIterSandInfiltDeposit = 0;
 
-      if (m_bDoInfiltration && (CALC_INFILT_INTERVAL-1 == ++snInfiltCount))                 // If we are considering infiltration, simulate it this iteration?
+      if (m_bDoInfiltration && (CALC_INFILT_INTERVAL-1 == ++snInfiltCount))                 // If we are considering infilt, simulate it this iteration?
       {
-         // Yup, simulate infiltration from the Cell array
+         // Yup, simulate infilt from the Cell array
          snInfiltCount = 0;
          m_bInfiltThisIter = true;
 
@@ -1029,19 +1026,22 @@ int CSimulation::nDoSimulation(void)
       // Note: tried calculating splash only on a subset of interations, but caused problems e.g. splash rate depended too much on how often splash was calculated; and leaving splash calcs too long meant that big splash changes could occur, which is unrealistic)
       m_bSplashThisIter = false;
 
-      m_dClaySplashedError += (m_dThisIterClaySplashDetach - m_dThisIterClaySplashDeposit);     // Use values from the previous iteration
-      m_dSiltSplashedError += (m_dThisIterSiltSplashDetach - m_dThisIterSiltSplashDeposit);     // Ditto
-      m_dSandSplashedError += (m_dThisIterSandSplashDetach - m_dThisIterSandSplashDeposit);     // Ditto
+      m_dClaySplashedError += (m_dThisIterClaySplashDetach - m_dThisIterClaySplashDepositAndSedLoad);     // Use values from the previous iteration
+      m_dSiltSplashedError += (m_dThisIterSiltSplashDetach - m_dThisIterSiltSplashDepositAndSedLoad);     // Ditto
+      m_dSandSplashedError += (m_dThisIterSandSplashDetach - m_dThisIterSandSplashDepositAndSedLoad);     // Ditto
 
-      m_dThisIterClaySplashDetach  =
-      m_dThisIterSiltSplashDetach  =
-      m_dThisIterSandSplashDetach  =
-      m_dThisIterClaySplashDeposit =
-      m_dThisIterSiltSplashDeposit =
-      m_dThisIterSandSplashDeposit =
-      m_dThisIterKE                = 0;
+      m_dThisIterClaySplashDetach            =
+      m_dThisIterSiltSplashDetach            =
+      m_dThisIterSandSplashDetach            =
+      m_dThisIterClaySplashDepositOnly       =
+      m_dThisIterSiltSplashDepositOnly       =
+      m_dThisIterSandSplashDepositOnly       =
+      m_dThisIterClaySplashDepositAndSedLoad =
+      m_dThisIterSiltSplashDepositAndSedLoad =
+      m_dThisIterSandSplashDepositAndSedLoad =
+      m_dThisIterKE                          = 0;
 
-      if (m_bSplash && (m_dRainIntensity > RAIN_MIN_CONSIDERED))
+      if (m_bSplash && (m_dRainIntensity > 0))
       {
          // Yes, simulating splash redistribution
          m_bSplashThisIter = true;
@@ -1108,8 +1108,10 @@ int CSimulation::nDoSimulation(void)
             return (RTN_ERR_GISFILEWRITE);
       }
 
+#if defined _DEBUG
       // Calculate and check this-iteration hydrology and sediment balance
-      RemoveCumulativeRoundingErrors();
+      CheckMassBalance();
+#endif
 
       // Output per-iteration results to the .out file
       if (! bWritePerIterationResults())

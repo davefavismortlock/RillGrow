@@ -30,7 +30,7 @@
 =========================================================================================================================================*/
 void CSimulation::DoAllSplash(void)
 {
-   // First calculate the Laplacian for all cells in the grid. Process the interior first
+   // First calculate the Laplacian for all cells in the grid, also zero each cell's temporary splash deposition value
    static bool sbSw = true;
    if (sbSw)
    {
@@ -61,9 +61,10 @@ void CSimulation::DoAllSplash(void)
 
    sbSw = ! sbSw;
 
-   // Now calculate the change in elevation due to splash redistribution for each cell
+   // Now calculate the change in elevation due to splash redistribution for each cell. A problem with this approach is that the totals for detached and deposited sediment are not identical i.e. mass is not conserved. So this has to be corrected
    m_dThisIterKE = 0;
-   double dTempSplashDepositionThisIter = 0;
+   double dTmpTotSplashDepositThisIter = 0;
+
    for (int nX = 0; nX < m_nXGridMax; nX++)
    {
       for (int nY = 0; nY < m_nYGridMax; nY++)
@@ -81,38 +82,45 @@ void CSimulation::DoAllSplash(void)
 
             // Now calculate the amount of splash detachment or deposition resulting from this KE
             double dToChange = dKE * m_VdSplashEffN * Cell[nX][nY].pGetSoil()->dGetLaplacian();
-            if (dToChange > 0)
+            if (dToChange == 0)
             {
-               // Splash deposition: save the dToChange value for the moment, until we know the proportion in each sediment size class for splashed detached sediment during this iteration
+               continue;
+            }
+            else if (dToChange > 0)
+            {
+               // Splash deposition: save the dToChange value for the moment, to be corrected later and also split into the correct proportions of for each sediment size class
                Cell[nX][nY].pGetSoil()->SetSplashDepositionTemporary(dToChange);
-               dTempSplashDepositionThisIter += dToChange;
+
+               dTmpTotSplashDepositThisIter += dToChange;
             }
             else
             {
-               // Splash detachment, first attenuate the dToChange depending on the depth of overland flow
+               // Splash detachment, first attenuate the dToChange depending on the depth of surface water
                dToChange *= dCalcSplashCubicSpline(Cell[nX][nY].pGetSurfaceWater()->dGetSurfaceWaterDepth());
 
                // Now do the detachment
-               Cell[nX][nY].pGetSoil()->DoSplashDetach(-dToChange);
+               double
+                  dClayEroded = 0,
+                  dSiltEroded = 0,
+                  dSandEroded = 0;
+
+               Cell[nX][nY].pGetSoil()->DoSplashDetach(-dToChange, dClayEroded, dSiltEroded, dSandEroded);
+
+               m_dThisIterClaySplashDetach += dClayEroded;
+               m_dThisIterSiltSplashDetach += dSiltEroded;
+               m_dThisIterSandSplashDetach += dSandEroded;
             }
          }
       }
    }
 
-   // OK, we have done all splash detachment, so we now know the proportion in each sediment size class for splashed detached sediment during this iteration
-   double dTotSplashDetachThisIter = m_dThisIterClaySplashDetach + m_dThisIterSiltSplashDetach + m_dThisIterSandSplashDetach;
-   if (dTotSplashDetachThisIter > 0)
+   // Now correct for mass conservation, and partition each deposited depth of sediment into the three size classes
+   if (dTmpTotSplashDepositThisIter > 0)
    {
-      // In order to preserve mass balance, splash detachment and deposition in any interation must be equal. We know the total of splash detachment for this iteration, so calculate a correction ratio to ensure that splash deposition equals splash detachment
-      double dCorrectionRatio = 1;
-      if (dTempSplashDepositionThisIter > 0)
-         dCorrectionRatio = dTotSplashDetachThisIter / dTempSplashDepositionThisIter;
-
-      // Calculate the weightings for each size fraction
       double
-         dClayWeight = dCorrectionRatio * m_dThisIterClaySplashDetach / dTotSplashDetachThisIter,
-         dSiltWeight = dCorrectionRatio * m_dThisIterSiltSplashDetach / dTotSplashDetachThisIter,
-         dSandWeight = dCorrectionRatio * m_dThisIterSandSplashDetach / dTotSplashDetachThisIter;
+         dTotClayDeposit = 0,
+         dTotSiltDeposit = 0,
+         dTotSandDeposit = 0;
 
       for (int nX = 0; nX < m_nXGridMax; nX++)
       {
@@ -121,15 +129,29 @@ void CSimulation::DoAllSplash(void)
             if (Cell[nX][nY].bIsMissingValue())
                continue;
 
-            // Do the splash deposition
-            double dToChange = Cell[nX][nY].pGetSoil()->dGetSplashDepositionTemporary();
-            if (dToChange > 0)
+            // First get the temporay (incorrect) value for splash deposition on this cell
+            double dTmpDeposit = Cell[nX][nY].pGetSoil()->dGetSplashDepositionTemporary();
+            if (dTmpDeposit > 0)
             {
-               Cell[nX][nY].pGetSoil()->DoSplashDeposit(dToChange * dClayWeight, dToChange * dSiltWeight, dToChange * dSandWeight);
+               // Now correct the value for splash deposition then partition it
+               double
+                  dFracOfTmpTot = dTmpDeposit / dTmpTotSplashDepositThisIter,
+                  dClayDeposit = m_dThisIterClaySplashDetach * dFracOfTmpTot,
+                  dSiltDeposit = m_dThisIterSiltSplashDetach * dFracOfTmpTot,
+                  dSandDeposit = m_dThisIterSandSplashDetach * dFracOfTmpTot;
+
+               Cell[nX][nY].pGetSoil()->DoSplashDeposit(dClayDeposit, dSiltDeposit, dSandDeposit);
+
+               dTotClayDeposit += dClayDeposit;
+               dTotSiltDeposit += dSiltDeposit;
+               dTotSandDeposit += dSandDeposit;
             }
          }
       }
    }
+   assert(bFPIsEqual(m_dThisIterClaySplashDetach, m_dThisIterClaySplashDepositAndSedLoad, SEDIMENT_TOLERANCE));
+   assert(bFPIsEqual(m_dThisIterSiltSplashDetach, m_dThisIterSiltSplashDepositAndSedLoad, SEDIMENT_TOLERANCE));
+   assert(bFPIsEqual(m_dThisIterSandSplashDetach, m_dThisIterSandSplashDepositAndSedLoad, SEDIMENT_TOLERANCE));
 }
 
 
@@ -196,7 +218,7 @@ void CSimulation::InitSplashEff(void)
 =========================================================================================================================================*/
 double CSimulation::dCalcSplashCubicSpline(double dDepth) const
 {
-   // Don't bother to do the calculation if there is no overland flow
+   // Don't bother to do the calculation if there is no surface water
    if (0 == dDepth)
       return (1);
 
@@ -458,43 +480,60 @@ bool CSimulation::bReadSplashEffData(void)
 
 /*=========================================================================================================================================
 
-Adds to the this-operation splash detachment value
+ Adds to the this-operation value for splash deposition only, for clay-sized sediment
 
 =========================================================================================================================================*/
-void CSimulation::AddSplashDetach(double const dClayDetach, double const dSiltDetach, double const dSandDetach)
+void CSimulation::AddClaySplashDepositOnly(double const dDeposit)
 {
-   m_dThisIterClaySplashDetach += dClayDetach;
-   m_dThisIterSiltSplashDetach += dSiltDetach;
-   m_dThisIterSandSplashDetach += dSandDetach;
-}
-
-
-/*=========================================================================================================================================
-
-Adds to the this-operation splash deposition value for clay-sized sediment
-
-=========================================================================================================================================*/
-void CSimulation::AddClaySplashDeposit(double const dDeposit)
-{
-   m_dThisIterClaySplashDeposit += dDeposit;
+   m_dThisIterClaySplashDepositOnly += dDeposit;
 }
 
 /*=========================================================================================================================================
 
-Adds to the this-operation splash deposition value for silt-sized sediment
+ Adds to the this-operation value for splash deposition only, for silt-sized sediment
 
 =========================================================================================================================================*/
-void CSimulation::AddSiltSplashDeposit(double const dDeposit)
+void CSimulation::AddSiltSplashDepositOnly(double const dDeposit)
 {
-   m_dThisIterSiltSplashDeposit += dDeposit;
+   m_dThisIterSiltSplashDepositOnly += dDeposit;
 }
 
 /*=========================================================================================================================================
 
-Adds to the this-operation splash deposition value for sand-sized sediment
+ Adds to the this-operation value for splash deposition only, for sand-sized sediment
 
 =========================================================================================================================================*/
-void CSimulation::AddSandSplashDeposit(double const dDeposit)
+void CSimulation::AddSandSplashDepositOnly(double const dDeposit)
 {
-   m_dThisIterSandSplashDeposit += dDeposit;
+   m_dThisIterSandSplashDepositOnly += dDeposit;
+}
+
+/*=========================================================================================================================================
+
+ Adds to the this-operation value for splash deposition and to sediment load, for clay-sized sediment
+
+=========================================================================================================================================*/
+void CSimulation::AddClaySplashDepositAndSedLoad(double const dDeposit)
+{
+   m_dThisIterClaySplashDepositAndSedLoad += dDeposit;
+}
+
+/*=========================================================================================================================================
+
+ Adds to the this-operation value for splash deposition and to sediment load, for silt-sized sediment
+
+=========================================================================================================================================*/
+void CSimulation::AddSiltSplashDepositAndSedLoad(double const dDeposit)
+{
+   m_dThisIterSiltSplashDepositAndSedLoad += dDeposit;
+}
+
+/*=========================================================================================================================================
+
+ Adds to the this-operation value for splash deposition and to sediment load, for sand-sized sediment
+
+=========================================================================================================================================*/
+void CSimulation::AddSandSplashDepositAndSedLoad(double const dDeposit)
+{
+   m_dThisIterSandSplashDepositAndSedLoad += dDeposit;
 }

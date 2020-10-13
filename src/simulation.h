@@ -24,7 +24,7 @@
 
 class CCell;            // Forward declarations
 class C2DVec;
-class CLayer;
+class CCellSoilLayer;
 
 class CSimulation
 {
@@ -90,8 +90,8 @@ private:
       m_bFlowDetachTS,
       m_bSlumpDetachTS,
       m_bToppleDetachTS,
-      m_bDoFlowDepositionTS,
-      m_bSedLostTS,
+      m_bDoSedLoadDepositTS,
+      m_bSedLoadLostTS,
       m_bSedLoadTS,
       m_bInfiltDepositTS,
       m_bSplashRedistTS,
@@ -143,7 +143,6 @@ private:
       m_dMaxY,
       m_dMaxFlowSpeed,
       m_dPossMaxSpeedNextIter,
-      m_dFlowSpeedLimit,
       m_dBasementElevation,
       m_dAvgElev,
       m_dMinElev,
@@ -205,7 +204,7 @@ private:
       m_dThisIterSurfaceWaterStored,
       m_dThisIterClaySedLoad,
       m_dThisIterSiltSedLoad,
-      m_dThisIterSandSedimentLoad,
+      m_dThisIterSandSedLoad,
       m_dThisIterRain,
       m_dThisIterRunOn,
       m_dThisIterKE,
@@ -222,9 +221,12 @@ private:
       m_dThisIterClaySplashDetach,
       m_dThisIterSiltSplashDetach,
       m_dThisIterSandSplashDetach,
-      m_dThisIterClaySplashDeposit,
-      m_dThisIterSiltSplashDeposit,
-      m_dThisIterSandSplashDeposit,
+      m_dThisIterClaySplashDepositOnly,
+      m_dThisIterSiltSplashDepositOnly,
+      m_dThisIterSandSplashDepositOnly,
+      m_dThisIterClaySplashDepositAndSedLoad,
+      m_dThisIterSiltSplashDepositAndSedLoad,
+      m_dThisIterSandSplashDepositAndSedLoad,
       m_dThisIterClaySlumpDetach,
       m_dThisIterSiltSlumpDetach,
       m_dThisIterSandSlumpDetach,
@@ -443,8 +445,8 @@ private:
    bool bReadSplashEffData(void);
    bool bReadRainfallTimeSeries(void);
    bool bSaveGISFiles(void);
-   bool bWriteFileFloat(int const, string const*);
-   bool bWriteFileInt(int const, string const*);
+   bool bWriteGISFileFloat(int const, string const*);
+   bool bWriteGISFileInt(int const, string const*);
    bool bWritePerIterationResults(void);
    bool bWriteTSFiles(bool const);
    int nWriteFilesAtEnd(void);
@@ -469,20 +471,20 @@ private:
    void TryCellOutFlow(int const, int const);
    void TryEdgeCellOutFlow(int const, int const, int const);
    int nFindSteepestEnergySlope(int const, int const, double const, int&, int&, double&, double&, double&);
-   void CellMoveWater(int const, int const, int const, int const, double const&, double const&);
+   void CellMoveWater(int const, int const, int const, int const, double const&, double&);
    double dTimeToCrossCell(int const, int const, int const, double const, double, double const, C2DVec&, double&);
    double dCalcHydraulicRadius(int const, int const);
    double dCalcLawrenceFrictionFactor(int const, int const, double const, bool const);
    void CalcTransportCapacity(int const, int const, int const, int const, int const, double const, double const, double const, double const, double const, double const);
    void DoCellErosion(int const, int const, int const, int const, int const, double const, double const, double const, double const, double const);
-   void DoCellDeposition(int const, int const, double const, double const, double const);
+   void DoCellSedLoadDeposit(int const, int const, double const, double const, double const);
    double dCalcSplashCubicSpline(double) const;
    double dCalcLaplacian(int const, int const);
    int nFindSteepestSoilSurface(int const, int const, double const, int&, int&, double&, bool&);
    void TryToppleCellsAbove(int const, int const, int);
    void DoToppleCells(int const, int const, int const, int const, double, bool const);
-   void DoCellInfiltration(int const, int const, int const, CLayer*, double const);
-   void DoCellExfiltration(int const, int const, int const, CLayer*, double const);
+   void DoCellInfiltration(int const, int const, int const, CCellSoilLayer*, double const);
+   void DoCellExfiltration(int const, int const, int const, CCellSoilLayer*, double const);
    void DoHeadcutRetreatMoveSoil(int const, int const, int const, int const, int const, double const);
    void DoDistributeShearStress(int const, int const, double const);
    double dGetReynolds(int const, int const);
@@ -490,7 +492,9 @@ private:
    // Utility
    bool bIsTimeToQuit(void);
    bool bSetUpRainfallIntensity(void);
-   void RemoveCumulativeRoundingErrors(void);
+#if defined _DEBUG
+   void CheckMassBalance(void);
+#endif
    int nCheckForInstability(void);
    void UpdateGrandTotals(void);
 //    void AdjustUnboundedEdges(void);
@@ -549,11 +553,14 @@ public:
    void IncrNumWetCells(void);
    void DecrNumWetCells(void);
 
-   void AddSurfaceWater(double const);
+   void AddThisIterSurfaceWater(double const);
 
-   void AddClaySedimentLoad(double const);
-   void AddSiltSedimentLoad(double const);
-   void AddSandSedimentLoad(double const);
+   double dGetThisIterClaySedLoad(void);
+   double dGetThisIterSiltSedLoad(void);
+   double dGetThisIterSandSedLoad(void);
+   void ChangeThisIterClaySedLoad(double const);
+   void ChangeThisIterSiltSedLoad(double const);
+   void ChangeThisIterSandSedLoad(double const);
 
    void AddClayFlowDetach(double const);
    void AddSiltFlowDetach(double const);
@@ -563,11 +570,12 @@ public:
    void AddSiltFlowDeposit(double const);
    void AddSandFlowDeposit(double const);
 
-   void AddSplashDetach(double const, double const, double const);
-
-   void AddClaySplashDeposit(double const);
-   void AddSiltSplashDeposit(double const);
-   void AddSandSplashDeposit(double const);
+   void AddClaySplashDepositOnly(double const);
+   void AddSiltSplashDepositOnly(double const);
+   void AddSandSplashDepositOnly(double const);
+   void AddClaySplashDepositAndSedLoad(double const);
+   void AddSiltSplashDepositAndSedLoad(double const);
+   void AddSandSplashDepositAndSedLoad(double const);
 
    void AddClaySlumpDetach(double const);
    void AddSiltSlumpDetach(double const);

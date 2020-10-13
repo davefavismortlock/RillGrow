@@ -1,6 +1,6 @@
 /*=========================================================================================================================================
 
- This is cell_surface_water.cpp: implementations of the RillGrow class used to represent a cell's overland flow
+ This is cell_surface_water.cpp: implementations of the RillGrow class used to represent a cell's surface water
 
  Copyright (C) 2020 David Favis-Mortlock
 
@@ -21,7 +21,7 @@
 #include "cell_surface_water.h"
 
 
-CSurfaceWater::CSurfaceWater(void)
+CCellSurfaceWater::CCellSurfaceWater(void)
 :
    m_nFlowDirection(DIRECTION_NONE),
    m_nInundationClass(NO_FLOW),
@@ -38,18 +38,18 @@ CSurfaceWater::CSurfaceWater(void)
    m_pCell = NULL;
 }
 
-CSurfaceWater::~CSurfaceWater(void)
+CCellSurfaceWater::~CCellSurfaceWater(void)
 {
 }
 
 
-void CSurfaceWater::SetParent(CCell* const pParent)
+void CCellSurfaceWater::SetParent(CCell* const pParent)
 {
    m_pCell = pParent;
 }
 
 
-void CSurfaceWater::InitializeFlow(void)
+void CCellSurfaceWater::InitializeFlow(void)
 {
    m_nFlowDirection = DIRECTION_NONE;
    m_nInundationClass = NO_FLOW;
@@ -59,45 +59,68 @@ void CSurfaceWater::InitializeFlow(void)
 }
 
 // Sets the inundation class
-void CSurfaceWater::SetInundation(int const nNewInundation)
+void CCellSurfaceWater::SetInundation(int const nNewInundation)
 {
    m_nInundationClass = nNewInundation;
 }
 
 // Returns the inundation class when using the Lawrence flow speed approach
-int CSurfaceWater::nGetInundation(void) const
+int CCellSurfaceWater::nGetInundation(void) const
 {
    return m_nInundationClass;
 }
 
 
-// Sets the overland flow direction
-void CSurfaceWater::SetFlowDirection(int nNewFlowDir)
+// Sets the surface water direction
+void CCellSurfaceWater::SetFlowDirection(int nNewFlowDir)
 {
    m_nFlowDirection = nNewFlowDir;
 }
 
-// Returns the overland flow direction
-int CSurfaceWater::nGetFlowDirection(void) const
+// Returns the surface water direction
+int CCellSurfaceWater::nGetFlowDirection(void) const
 {
    return m_nFlowDirection;
 }
 
-
-// Changes this cell's overland flow depth. Assumes that cell is already wet (and does not change the count of wet cells)
-void CSurfaceWater::ChangeSurfaceWater(double const dNewWater)
+// Adds to this cell's surface water depth. Also handles the per-iteration count of wet cells and the per-iteration total of surface water
+void CCellSurfaceWater::AddSurfaceWater(double const dAddDepth)
 {
-   m_dSurfaceWaterDepth += dNewWater;
-   m_dCumulSurfaceWaterDepth += dNewWater;
+   assert(dAddDepth > 0);
+   if (m_dSurfaceWaterDepth == 0)
+      // The cell was previously dry, so update the per-iteration count of wet cells
+      m_pSim->IncrNumWetCells();
+
+   m_dSurfaceWaterDepth += dAddDepth;
+   m_dCumulSurfaceWaterDepth += dAddDepth;
+
+   // Add to the this-iteration total depth of surface water
+   m_pSim->AddThisIterSurfaceWater(dAddDepth);
 
    assert(m_dSurfaceWaterDepth >= 0);
 }
 
-// Sets this cell's overland flow depth to zero, also decrements the count of wet cells and removes from the this-iteration surface water total
-void CSurfaceWater::SetSurfaceWaterZero(void)
+// Removes from this cell's surface water depth; if there is insufficient water, then the function returns false and sets the parameter to the depth actually removed, it also  handles the per-simulation count of wet cells and the per-iteration total of surface water
+void CCellSurfaceWater::RemoveSurfaceWater(double& dRemoveDepth)
 {
-   // Subtract from the this-iteration total depth of overland flow
-   m_pSim->AddSurfaceWater(-m_dSurfaceWaterDepth);
+   if (dRemoveDepth >  m_dSurfaceWaterDepth)
+   {
+      dRemoveDepth = m_dSurfaceWaterDepth;
+      this->SetSurfaceWaterZero();
+   }
+   else
+   {
+      m_dSurfaceWaterDepth -= dRemoveDepth;
+      m_dCumulSurfaceWaterDepth -= dRemoveDepth;
+      assert(m_dSurfaceWaterDepth >= 0);
+   }
+}
+
+// Sets this cell's surface water depth to zero, also decrements the count of wet cells and removes from the this-iteration surface water total
+void CCellSurfaceWater::SetSurfaceWaterZero(void)
+{
+   // Subtract from the this-iteration total depth of surface water
+   m_pSim->AddThisIterSurfaceWater(-m_dSurfaceWaterDepth);
 
    // Decrement the count of wet cells
    m_pSim->DecrNumWetCells();
@@ -108,21 +131,21 @@ void CSurfaceWater::SetSurfaceWaterZero(void)
    this->ZeroAllFlowVelocity();
 }
 
-// Returns the depth of overland flow (in mm) on this cell
-double CSurfaceWater::dGetSurfaceWaterDepth(void) const
+// Returns the depth of surface water (in mm) on this cell
+double CCellSurfaceWater::dGetSurfaceWaterDepth(void) const
 {
    return m_dSurfaceWaterDepth;
 }
 
 // Returns true if water depth > 0, false otherwise
-bool CSurfaceWater::bIsWet(void) const
+bool CCellSurfaceWater::bIsWet(void) const
 {
    return ((m_dSurfaceWaterDepth > 0) ? true : false);
 }
 
 
 // Gets the cumulative water depth
-double CSurfaceWater::dGetCumulSurfaceWater(void) const
+double CCellSurfaceWater::dGetCumulSurfaceWater(void) const
 {
    return m_dCumulSurfaceWaterDepth;
 }
@@ -130,20 +153,20 @@ double CSurfaceWater::dGetCumulSurfaceWater(void) const
 
 #if defined _DEBUG
 // Increments the total depth of water lost from the grid via this cell (only meaningful for edge cells)
-void CSurfaceWater::AddSurfaceWaterLost(double const dAddWater)
+void CCellSurfaceWater::AddSurfaceWaterLost(double const dAddWater)
 {
    m_dCumulSurfaceWaterDepthLost += dAddWater;
 }
 
 // Returns the cumulative depth of water lost from the grid via this cell (only meaningful for edge cells)
-double CSurfaceWater::dGetCumulSurfaceWaterLost(void) const
+double CCellSurfaceWater::dGetCumulSurfaceWaterLost(void) const
 {
    return m_dCumulSurfaceWaterDepthLost;
 }
 #endif
 
 // Initialize flow velocities
-void CSurfaceWater::InitializeAllFlowVelocity(void)
+void CCellSurfaceWater::InitializeAllFlowVelocity(void)
 {
    // Need to make this small +ve or -Ve random to seed Reynolds' number calculations if using Darcy-Weisbach/Reynolds' flow speed calcs. Could be zero for other approaches, but does no harm
    m_vFlowVelocity.x = m_pSim->dGetRandGaussian() * INIT_MAX_SPEED_GUESS;
@@ -155,7 +178,7 @@ void CSurfaceWater::InitializeAllFlowVelocity(void)
 }
 
 // Zero all flow velocities
-void CSurfaceWater::ZeroAllFlowVelocity(void)
+void CCellSurfaceWater::ZeroAllFlowVelocity(void)
 {
    m_vFlowVelocity.x =
    m_vFlowVelocity.y =
@@ -163,8 +186,8 @@ void CSurfaceWater::ZeroAllFlowVelocity(void)
    m_vDWFlowVelocity.y = 0;
 }
 
-// Sets the vector which stores the overland flow velocity for a cell
-void CSurfaceWater::SetFlowVelocity(const C2DVec& vNewVel)
+// Sets the vector which stores the surface water velocity for a cell
+void CCellSurfaceWater::SetFlowVelocity(const C2DVec& vNewVel)
 {
    m_vFlowVelocity.x = vNewVel.x;
    m_vFlowVelocity.y = vNewVel.y;
@@ -175,7 +198,7 @@ void CSurfaceWater::SetFlowVelocity(const C2DVec& vNewVel)
 }
 
 // Overloaded version with pointer to C2DVec as param
-void CSurfaceWater::SetFlowVelocity(const C2DVec* pvNewVel)
+void CCellSurfaceWater::SetFlowVelocity(const C2DVec* pvNewVel)
 {
    m_vFlowVelocity.x = pvNewVel->x;
    m_vFlowVelocity.y = pvNewVel->y;
@@ -186,7 +209,7 @@ void CSurfaceWater::SetFlowVelocity(const C2DVec* pvNewVel)
 }
 
 // Overloaded version used when inputting two numbers
-void CSurfaceWater::SetFlowVelocity(double const dInx, double const dIny)
+void CCellSurfaceWater::SetFlowVelocity(double const dInx, double const dIny)
 {
    m_vFlowVelocity.x = dInx;
    m_vFlowVelocity.y = dIny;
@@ -196,28 +219,28 @@ void CSurfaceWater::SetFlowVelocity(double const dInx, double const dIny)
    m_vCumulFlowVelocity.y += (dIny * dTimeStep);
 }
 
-// Returns the overland flow velocity for a cell as a pointer to an existing vector
-C2DVec* CSurfaceWater::vecGetFlowVel(void)
+// Returns the surface water velocity for a cell as a pointer to an existing vector
+C2DVec* CCellSurfaceWater::vecGetFlowVel(void)
 {
    return &m_vFlowVelocity;
 }
 
-// Returns the overland flow velocity for a cell as a scalar
-double CSurfaceWater::dGetFlowSpd(void) const
+// Returns the surface water velocity for a cell as a scalar
+double CCellSurfaceWater::dGetFlowSpd(void) const
 {
    return m_vFlowVelocity.dToScalar();
 }
 
 
-// Returns the cumulative total of overland flow scalar velocity
-double CSurfaceWater::dCumulFlowSpeed(void) const
+// Returns the cumulative total of surface water scalar velocity
+double CCellSurfaceWater::dCumulFlowSpeed(void) const
 {
    return m_vCumulFlowVelocity.dToScalar();
 }
 
 
-// Sets the vector which stores the depth-weighted overland flow velocity for a cell
-void CSurfaceWater::SetDepthWeightedFlowVelocity(const C2DVec& vNewVel)
+// Sets the vector which stores the depth-weighted surface water velocity for a cell
+void CCellSurfaceWater::SetDepthWeightedFlowVelocity(const C2DVec& vNewVel)
 {
    m_vDWFlowVelocity.x = vNewVel.x;
    m_vDWFlowVelocity.y = vNewVel.y;
@@ -228,7 +251,7 @@ void CSurfaceWater::SetDepthWeightedFlowVelocity(const C2DVec& vNewVel)
 }
 
 // Overloaded version with pointer to C2DVec as param
-void CSurfaceWater::SetDepthWeightedFlowVelocity(const C2DVec* pvNewVel)
+void CCellSurfaceWater::SetDepthWeightedFlowVelocity(const C2DVec* pvNewVel)
 {
    m_vDWFlowVelocity.x = pvNewVel->x;
    m_vDWFlowVelocity.y = pvNewVel->y;
@@ -239,7 +262,7 @@ void CSurfaceWater::SetDepthWeightedFlowVelocity(const C2DVec* pvNewVel)
 }
 
 // Overloaded version used when inputting two numbers
-void CSurfaceWater::SetDepthWeightedFlowVelocity(double const dInX, double const dInY)
+void CCellSurfaceWater::SetDepthWeightedFlowVelocity(double const dInX, double const dInY)
 {
    m_vDWFlowVelocity.x = dInX;
    m_vDWFlowVelocity.y = dInY;
@@ -249,80 +272,80 @@ void CSurfaceWater::SetDepthWeightedFlowVelocity(double const dInX, double const
    m_vCumulFlowVelocity.y += (dInY * dTimeStep);
 }
 
-// Returns the depth-weighted overland flow velocity for a cell as a pointer to an existing vector
-C2DVec* CSurfaceWater::vecGetDWFlowVel(void)
+// Returns the depth-weighted surface water velocity for a cell as a pointer to an existing vector
+C2DVec* CCellSurfaceWater::vecGetDWFlowVel(void)
 {
    return &m_vDWFlowVelocity;
 }
 
-// Returns the x component of depth-weighted overland flow velocity for a cell as a double
-double CSurfaceWater::dGetDWFlowVelX(void) const
+// Returns the x component of depth-weighted surface water velocity for a cell as a double
+double CCellSurfaceWater::dGetDWFlowVelX(void) const
 {
    return m_vDWFlowVelocity.x;
 }
 
-// Returns the y component of depth-weighted overland flow velocity for a cell as a double
-double CSurfaceWater::dGetDWFlowVelY(void) const
+// Returns the y component of depth-weighted surface water velocity for a cell as a double
+double CCellSurfaceWater::dGetDWFlowVelY(void) const
 {
    return m_vDWFlowVelocity.y;
 }
 
-// Returns the depth-weighted overland flow velocity for a cell as a scalar
-double CSurfaceWater::dGetDWFlowSpd(void) const
+// Returns the depth-weighted surface water velocity for a cell as a scalar
+double CCellSurfaceWater::dGetDWFlowSpd(void) const
 {
    return m_vDWFlowVelocity.dToScalar();
 }
 
 
-// Returns the cumulative total of depth-weighted overland flow velocity as a scalar
-double CSurfaceWater::dGetCumulDWFlowSpd(void) const
+// Returns the cumulative total of depth-weighted surface water velocity as a scalar
+double CCellSurfaceWater::dGetCumulDWFlowSpd(void) const
 {
    return m_vCumulDWFlowVelocity.dToScalar();
 }
 
 
-// Sets a cell's overland flow streampower
-void CSurfaceWater::SetStreamPower(double const dNewStreamPower)
+// Sets a cell's surface water streampower
+void CCellSurfaceWater::SetStreamPower(double const dNewStreamPower)
 {
    m_dStreamPower = dNewStreamPower;
 }
 
-// Returns the overland flow streampower value for this cell
-double CSurfaceWater::dGetStreamPower(void) const
+// Returns the surface water streampower value for this cell
+double CCellSurfaceWater::dGetStreamPower(void) const
 {
    return m_dStreamPower;
 }
 
 
 // Sets this cell's transport capacity: as with all others, it's a depth equivalent i.e. what depth of sediment could be transported
-void CSurfaceWater::SetTransportCapacity(double const dNewTC)
+void CCellSurfaceWater::SetTransportCapacity(double const dNewTC)
 {
    m_dTransCap = dNewTC;
 }
 
 // Returns the transport capacity for this cell
-double CSurfaceWater::dGetTransportCapacity(void) const
+double CCellSurfaceWater::dGetTransportCapacity(void) const
 {
    return m_dTransCap;
 }
 
 
 // Sets this cell's friction factor
-void CSurfaceWater::SetFrictionFactor(double const dNewFrictionFactor)
+void CCellSurfaceWater::SetFrictionFactor(double const dNewFrictionFactor)
 {
    m_dFrictionFactor = dNewFrictionFactor;
 }
 
 
 // Returns the friction factor for this cell
-double CSurfaceWater::dGetFrictionFactor(void) const
+double CCellSurfaceWater::dGetFrictionFactor(void) const
 {
    return (m_dFrictionFactor);
 }
 
 
 // Calculates and returns the Froude number
-double CSurfaceWater::dGetFroude(double const dG) const
+double CCellSurfaceWater::dGetFroude(double const dG) const
 {
    // Divide by 1e3 in each case because in mm/sec and mm, need them in m/sec and m
    return ((m_dSurfaceWaterDepth > 0) ? m_vFlowVelocity.dToScalar() * 1e-3 / sqrt(m_dSurfaceWaterDepth * dG * 1e-3) : 0);

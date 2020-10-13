@@ -591,7 +591,7 @@ bool CSimulation::bCheckGISOutputFormat(void)
  Writes floating point GIS files using GDAL, using data from the Cell array
 
 =========================================================================================================================================*/
-bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTitle)
+bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlotTitle)
 {
    // Increment file number when soil loss file is written (this is done first, and is always saved)
    if (GIS_CUMUL_ALL_SIZE_FLOW_DETACH == nDataItem)
@@ -622,8 +622,8 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
          strFilDat.append(GIS_DETREND_ELEVATION_FILENAME);
          break;
 
-      case (GIS_OVERLANDFLOW_DEPTH) :
-         strFilDat.append(GIS_OVERLANDFLOW_DEPTH_FILENAME);
+      case (GIS_SURFACE_WATER_DEPTH) :
+         strFilDat.append(GIS_SURFACE_WATER_DEPTH_FILENAME);
          break;
 
       case (GIS_ALL_SIZE_FLOW_DETACH) :
@@ -662,17 +662,17 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
          strFilDat.append(GIS_CUMUL_SPLASH_FILENAME);
          break;
 
-      case (GIS_OVERLANDFLOW_SPEED) :
-         strFilDat.append(GIS_OVERLANDFLOW_SPEED_FILENAME);
+      case (GIS_SURFACE_WATER_SPEED) :
+         strFilDat.append(GIS_SURFACE_WATER_SPEED_FILENAME);
          break;
 
-      case (GIS_OVERLANDFLOW_DW_SPEED) :
-         strFilDat.append(GIS_OVERLANDFLOW_DW_SPEED_FILENAME);
+      case (GIS_SURFACE_WATER_DW_SPEED) :
+         strFilDat.append(GIS_SURFACE_WATER_DW_SPEED_FILENAME);
          break;
 
 #if defined _DEBUG
-      case (GIS_AVG_OVERLANDFLOW_FROM_EDGES) :
-         strFilDat.append(GIS_AVG_OVERLANDFLOW_FROM_EDGES_FILENAME);
+      case (GIS_AVG_SURFACE_WATER_FROM_EDGES) :
+         strFilDat.append(GIS_AVG_SURFACE_WATER_FROM_EDGES_FILENAME);
          break;
 #endif
 
@@ -704,16 +704,16 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
          strFilDat.append(GIS_TRANSPORT_CAPACITY_FILENAME);
          break;
 
-      case (GIS_AVG_OVERLANDFLOW_DEPTH) :
-         strFilDat.append(GIS_AVG_OVERLANDFLOW_DEPTH_FILENAME);
+      case (GIS_AVG_SURFACE_WATER_DEPTH) :
+         strFilDat.append(GIS_AVG_SURFACE_WATER_DEPTH_FILENAME);
          break;
 
-      case (GIS_AVG_OVERLANDFLOW_SPEED) :
-         strFilDat.append(GIS_AVG_OVERLANDFLOW_SPEED_FILENAME);
+      case (GIS_AVG_SURFACE_WATER_SPEED) :
+         strFilDat.append(GIS_AVG_SURFACE_WATER_SPEED_FILENAME);
          break;
 
-      case (GIS_AVG_OVERLANDFLOW_DW_SPEED) :
-         strFilDat.append(GIS_AVG_OVERLANDFLOW_DW_SPEED_FILENAME);
+      case (GIS_AVG_SURFACE_WATER_DW_SPEED) :
+         strFilDat.append(GIS_AVG_SURFACE_WATER_DW_SPEED_FILENAME);
          break;
 
       case (GIS_CUMUL_ALL_SIZE_FLOW_DETACH) :
@@ -858,7 +858,7 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
                }
                break;
 
-            case (GIS_OVERLANDFLOW_DEPTH) :
+            case (GIS_SURFACE_WATER_DEPTH) :
                dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetSurfaceWaterDepth();
                break;
 
@@ -910,16 +910,16 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
                dTmp = Cell[nX][nY].pGetSoil()->dGetCumulAllSizeSplashDetach() - Cell[nX][nY].pGetSoil()->dGetCumulAllSizeSplashDeposit();
                break;
 
-            case (GIS_OVERLANDFLOW_SPEED) :
+            case (GIS_SURFACE_WATER_SPEED) :
                dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetFlowSpd();
                break;
 
-            case (GIS_OVERLANDFLOW_DW_SPEED) :
+            case (GIS_SURFACE_WATER_DW_SPEED) :
                dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetDWFlowSpd();
                break;
 
 #if defined _DEBUG
-            case (GIS_AVG_OVERLANDFLOW_FROM_EDGES) :
+            case (GIS_AVG_SURFACE_WATER_FROM_EDGES) :
                dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetCumulSurfaceWaterLost() / m_dSimulatedTimeElapsed;
                break;
 #endif
@@ -956,15 +956,15 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
                dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetTransportCapacity();
                break;
 
-            case (GIS_AVG_OVERLANDFLOW_DEPTH) :
+            case (GIS_AVG_SURFACE_WATER_DEPTH) :
                dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetCumulSurfaceWater() / m_dSimulatedTimeElapsed;
                break;
 
-            case (GIS_AVG_OVERLANDFLOW_SPEED) :
+            case (GIS_AVG_SURFACE_WATER_SPEED) :
                dTmp = Cell[nX][nY].pGetSurfaceWater()->dCumulFlowSpeed() / m_dSimulatedTimeElapsed;
                break;
 
-            case (GIS_AVG_OVERLANDFLOW_DW_SPEED) :
+            case (GIS_AVG_SURFACE_WATER_DW_SPEED) :
                dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetCumulDWFlowSpd() / m_dSimulatedTimeElapsed;
                break;
 
@@ -977,15 +977,15 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
                break;
 
             case (GIS_SEDIMENT_CONCENTRATION) :
-               dTmp = Cell[nX][nY].pGetSediment()->dGetAllSizeSedimentConcentration();
+               dTmp = Cell[nX][nY].pGetSediment()->dGetAllSizeSedConc();
                break;
 
             case (GIS_SEDIMENT_LOAD) :
-               dTmp = Cell[nX][nY].pGetSediment()->dGetAllSizeSedimentLoad();
+               dTmp = Cell[nX][nY].pGetSediment()->dGetAllSizeSedLoad();
                break;
 
             case (GIS_AVG_SEDIMENT_LOAD) :
-               dTmp = Cell[nX][nY].pGetSediment()->dGetCumulAllSizeSedimentLoad() / m_dSimulatedTimeElapsed;
+               dTmp = Cell[nX][nY].pGetSediment()->dGetCumulAllSizeSedLoad() / m_dSimulatedTimeElapsed;
                break;
 
             case (GIS_CUMUL_SLUMP_DETACH) :
@@ -1044,8 +1044,8 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
       case (GIS_DETREND_ELEVATION) :
       case (GIS_CUMUL_RAIN) :
       case (GIS_CUMUL_RUNON) :
-      case (GIS_OVERLANDFLOW_DEPTH) :
-      case (GIS_AVG_OVERLANDFLOW_DEPTH) :
+      case (GIS_SURFACE_WATER_DEPTH) :
+      case (GIS_AVG_SURFACE_WATER_DEPTH) :
       case (GIS_INFILT) :
       case (GIS_CUMUL_INFILT) :
       case (GIS_SOIL_WATER) :
@@ -1066,15 +1066,15 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
       case (GIS_CUMUL_ALL_SIZE_FLOW_DEPOSIT) :
       case (GIS_CUMUL_ALL_PROC_SURF_LOWER) :
 #if defined _DEBUG
-      case (GIS_AVG_OVERLANDFLOW_FROM_EDGES) :
+      case (GIS_AVG_SURFACE_WATER_FROM_EDGES) :
 #endif
          strUnits = "mm";
          break;
 
-      case (GIS_OVERLANDFLOW_SPEED) :
-      case (GIS_AVG_OVERLANDFLOW_SPEED) :
-      case (GIS_OVERLANDFLOW_DW_SPEED) :
-      case (GIS_AVG_OVERLANDFLOW_DW_SPEED) :
+      case (GIS_SURFACE_WATER_SPEED) :
+      case (GIS_AVG_SURFACE_WATER_SPEED) :
+      case (GIS_SURFACE_WATER_DW_SPEED) :
+      case (GIS_AVG_SURFACE_WATER_DW_SPEED) :
          strUnits = "mm/sec";
          break;
 
@@ -1130,7 +1130,7 @@ bool CSimulation::bWriteFileFloat(int const nDataItem, string const* pstrPlotTit
  Writes integer GIS files using GDAL, using data from the Cell array
 
 =========================================================================================================================================*/
-bool CSimulation::bWriteFileInt(int const nDataItem, string const* pstrPlotTitle)
+bool CSimulation::bWriteGISFileInt(int const nDataItem, string const* pstrPlotTitle)
 {
    // Begin constructing the file name for this save
    string strFilDat = m_strOutputPath;
@@ -1141,8 +1141,8 @@ bool CSimulation::bWriteFileInt(int const nDataItem, string const* pstrPlotTitle
          strFilDat.append(GIS_INUNDATION_REGIME_FILENAME);
          break;
 
-      case (GIS_OVERLANDFLOW_DIRECTION) :
-         strFilDat.append(GIS_OVERLANDFLOW_DIRECTION_FILENAME);
+      case (GIS_SURFACE_WATER_DIRECTION) :
+         strFilDat.append(GIS_SURFACE_WATER_DIRECTION_FILENAME);
          break;
 
       case (GIS_CUMUL_BINARY_HEADCUT_RETREAT) :
@@ -1206,7 +1206,7 @@ bool CSimulation::bWriteFileInt(int const nDataItem, string const* pstrPlotTitle
                nTmp = Cell[nX][nY].pGetSurfaceWater()->nGetInundation();
                break;
 
-            case (GIS_OVERLANDFLOW_DIRECTION) :
+            case (GIS_SURFACE_WATER_DIRECTION) :
                nTmp = Cell[nX][nY].pGetSurfaceWater()->nGetFlowDirection();
                break;
 
@@ -1244,7 +1244,7 @@ bool CSimulation::bWriteFileInt(int const nDataItem, string const* pstrPlotTitle
    switch (nDataItem)
    {
       case (GIS_INUNDATION_REGIME):
-      case (GIS_OVERLANDFLOW_DIRECTION):
+      case (GIS_SURFACE_WATER_DIRECTION):
       case (GIS_CUMUL_BINARY_HEADCUT_RETREAT) :
          strUnits = "none";
    }
@@ -1278,7 +1278,7 @@ bool CSimulation::bWriteFileInt(int const nDataItem, string const* pstrPlotTitle
          papszCategoryNames = CSLAddString(papszCategoryNames, "Well inundated");
          break;
 
-      case (GIS_OVERLANDFLOW_DIRECTION) :
+      case (GIS_SURFACE_WATER_DIRECTION) :
          papszCategoryNames = CSLAddString(papszCategoryNames, "None");
          papszCategoryNames = CSLAddString(papszCategoryNames, "Top");
          papszCategoryNames = CSLAddString(papszCategoryNames, "Top right");
@@ -1722,228 +1722,228 @@ bool CSimulation::bSaveGISFiles(void)
       m_nThisSave = tMin(++m_nThisSave, m_nUSave);
 
    // These are always written. Note must write GIS_CUMUL_ALL_SIZE_FLOW_DETACH first, to increment save number
-   if (! bWriteFileFloat(GIS_CUMUL_ALL_SIZE_FLOW_DETACH, &GIS_CUMUL_ALL_SIZE_FLOW_DETACH_TITLE))      // Increments filename count
+   if (! bWriteGISFileFloat(GIS_CUMUL_ALL_SIZE_FLOW_DETACH, &GIS_CUMUL_ALL_SIZE_FLOW_DETACH_TITLE))      // Increments filename count
       return (false);
 
-   if (! bWriteFileFloat(GIS_CUMUL_RAIN, &GIS_CUMUL_RAIN_TITLE))
+   if (! bWriteGISFileFloat(GIS_CUMUL_RAIN, &GIS_CUMUL_RAIN_TITLE))
       return (false);
 
-   if (! bWriteFileFloat(GIS_CUMUL_SPLASH, &GIS_CUMUL_SPLASH_TITLE))
+   if (! bWriteGISFileFloat(GIS_CUMUL_SPLASH, &GIS_CUMUL_SPLASH_TITLE))
       return (false);
 
-   if (! bWriteFileFloat(GIS_OVERLANDFLOW_DEPTH, &GIS_OVERLANDFLOW_DEPTH_TITLE))
+   if (! bWriteGISFileFloat(GIS_SURFACE_WATER_DEPTH, &GIS_SURFACE_WATER_DEPTH_TITLE))
       return (false);
 
-   if (! bWriteFileFloat(GIS_OVERLANDFLOW_SPEED, &GIS_OVERLANDFLOW_SPEED_TITLE))
+   if (! bWriteGISFileFloat(GIS_SURFACE_WATER_SPEED, &GIS_SURFACE_WATER_SPEED_TITLE))
       return (false);
 
-   if (! bWriteFileFloat(GIS_OVERLANDFLOW_DW_SPEED, &GIS_OVERLANDFLOW_DW_SPEED_TITLE))
+   if (! bWriteGISFileFloat(GIS_SURFACE_WATER_DW_SPEED, &GIS_SURFACE_WATER_DW_SPEED_TITLE))
       return (false);
 
    // These are optional
    if (m_bElevSave)
    {
-      if (! bWriteFileFloat(GIS_ELEVATION, &GIS_ELEVATION_TITLE))
+      if (! bWriteGISFileFloat(GIS_ELEVATION, &GIS_ELEVATION_TITLE))
          return (false);
    }
 
    if (m_bDetrendElevSave)
    {
-      if (! bWriteFileFloat(GIS_DETREND_ELEVATION, &GIS_DETREND_ELEVATION_TITLE))
+      if (! bWriteGISFileFloat(GIS_DETREND_ELEVATION, &GIS_DETREND_ELEVATION_TITLE))
          return (false);
    }
 
    if (m_bRunOn)
    {
-      if (! bWriteFileFloat(GIS_CUMUL_RUNON, &GIS_CUMUL_RUNON_TITLE))
+      if (! bWriteGISFileFloat(GIS_CUMUL_RUNON, &GIS_CUMUL_RUNON_TITLE))
          return (false);
    }
 
    if (m_bSplashSave)
    {
-      if (! bWriteFileFloat(GIS_SPLASH, &GIS_SPLASH_TITLE))
+      if (! bWriteGISFileFloat(GIS_SPLASH, &GIS_SPLASH_TITLE))
          return (false);
    }
 
    if (m_bCumulSplashSave)
    {
-      if (! bWriteFileFloat(GIS_CUMUL_SPLASH, &GIS_CUMUL_SPLASH_TITLE))
+      if (! bWriteGISFileFloat(GIS_CUMUL_SPLASH, &GIS_CUMUL_SPLASH_TITLE))
          return (false);
    }
 
    if (m_bFlowDetachSave)
    {
-      if (! bWriteFileFloat(GIS_ALL_SIZE_FLOW_DETACH, &GIS_CUMUL_ALL_SIZE_FLOW_DETACH_TITLE))
+      if (! bWriteGISFileFloat(GIS_ALL_SIZE_FLOW_DETACH, &GIS_CUMUL_ALL_SIZE_FLOW_DETACH_TITLE))
          return (false);
    }
 
    if (m_bInundationSave)
    {
-      if (! bWriteFileInt(GIS_INUNDATION_REGIME, &GIS_INUNDATION_REGIME_TITLE))
+      if (! bWriteGISFileInt(GIS_INUNDATION_REGIME, &GIS_INUNDATION_REGIME_TITLE))
          return (false);
    }
 
    if (m_bFlowDirSave)
    {
-      if (! bWriteFileInt(GIS_OVERLANDFLOW_DIRECTION, &GIS_OVERLANDFLOW_DIRECTION_TITLE))
+      if (! bWriteGISFileInt(GIS_SURFACE_WATER_DIRECTION, &GIS_SURFACE_WATER_DIRECTION_TITLE))
          return (false);
    }
 
    if (m_bInfiltSave)
    {
-      if (! bWriteFileFloat(GIS_INFILT, &GIS_INFILT_TITLE))
+      if (! bWriteGISFileFloat(GIS_INFILT, &GIS_INFILT_TITLE))
          return (false);
    }
 
    if (m_bCumulInfiltSave)
    {
-      if (! bWriteFileFloat(GIS_CUMUL_INFILT, &GIS_CUMUL_INFILT_TITLE))
+      if (! bWriteGISFileFloat(GIS_CUMUL_INFILT, &GIS_CUMUL_INFILT_TITLE))
          return (false);
    }
 
    if (m_bSoilWaterSave)
    {
-      if (! bWriteFileFloat(GIS_SOIL_WATER, &GIS_SOIL_WATER_TITLE))
+      if (! bWriteGISFileFloat(GIS_SOIL_WATER, &GIS_SOIL_WATER_TITLE))
          return (false);
    }
 
    if (m_bInfiltDepositSave)
    {
-      if (! bWriteFileFloat(GIS_INFILT_DEPOSIT, &GIS_INFILT_DEPOSIT_TITLE))
+      if (! bWriteGISFileFloat(GIS_INFILT_DEPOSIT, &GIS_INFILT_DEPOSIT_TITLE))
          return (false);
    }
 
    if (m_bCumulInfiltDepositSave)
    {
-      if (! bWriteFileFloat(GIS_CUMUL_INFILT_DEPOSIT, &GIS_CUMUL_INFILT_DEPOSIT_TITLE))
+      if (! bWriteGISFileFloat(GIS_CUMUL_INFILT_DEPOSIT, &GIS_CUMUL_INFILT_DEPOSIT_TITLE))
          return (false);
    }
 
    if (m_bTopSurfaceSave)
    {
-      if (! bWriteFileFloat(GIS_TOP_SURFACE, &GIS_TOP_SURFACE_TITLE))
+      if (! bWriteGISFileFloat(GIS_TOP_SURFACE, &GIS_TOP_SURFACE_TITLE))
          return (false);
    }
 
 #if defined _DEBUG
    if (m_bLostSave)
    {
-      if (! bWriteFileFloat(GIS_AVG_OVERLANDFLOW_FROM_EDGES, &GIS_AVG_OVERLANDFLOW_FROM_EDGES_TITLE))
+      if (! bWriteGISFileFloat(GIS_AVG_SURFACE_WATER_FROM_EDGES, &GIS_AVG_SURFACE_WATER_FROM_EDGES_TITLE))
          return (false);
    }
 #endif
 
    if (m_bStreamPowerSave)
    {
-      if (! bWriteFileFloat(GIS_STREAMPOWER, &GIS_STREAMPOWER_TITLE))
+      if (! bWriteGISFileFloat(GIS_STREAMPOWER, &GIS_STREAMPOWER_TITLE))
          return (false);
    }
 
    if (m_bShearStressSave)
    {
-      if (! bWriteFileFloat(GIS_SHEAR_STRESS, &GIS_SHEAR_STRESS_TITLE))
+      if (! bWriteGISFileFloat(GIS_SHEAR_STRESS, &GIS_SHEAR_STRESS_TITLE))
          return (false);
    }
 
    if (m_bFrictionFactorSave)
    {
-      if (! bWriteFileFloat(GIS_FRICTION_FACTOR, &GIS_FRICTION_FACTOR_TITLE))
+      if (! bWriteGISFileFloat(GIS_FRICTION_FACTOR, &GIS_FRICTION_FACTOR_TITLE))
          return (false);
    }
 
    if (m_bCumulAvgShearStressSave)
    {
-      if (! bWriteFileFloat(GIS_AVG_SHEAR_STRESS, &GIS_AVG_SHEAR_STRESS_TITLE))
+      if (! bWriteGISFileFloat(GIS_AVG_SHEAR_STRESS, &GIS_AVG_SHEAR_STRESS_TITLE))
          return (false);
    }
 
    if (m_bReynoldsSave)
    {
-      if (! bWriteFileFloat(GIS_REYNOLDS_NUMBER, &GIS_REYNOLDS_NUMBER_TITLE))
+      if (! bWriteGISFileFloat(GIS_REYNOLDS_NUMBER, &GIS_REYNOLDS_NUMBER_TITLE))
          return (false);
    }
 
    if (m_bFroudeSave)
    {
-      if (! bWriteFileFloat(GIS_FROUDE_NUMBER, &GIS_FROUDE_NUMBER_TITLE))
+      if (! bWriteGISFileFloat(GIS_FROUDE_NUMBER, &GIS_FROUDE_NUMBER_TITLE))
          return (false);
    }
 
    if (m_bTCSave)
    {
-      if (! bWriteFileFloat(GIS_TRANSPORT_CAPACITY, &GIS_TRANSPORT_CAPACITY_TITLE))
+      if (! bWriteGISFileFloat(GIS_TRANSPORT_CAPACITY, &GIS_TRANSPORT_CAPACITY_TITLE))
          return (false);
    }
 
    if (m_bCumulAvgDepthSave)
    {
-      if (! bWriteFileFloat(GIS_AVG_OVERLANDFLOW_DEPTH, &GIS_AVG_OVERLANDFLOW_DEPTH_TITLE))
+      if (! bWriteGISFileFloat(GIS_AVG_SURFACE_WATER_DEPTH, &GIS_AVG_SURFACE_WATER_DEPTH_TITLE))
          return (false);
    }
 
    if (m_bCumulAvgSpdSave)
    {
-      if (! bWriteFileFloat(GIS_AVG_OVERLANDFLOW_SPEED, &GIS_AVG_OVERLANDFLOW_SPEED_TITLE))
+      if (! bWriteGISFileFloat(GIS_AVG_SURFACE_WATER_SPEED, &GIS_AVG_SURFACE_WATER_SPEED_TITLE))
          return (false);
    }
 
    if (m_bCumulAvgDWSpdSave)
    {
-      if (! bWriteFileFloat(GIS_AVG_OVERLANDFLOW_DW_SPEED, &GIS_AVG_OVERLANDFLOW_DW_SPEED_TITLE))
+      if (! bWriteGISFileFloat(GIS_AVG_SURFACE_WATER_DW_SPEED, &GIS_AVG_SURFACE_WATER_DW_SPEED_TITLE))
          return (false);
    }
 
    if (m_bSedConcSave)
    {
-      if (! bWriteFileFloat(GIS_SEDIMENT_CONCENTRATION, &GIS_SEDIMENT_CONCENTRATION_TITLE))
+      if (! bWriteGISFileFloat(GIS_SEDIMENT_CONCENTRATION, &GIS_SEDIMENT_CONCENTRATION_TITLE))
          return (false);
    }
 
    if (m_bSedLoadSave)
    {
-      if (! bWriteFileFloat(GIS_SEDIMENT_LOAD, &GIS_SEDIMENT_LOAD_TITLE))
+      if (! bWriteGISFileFloat(GIS_SEDIMENT_LOAD, &GIS_SEDIMENT_LOAD_TITLE))
          return (false);
    }
 
    if (m_bAvgSedLoadSave)
    {
-      if (! bWriteFileFloat(GIS_AVG_SEDIMENT_LOAD, &GIS_AVG_SEDIMENT_LOAD_TITLE))
+      if (! bWriteGISFileFloat(GIS_AVG_SEDIMENT_LOAD, &GIS_AVG_SEDIMENT_LOAD_TITLE))
          return (false);
    }
 
    if (m_bCumulFlowDepositSave)
    {
-      if (! bWriteFileFloat(GIS_CUMUL_ALL_SIZE_FLOW_DEPOSIT, &GIS_CUMUL_ALL_SIZE_FLOW_DEPOSIT_TITLE))
+      if (! bWriteGISFileFloat(GIS_CUMUL_ALL_SIZE_FLOW_DEPOSIT, &GIS_CUMUL_ALL_SIZE_FLOW_DEPOSIT_TITLE))
          return (false);
    }
 
    if (m_bSlumpSave)
    {
-      if (! bWriteFileFloat(GIS_CUMUL_SLUMP_DETACH, &GIS_CUMUL_SLUMP_DETACH_TITLE))
+      if (! bWriteGISFileFloat(GIS_CUMUL_SLUMP_DETACH, &GIS_CUMUL_SLUMP_DETACH_TITLE))
          return (false);
 
-      if (! bWriteFileFloat(GIS_CUMUL_SLUMP_DEPOSIT, &GIS_CUMUL_SLUMP_DEPOSIT_TITLE))
+      if (! bWriteGISFileFloat(GIS_CUMUL_SLUMP_DEPOSIT, &GIS_CUMUL_SLUMP_DEPOSIT_TITLE))
          return (false);
    }
 
    if (m_bToppleSave)
    {
-      if (! bWriteFileFloat(GIS_CUMUL_TOPPLE_DETACH, &GIS_CUMUL_TOPPLE_DETACH_TITLE))
+      if (! bWriteGISFileFloat(GIS_CUMUL_TOPPLE_DETACH, &GIS_CUMUL_TOPPLE_DETACH_TITLE))
          return (false);
 
-      if (! bWriteFileFloat(GIS_CUMUL_TOPPLE_DEPOSIT, &GIS_CUMUL_TOPPLE_DEPOSIT_TITLE))
+      if (! bWriteGISFileFloat(GIS_CUMUL_TOPPLE_DEPOSIT, &GIS_CUMUL_TOPPLE_DEPOSIT_TITLE))
          return (false);
    }
 
    if (m_bCumulLoweringSave)
    {
-      if (! bWriteFileFloat(GIS_CUMUL_ALL_PROC_SURF_LOWER, &GIS_CUMUL_ALL_PROC_SURF_LOWER_TITLE))
+      if (! bWriteGISFileFloat(GIS_CUMUL_ALL_PROC_SURF_LOWER, &GIS_CUMUL_ALL_PROC_SURF_LOWER_TITLE))
          return (false);
    }
 
    if (m_bHeadcutRetreat)
    {
-      if (! bWriteFileInt(GIS_CUMUL_BINARY_HEADCUT_RETREAT, &GIS_CUMUL_BINARY_HEADCUT_RETREAT_TITLE))
+      if (! bWriteGISFileInt(GIS_CUMUL_BINARY_HEADCUT_RETREAT, &GIS_CUMUL_BINARY_HEADCUT_RETREAT_TITLE))
          return (false);
    }
 

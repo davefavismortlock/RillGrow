@@ -165,31 +165,31 @@ bool CCell::bHasHadHeadcutRetreat(void) const
 }
 
 
-// Returns a pointer to the CSoil object
-CSoil* CCell::pGetSoil(void)
+// Returns a pointer to the CCellSoil object
+CCellSoil* CCell::pGetSoil(void)
 {
    return &m_Soil;
 }
 
-// Returns a pointer to the CRainAndRunon object
-CRainAndRunon* CCell::pGetRainAndRunon(void)
+// Returns a pointer to the CCellRainAndRunon object
+CCellRainAndRunon* CCell::pGetRainAndRunon(void)
 {
    return &m_RainAndRunon;
 }
 
-CSurfaceWater* CCell::pGetSurfaceWater(void)
+CCellSurfaceWater* CCell::pGetSurfaceWater(void)
 {
    return &m_SurfaceWater;
 }
 
-// Returns a pointer to the CSediment object
-CSediment* CCell::pGetSediment(void)
+// Returns a pointer to the CellSediment object
+CCellSedimentLoad* CCell::pGetSediment(void)
 {
    return &m_Sediment;
 }
 
-// Returns a pointer to the CSoilWater object
-CSoilWater* CCell::pGetSoilWater(void)
+// Returns a pointer to the CCellSubsurfaceWater object
+CCellSubsurfaceWater* CCell::pGetSoilWater(void)
 {
    return &m_SoilWater;
 }

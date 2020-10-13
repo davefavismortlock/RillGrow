@@ -20,7 +20,7 @@
 #include "cell_soil_layer.h"
 
 
-CLayer::CLayer(void)
+CCellSoilLayer::CCellSoilLayer(void)
 :
    m_dClayThickness(0),
    m_dSiltThickness(0),
@@ -39,168 +39,168 @@ CLayer::CLayer(void)
 {
 }
 
-CLayer::~CLayer(void)
+CCellSoilLayer::~CCellSoilLayer(void)
 {
 }
 
 
-void CLayer::SetName(string const* pstrName)
+void CCellSoilLayer::SetName(string const* pstrName)
 {
    m_strName = *pstrName;
 }
 
-string* CLayer::pstrGetName(void)
+string* CCellSoilLayer::pstrGetName(void)
 {
    return &m_strName;
 }
 
 
-void CLayer::SetClayThickness(double const dThick)
+void CCellSoilLayer::SetClayThickness(double const dThick)
 {
    m_dClayThickness = dThick;
 }
 
-void CLayer::SetSiltThickness(double const dThick)
+void CCellSoilLayer::SetSiltThickness(double const dThick)
 {
    m_dSiltThickness = dThick;
 }
 
-void CLayer::SetSandThickness(double const dThick)
+void CCellSoilLayer::SetSandThickness(double const dThick)
 {
    m_dSandThickness = dThick;
 }
 
-double CLayer::dGetClayThickness(void) const
+double CCellSoilLayer::dGetClayThickness(void) const
 {
    return m_dClayThickness;
 }
 
-double CLayer::dGetSiltThickness(void) const
+double CCellSoilLayer::dGetSiltThickness(void) const
 {
    return m_dSiltThickness;
 }
 
-double CLayer::dGetSandThickness(void) const
+double CCellSoilLayer::dGetSandThickness(void) const
 {
    return m_dSandThickness;
 }
 
-double CLayer::dGetLayerThickness(void) const
+double CCellSoilLayer::dGetLayerThickness(void) const
 {
    return m_dClayThickness + m_dSiltThickness + m_dSandThickness;
 }
 
-// bool CLayer::bIsZeroTotalThickness(void) const
+// bool CCellSoilLayer::bIsZeroTotalThickness(void) const
 // {
 //    return ((m_dClayThickness + m_dSiltThickness + m_dSandThickness) > 0 ? false : true);
 // }
 
 
-void CLayer::SetBulkDensity(double const dBulkDensity)
+void CCellSoilLayer::SetBulkDensity(double const dBulkDensity)
 {
    m_dBulkDensity = dBulkDensity;
 }
 
-double CLayer::dGetBulkDensity(void) const
+double CCellSoilLayer::dGetBulkDensity(void) const
 {
    return m_dBulkDensity;
 }
 
 
-void CLayer::SetClayFlowErodibility(double const dErod)
+void CCellSoilLayer::SetClayFlowErodibility(double const dErod)
 {
    m_dClayFlowErodibility = dErod;
 }
 
-void CLayer::SetSiltFlowErodibility(double const dErod)
+void CCellSoilLayer::SetSiltFlowErodibility(double const dErod)
 {
    m_dSiltFlowErodibility = dErod;
 }
 
-void CLayer::SetSandFlowErodibility(double const dErod)
+void CCellSoilLayer::SetSandFlowErodibility(double const dErod)
 {
    m_dSandFlowErodibility = dErod;
 }
 
-double CLayer::dGetClayFlowErodibility(void) const
+double CCellSoilLayer::dGetClayFlowErodibility(void) const
 {
    return m_dClayFlowErodibility;
 }
 
-double CLayer::dGetSiltFlowErodibility(void) const
+double CCellSoilLayer::dGetSiltFlowErodibility(void) const
 {
    return m_dSiltFlowErodibility;
 }
 
-double CLayer::dGetSandFlowErodibility(void) const
+double CCellSoilLayer::dGetSandFlowErodibility(void) const
 {
    return m_dSandFlowErodibility;
 }
 
 
-void CLayer::SetClaySplashErodibility(double const dErod)
+void CCellSoilLayer::SetClaySplashErodibility(double const dErod)
 {
    m_dClaySplashErodibility = dErod;
 }
 
-void CLayer::SetSiltSplashErodibility(double const dErod)
+void CCellSoilLayer::SetSiltSplashErodibility(double const dErod)
 {
    m_dSiltSplashErodibility = dErod;
 }
 
-void CLayer::SetSandSplashErodibility(double const dErod)
+void CCellSoilLayer::SetSandSplashErodibility(double const dErod)
 {
    m_dSandSplashErodibility = dErod;
 }
 
-double CLayer::dGetClaySplashErodibility(void) const
+double CCellSoilLayer::dGetClaySplashErodibility(void) const
 {
    return m_dClaySplashErodibility;
 }
 
-double CLayer::dGetSiltSplashErodibility(void) const
+double CCellSoilLayer::dGetSiltSplashErodibility(void) const
 {
    return m_dSiltSplashErodibility;
 }
 
-double CLayer::dGetSandSplashErodibility(void) const
+double CCellSoilLayer::dGetSandSplashErodibility(void) const
 {
    return m_dSandSplashErodibility;
 }
 
 
-void CLayer::SetClaySlumpErodibility(double const dErod)
+void CCellSoilLayer::SetClaySlumpErodibility(double const dErod)
 {
    m_dClaySlumpErodibility = dErod;
 }
 
-void CLayer::SetSiltSlumpErodibility(double const dErod)
+void CCellSoilLayer::SetSiltSlumpErodibility(double const dErod)
 {
    m_dSiltSlumpErodibility = dErod;
 }
 
-void CLayer::SetSandSlumpErodibility(double const dErod)
+void CCellSoilLayer::SetSandSlumpErodibility(double const dErod)
 {
    m_dSandSlumpErodibility = dErod;
 }
 
-double CLayer::dGetClaySlumpErodibility(void) const
+double CCellSoilLayer::dGetClaySlumpErodibility(void) const
 {
    return m_dClaySlumpErodibility;
 }
 
-double CLayer::dGetSiltSlumpErodibility(void) const
+double CCellSoilLayer::dGetSiltSlumpErodibility(void) const
 {
    return m_dSiltSlumpErodibility;
 }
 
-double CLayer::dGetSandSlumpErodibility(void) const
+double CCellSoilLayer::dGetSandSlumpErodibility(void) const
 {
    return m_dSandSlumpErodibility;
 }
 
 
-void CLayer::DoLayerFlowErosion(double const dToErode, double& dClayEroded, double& dSiltEroded, double& dSandEroded)
+void CCellSoilLayer::DoLayerFlowErosion(double const dToErode, double& dClayEroded, double& dSiltEroded, double& dSandEroded)
 {
    double dTotalThickness = m_dClayThickness + m_dSiltThickness + m_dSandThickness;
 
@@ -254,7 +254,7 @@ void CLayer::DoLayerFlowErosion(double const dToErode, double& dClayEroded, doub
 }
 
 
-void CLayer::DoLayerSplashErosion(double const dToErode, double& dClayEroded, double& dSiltEroded, double& dSandEroded)
+void CCellSoilLayer::DoLayerSplashErosion(double const dToErode, double& dClayEroded, double& dSiltEroded, double& dSandEroded)
 {
    double dTotalThickness = m_dClayThickness + m_dSiltThickness + m_dSandThickness;
 
@@ -308,7 +308,7 @@ void CLayer::DoLayerSplashErosion(double const dToErode, double& dClayEroded, do
 }
 
 
-void CLayer::DoLayerSlumpErosion(double const dToErode, double& dClayEroded, double& dSiltEroded, double& dSandEroded)
+void CCellSoilLayer::DoLayerSlumpErosion(double const dToErode, double& dClayEroded, double& dSiltEroded, double& dSandEroded)
 {
    double dTotalThickness = m_dClayThickness + m_dSiltThickness + m_dSandThickness;
 
@@ -361,7 +361,7 @@ void CLayer::DoLayerSlumpErosion(double const dToErode, double& dClayEroded, dou
    }
 }
 
-void CLayer::DoLayerToppleErosion(double const dToErode, double& dClayEroded, double& dSiltEroded, double& dSandEroded)
+void CCellSoilLayer::DoLayerToppleErosion(double const dToErode, double& dClayEroded, double& dSiltEroded, double& dSandEroded)
 {
    double dTotalThickness = m_dClayThickness + m_dSiltThickness + m_dSandThickness;
 
@@ -415,7 +415,7 @@ void CLayer::DoLayerToppleErosion(double const dToErode, double& dClayEroded, do
 }
 
 
-void CLayer::DoLayerDeposition(double const dClayDepth, double const dSiltDepth, double const dSandDepth)
+void CCellSoilLayer::DoLayerDeposition(double const dClayDepth, double const dSiltDepth, double const dSandDepth)
 {
    m_dClayThickness += dClayDepth;
    m_dSiltThickness += dSiltDepth;
@@ -423,23 +423,23 @@ void CLayer::DoLayerDeposition(double const dClayDepth, double const dSiltDepth,
 }
 
 
-void CLayer::SetSoilWater(double const dWater)
+void CCellSoilLayer::SetSoilWater(double const dWater)
 {
    m_dSoilWater = dWater;
 }
 
-void CLayer::ChangeSoilWater(double const dWater)
+void CCellSoilLayer::ChangeSoilWater(double const dWater)
 {
    m_dSoilWater += dWater;
 }
 
-double CLayer::dGetSoilWater(void) const
+double CCellSoilLayer::dGetSoilWater(void) const
 {
    return m_dSoilWater;
 }
 
 
-void CLayer::DoLayerHeadcutRetreatErosion(double const dToErode, double& dClayEroded, double& dSiltEroded, double& dSandEroded)
+void CCellSoilLayer::DoLayerHeadcutRetreatErosion(double const dToErode, double& dClayEroded, double& dSiltEroded, double& dSandEroded)
 {
    double dTotalThickness = m_dClayThickness + m_dSiltThickness + m_dSandThickness;
 
@@ -494,7 +494,7 @@ void CLayer::DoLayerHeadcutRetreatErosion(double const dToErode, double& dClayEr
 
 
 // This ugly-but-possibly-necessary method changes the thickness of a soil layer; it is for use in the AdjustUnboundedEdges() routine only
-// void CLayer::ChangeThickness(double const dChange)
+// void CCellSoilLayer::ChangeThickness(double const dChange)
 // {
 //    double dTotalThickness = m_dClayThickness + m_dSiltThickness + m_dSandThickness;
 //

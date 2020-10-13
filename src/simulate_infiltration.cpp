@@ -1,6 +1,6 @@
 /*=========================================================================================================================================
 
- This is simulate_infiltration.cpp: it simulates infiltration
+ This is simulate_infilt.cpp: it simulates infilt
 
  Copyright (C) 2020 David Favis-Mortlock
 
@@ -23,7 +23,7 @@
 
 /*=========================================================================================================================================
 
- Sets an initial value for suboverland flow for every cell
+ Sets an initial value for subsurface water for every cell
 
 =========================================================================================================================================*/
 void CSimulation::InitSoilWater(void)
@@ -36,7 +36,7 @@ void CSimulation::InitSoilWater(void)
       {
          for (int nY = 0; nY < m_nYGridMax; nY++)
          {
-            CLayer* pLayer = Cell[nX][nY].pGetSoil()->pLayerGetLayer(nLayer);
+            CCellSoilLayer* pLayer = Cell[nX][nY].pGetSoil()->pLayerGetLayer(nLayer);
 
             double
                dLayerThickness = pLayer->dGetLayerThickness(),
@@ -46,7 +46,7 @@ void CSimulation::InitSoilWater(void)
          }
       }
 
-      // For this soil, calculate the capillary pressure head at the wetting front. This is equation 1 and 2 of the EPA Explicit Green-Ampt Model (GAEXP) at https://www.epa.gov/water-research/infiltration-models#Explicitgreen
+      // For this soil, calculate the capillary pressure head at the wetting front. This is equation 1 and 2 of the EPA Explicit Green-Ampt Model (GAEXP) at https://www.epa.gov/water-research/infilt-models#Explicitgreen
       double const GAEXP_CONST_A = 2;
       double const GAEXP_CONST_B = 3;
       double dNu = GAEXP_CONST_A + (GAEXP_CONST_B * m_VdInputSoilLayerInfiltLambda[nLayer]);
@@ -60,7 +60,7 @@ void CSimulation::InitSoilWater(void)
 
 /*=========================================================================================================================================
 
- This calculates suboverland flow movement for all cells
+ This calculates subsurface water movement for all cells
 
 =========================================================================================================================================*/
 void CSimulation::DoAllInfiltration()
@@ -69,15 +69,15 @@ void CSimulation::DoAllInfiltration()
    {
       for (int nY = 0; nY < m_nYGridMax; nY++)
       {
-         // Zero this cell's values for water lost by infiltration and sediment deposited due to infiltration
+         // Zero this cell's values for water lost by infilt and sediment deposited due to infilt
          Cell[nX][nY].pGetSoilWater()->SetZeroThisIterInfiltration();
 
          // Start at the top soil layer and work downwards
          for (int nLayer = 0; nLayer < m_nNumSoilLayers; nLayer++)
          {
-            CLayer* pLayer = Cell[nX][nY].pGetSoil()->pLayerGetLayer(nLayer);
+            CCellSoilLayer* pLayer = Cell[nX][nY].pGetSoil()->pLayerGetLayer(nLayer);
 
-            // Get the suboverland flow content (a depth equivalent) for this layer
+            // Get the subsurface water content (a depth equivalent) for this layer
             double dLayerSoilWaterDepth = pLayer->dGetSoilWater();
 
             // Now calculate the saturated (maximum) soil water content (also a depth equivalent) for this layer
@@ -89,10 +89,10 @@ void CSimulation::DoAllInfiltration()
 //             // Is this soil layer over-saturated?
 //             if ((dDiff + TOLERANCE) < 0)
 //             {
-//                // Yes, so do exfiltration
+//                // Yes, so do exfilt
 //                DoCellExfiltration(nX, nY, nLayer, pLayer, -dDiff);
 //
-// //                m_ofsLog << m_ulIter << ": should have exfiltration " << -dDiff << " from layer " << nLayer << " at [" << nX << "][" << nY << "] since dLayerMaxSoilWaterDepth = " << dLayerMaxSoilWaterDepth << ", dLayerSoilWaterDepth = " << dLayerSoilWaterDepth << endl;
+// //                m_ofsLog << m_ulIter << ": should have exfilt " << -dDiff << " from layer " << nLayer << " at [" << nX << "][" << nY << "] since dLayerMaxSoilWaterDepth = " << dLayerMaxSoilWaterDepth << ", dLayerSoilWaterDepth = " << dLayerSoilWaterDepth << endl;
 //
 //                continue;
 //             }
@@ -100,8 +100,8 @@ void CSimulation::DoAllInfiltration()
             // Is this soil layer under-saturated?
             if ((dDiff - TOLERANCE) > 0)
             {
-               // Yes, so do infiltration
-//                m_ofsLog << m_ulIter << ": infiltration " << dDiff << " from layer " << nLayer << " at [" << nX << "][" << nY << "] since dLayerMaxSoilWaterDepth = " << dLayerMaxSoilWaterDepth << ", dLayerSoilWaterDepth = " << dLayerSoilWaterDepth << endl;
+               // Yes, so do infilt
+//                m_ofsLog << m_ulIter << ": infilt " << dDiff << " from layer " << nLayer << " at [" << nX << "][" << nY << "] since dLayerMaxSoilWaterDepth = " << dLayerMaxSoilWaterDepth << ", dLayerSoilWaterDepth = " << dLayerSoilWaterDepth << endl;
 
                DoCellInfiltration(nX, nY, nLayer, pLayer, dDiff);
             }
@@ -116,14 +116,14 @@ void CSimulation::DoAllInfiltration()
 
 /*=========================================================================================================================================
 
- This member function of CSimulation calculates water loss from infiltration for one cell using the EPA Explicit Green-Ampt Model (GAEXP), see
+ This member function of CSimulation calculates water loss from infilt for one cell using the EPA Explicit Green-Ampt Model (GAEXP), see
  http://www.epa.gov/ada/csmos/ninflmod.html
 
 =========================================================================================================================================*/
-void CSimulation::DoCellInfiltration(int const nX, int const nY, int const nLayer, CLayer* pLayer, double const dDeficit)
+void CSimulation::DoCellInfiltration(int const nX, int const nY, int const nLayer, CCellSoilLayer* pLayer, double const dDeficit)
 {
-   // The layer is not fully saturated, so maybe can get water from the layer above, or from overland flow if this is the top layer
-   CLayer* pLayerAbove = NULL;
+   // The layer is not fully saturated, so maybe can get water from the layer above, or from surface water if this is the top layer
+   CCellSoilLayer* pLayerAbove = NULL;
    double dWaterDepthAbove = 0;
    if (nLayer == 0)
    {
@@ -131,7 +131,7 @@ void CSimulation::DoCellInfiltration(int const nX, int const nY, int const nLaye
       if (! Cell[nX][nY].pGetSurfaceWater()->bIsWet())
          return;
 
-      // Cell is wet, so get the depth of overland flow
+      // Cell is wet, so get the depth of surface water
       dWaterDepthAbove = Cell[nX][nY].pGetSurfaceWater()->dGetSurfaceWaterDepth();
    }
    else
@@ -168,8 +168,8 @@ void CSimulation::DoCellInfiltration(int const nX, int const nY, int const nLaye
 
       if (nLayer == 0)
       {
-         // This is the top layer, so remove from the overland flow and update total infiltration for this cell
-         Cell[nX][nY].pGetSoilWater()->Infiltrate(dDepthToInfiltrate);
+         // This is the top layer, so remove from the surface water and update total infilt for this cell. Note that if there is insufficient surface water, dDepthToInfiltrate is reduced
+         Cell[nX][nY].pGetSoilWater()->DoInfiltration(dDepthToInfiltrate);
 
          // Update the this-operation (value is kept for several iterations) total depth of infiltrated water
          m_dThisIterInfiltration += dDepthToInfiltrate;
@@ -183,12 +183,12 @@ void CSimulation::DoCellInfiltration(int const nX, int const nY, int const nLaye
    }
    else
    {
-      // All water lost to infiltration
+      // All water lost to infilt
       dDepthToInfiltrate = dWaterDepthAbove;
 
       if (nLayer == 0)
       {
-         // This is the top layer, so remove the water, update total infiltration for this cell, assume that any in-transport sediment is deposited and add this to the per-iteration total of infitration-deposited sediment
+         // This is the top layer, so remove the water, update total infilt for this cell, assume that any in-transport sediment is deposited and add this to the per-iteration total of infitration-deposited sediment
          Cell[nX][nY].pGetSoilWater()->InfiltrateAndMakeDry();
 
          // Update this-operation (value is kept for several iterations) total depth of infiltrated water
@@ -207,16 +207,16 @@ void CSimulation::DoCellInfiltration(int const nX, int const nY, int const nLaye
 
 /*=========================================================================================================================================
 
-Calculates water loss from exfiltration for one cell TODO this needs to be looked at
+Calculates water loss from exfilt for one cell TODO this needs to be looked at
 
 =========================================================================================================================================*/
-void CSimulation::DoCellExfiltration(int const nX, int const nY, int const nLayer, CLayer* pLayer, double const dExcess)
+void CSimulation::DoCellExfiltration(int const nX, int const nY, int const nLayer, CCellSoilLayer* pLayer, double const dExcess)
 {
    // The current soil layer is over-saturated, so we must try to get rid of some water from it. First try to move it downwards to the layer below
    if (nLayer < m_nNumSoilLayers-1)
    {
       // We are not on the lowest (i.e. just above basement) layer, so get a pointer to the layer below
-      CLayer* pLayerBelow = Cell[nX][nY].pGetSoil()->pLayerGetLayer(nLayer+1);
+      CCellSoilLayer* pLayerBelow = Cell[nX][nY].pGetSoil()->pLayerGetLayer(nLayer+1);
 
       // Get the soil water content for the layer below
       double dLayerBelowSoilWater = pLayerBelow->dGetSoilWater();
@@ -244,19 +244,11 @@ void CSimulation::DoCellExfiltration(int const nX, int const nY, int const nLaye
    if (nLayer == 0)
    {
       // This is the top layer
-//       m_ofsLog << m_ulIter << " [" << nX << "][" << nY << "] exfiltration to overland flow = " << dExcess << endl;
+//       m_ofsLog << m_ulIter << " [" << nX << "][" << nY << "] exfilt to surface water = " << dExcess << endl;
 
-      // Remove water from this layer and add it to the overland flow
+      // Remove water from this layer and add it to the surface water
       pLayer->ChangeSoilWater(-dExcess);
-
-      // Was the cell previously dry?
-      if (! Cell[nX][nY].pGetSurfaceWater()->bIsWet())
-         m_ulNWet++;
-
-      // Add to the this-iteration total depth of overland flow
-      AddSurfaceWater(dExcess);
-
-      Cell[nX][nY].pGetSurfaceWater()->ChangeSurfaceWater(dExcess);
+      Cell[nX][nY].pGetSurfaceWater()->AddSurfaceWater(dExcess);
 
       m_dThisIterExfiltration += dExcess;
 
@@ -265,13 +257,13 @@ void CSimulation::DoCellExfiltration(int const nX, int const nY, int const nLaye
    else
    {
       // This is not the top layer
-//       m_ofsLog << m_ulIter << " [" << nX << "][" << nY << "] exfiltration from layer " << nLayer << " to " << nLayer-1 << " = " << dExcess << endl;
+//       m_ofsLog << m_ulIter << " [" << nX << "][" << nY << "] exfilt from layer " << nLayer << " to " << nLayer-1 << " = " << dExcess << endl;
 
       // Remove water from this layer
       pLayer->ChangeSoilWater(-dExcess);
 
       // And add it to the layer above
-      CLayer* pLayerAbove = Cell[nX][nY].pGetSoil()->pLayerGetLayer(nLayer-1);
+      CCellSoilLayer* pLayerAbove = Cell[nX][nY].pGetSoil()->pLayerGetLayer(nLayer-1);
       pLayerAbove->ChangeSoilWater(dExcess);
    }
 }

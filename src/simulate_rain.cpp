@@ -52,7 +52,7 @@ void CSimulation::DoRunOnFromOneEdge(int const nEdge)
       double dTmpDpth = m_dMeanCellWaterVol * m_dInvCellSquare * m_dRunOnRainVarM * dDrops;
       m_dThisIterRunOn += dTmpDpth;
 
-      // Now add the same fraction of this depth of water to every cell at this edge of the plot. Note that this implies that there is no infiltration on the run-on area
+      // Now add the same fraction of this depth of water to every cell at this edge of the plot. Note that this implies that there is no infilt on the run-on area
       dTmpDpth /= dEdgeLen;
 
       if (nEdge == EDGE_TOP)
@@ -167,7 +167,7 @@ void CSimulation::DoAllRain(void)
       }
    }
 
-   // Needed for  tiny grids
+   // Needed for tiny grids
    nDrops = tMax(nDrops, 1);
 
    // Actually drop each raindrop

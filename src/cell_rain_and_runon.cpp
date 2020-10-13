@@ -21,7 +21,7 @@
 #include "cell_rain_and_runon.h"
 
 
-CRainAndRunon::CRainAndRunon(void)
+CCellRainAndRunon::CCellRainAndRunon(void)
 :
    m_dRain(0),
    m_dCumulRain(0),
@@ -32,26 +32,26 @@ CRainAndRunon::CRainAndRunon(void)
    m_pCell = NULL;
 }
 
-CRainAndRunon::~CRainAndRunon(void)
+CCellRainAndRunon::~CCellRainAndRunon(void)
 {
 }
 
 
-void CRainAndRunon::SetParent(CCell* const pParent)
+void CCellRainAndRunon::SetParent(CCell* const pParent)
 {
    m_pCell = pParent;
 }
 
 
 // Sets this-iteration rainfall and runon to zero for this cell
-void CRainAndRunon::InitializeRainAndRunon(void)
+void CCellRainAndRunon::InitializeRainAndRunon(void)
 {
    m_dRain =
    m_dRunOn = 0;
 }
 
-// Increments rainfall for this cell, also adds to the overland flow in the cell
-void CRainAndRunon::AddRain(double const dRain)
+// Increments rainfall for this cell, also adds to the surface water on the cell
+void CCellRainAndRunon::AddRain(double const dRain)
 {
    // Add rain to this cell
    m_dRain      += dRain;
@@ -67,45 +67,42 @@ void CRainAndRunon::AddRain(double const dRain)
       m_pCell->pGetSurfaceWater()->InitializeAllFlowVelocity();
 
       // Initialize sediment load
-      m_pCell->pGetSediment()->InitializeAllSizeSedimentLoad();
+      m_pCell->pGetSediment()->InitializeAllSizeSedLoad();
    }
 
-   // Increase the depth of overland flow on the cell
-   m_pCell->pGetSurfaceWater()->ChangeSurfaceWater(dRain);
-
-   // Add to the this-iteration surface water total
-   m_pSim->AddSurfaceWater(dRain);
+   // Increase the depth of surface water on the cell
+   m_pCell->pGetSurfaceWater()->AddSurfaceWater(dRain);
 }
 
 // Returns the this-timestep rainfall on this cell
-double CRainAndRunon::dGetRain(void) const
+double CCellRainAndRunon::dGetRain(void) const
 {
    return m_dRain;
 }
 
 
 // Returns the cumulative rainfall on this cell
-double CRainAndRunon::dGetCumulRain(void) const
+double CCellRainAndRunon::dGetCumulRain(void) const
 {
    return m_dCumulRain;
 }
 
 
 // Sets this cell's rainfall variation multiplier
-void CRainAndRunon::SetRainVarM(double const dNewVar)
+void CCellRainAndRunon::SetRainVarM(double const dNewVar)
 {
    m_dRainVarM = dNewVar;
 }
 
 // Returns this cell's rainfall variation multiplier
-double CRainAndRunon::dGetRainVarM(void) const
+double CCellRainAndRunon::dGetRainVarM(void) const
 {
    return m_dRainVarM;
 }
 
 
-// Increments this cell's runon, also adds to the overland flow on the cell
-void CRainAndRunon::AddRunOn(double const dRunOn)
+// Increments this cell's runon, also adds to the surface water on the cell
+void CCellRainAndRunon::AddRunOn(double const dRunOn)
 {
    m_dRunOn += dRunOn;
    m_dCumulRunOn += dRunOn;
@@ -120,24 +117,21 @@ void CRainAndRunon::AddRunOn(double const dRunOn)
       m_pCell->pGetSurfaceWater()->InitializeAllFlowVelocity();
 
       // Initialize sediment load
-      m_pCell->pGetSediment()->InitializeAllSizeSedimentLoad();
+      m_pCell->pGetSediment()->InitializeAllSizeSedLoad();
    }
 
-   // Increase the depth of overland flow
-   m_pCell->pGetSurfaceWater()->ChangeSurfaceWater(dRunOn);
-
-   // Add to the this-iteration surface water total
-   m_pSim->AddSurfaceWater(dRunOn);
+   // Increase the depth of surface water
+   m_pCell->pGetSurfaceWater()->AddSurfaceWater(dRunOn);
 }
 
 // Returns the this-timestep run-on on this cell
-double CRainAndRunon::dGetRunOn(void) const
+double CCellRainAndRunon::dGetRunOn(void) const
 {
    return m_dRunOn;
 }
 
 // Returns the total run-on on this cell
-double CRainAndRunon::dGetCumulRunOn(void) const
+double CCellRainAndRunon::dGetCumulRunOn(void) const
 {
    return m_dCumulRunOn;
 }

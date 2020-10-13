@@ -119,15 +119,15 @@ int CSimulation::nInitSlumping(void)
    }
 
    // See the result
-   for (int nY = 0; nY < m_nSSSQuadrantSize; nY++)
-   {
-      for (int nX = 0; nX < m_nSSSQuadrantSize; nX++)
-      {
-         m_ofsLog << m_SSSWeightQuadrant[nX][nY] << "\t";
-      }
-      m_ofsLog << endl;
-   }
-   m_ofsLog << endl << endl;
+//    for (int nY = 0; nY < m_nSSSQuadrantSize; nY++)
+//    {
+//       for (int nX = 0; nX < m_nSSSQuadrantSize; nX++)
+//       {
+//          m_ofsLog << m_SSSWeightQuadrant[nX][nY] << "\t";
+//       }
+//       m_ofsLog << endl;
+//    }
+//    m_ofsLog << endl << endl;
 
    return RTN_OK;
 }
@@ -264,13 +264,13 @@ void CSimulation::DoAllSlump(void)
          if (dThisStress == 0)
             continue;
 
-         // OK, we have some shear stress. Now get the water content of this cell, as a fraction. But if we aren't simulating infiltration, assume the soil is saturated
+         // OK, we have some shear stress. Now get the water content of this cell, as a fraction. But if we aren't simulating infilt, assume the soil is saturated
          // TODO get working for multiple soil layers
          double dWaterFrac = 1;
          if (m_bDoInfiltration)
          {
             // Calculate the saturated (maximum) soil water content (a depth equivalent) for the top soil layer on this cell
-            CLayer* pTopLayer = Cell[nX][nY].pGetSoil()->pLayerGetLayer(0);
+            CCellSoilLayer* pTopLayer = Cell[nX][nY].pGetSoil()->pLayerGetLayer(0);
 
             // Get the current water content (a depth equivalent) for the top soil layer
             double dTopLayerSoilWater = pTopLayer->dGetSoilWater();
@@ -771,7 +771,7 @@ void CSimulation::DoAllHeadcutRetreat(void)
                double dElevDiff = dUpStreamElev - dThisElev;
 
                // Is the elevation difference nearly zero?
-               if (bFPIsEqual(dElevDiff, 0.0, TOLERANCE))
+               if (bFPIsEqual(dElevDiff, 0.0, SEDIMENT_TOLERANCE))
                {
                   // Just try the next direction. Note that we don't zero the retreat for this direction since the elvation of the upstream cell may change later
                   continue;

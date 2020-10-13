@@ -2,7 +2,7 @@
    #define __SURFACE_WATER_H__
 /*=========================================================================================================================================
 
- This is cell_surface_water.h: declarations for the RillGrow class used to represent a cell's overland flow
+ This is cell_surface_water.h: declarations for the RillGrow class used to represent a cell's surface water
 
  Copyright (C) 2020 David Favis-Mortlock
 
@@ -24,7 +24,7 @@ class CSimulation;                                 // Ditto
 #include "2d_vec.h"
 
 
-class CSurfaceWater
+class CCellSurfaceWater
 {
 public:
    static CSimulation* m_pSim;
@@ -55,8 +55,8 @@ private:
    CCell* m_pCell;
 
 public:
-   CSurfaceWater(void);
-   ~CSurfaceWater(void);
+   CCellSurfaceWater(void);
+   ~CCellSurfaceWater(void);
 
    void SetParent(CCell* const);
 
@@ -68,7 +68,8 @@ public:
    void SetFlowDirection(int const);
    int nGetFlowDirection(void) const;
 
-   void ChangeSurfaceWater(double const);
+   void AddSurfaceWater(double const);
+   void RemoveSurfaceWater(double&);
    void SetSurfaceWaterZero(void);
    double dGetSurfaceWaterDepth(void) const;
    bool bIsWet(void) const;

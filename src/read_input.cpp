@@ -506,10 +506,10 @@ bool CSimulation::bReadRunData(void)
                strRH = strRemoveSubstr(&strRH, &GIS_INUNDATION_REGIME_CODE);
             }
 
-            if (strRH.find(GIS_OVERLANDFLOW_DIRECTION_CODE) != string::npos)
+            if (strRH.find(GIS_SURFACE_WATER_DIRECTION_CODE) != string::npos)
             {
                m_bFlowDirSave = true;
-               strRH = strRemoveSubstr(&strRH, &GIS_OVERLANDFLOW_DIRECTION_CODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_SURFACE_WATER_DIRECTION_CODE);
             }
 
             if (strRH.find(GIS_STREAMPOWER_CODE) != string::npos)
@@ -554,22 +554,22 @@ bool CSimulation::bReadRunData(void)
                strRH = strRemoveSubstr(&strRH, &GIS_TRANSPORT_CAPACITY_CODE);
             }
 
-            if (strRH.find(GIS_AVG_OVERLANDFLOW_DEPTH_CODE) != string::npos)
+            if (strRH.find(GIS_AVG_SURFACE_WATER_DEPTH_CODE) != string::npos)
             {
                m_bCumulAvgDepthSave = true;
-               strRH = strRemoveSubstr(&strRH, &GIS_AVG_OVERLANDFLOW_DEPTH_CODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_AVG_SURFACE_WATER_DEPTH_CODE);
             }
 
-            if (strRH.find(GIS_AVG_OVERLANDFLOW_SPEED_CODE) != string::npos)
+            if (strRH.find(GIS_AVG_SURFACE_WATER_SPEED_CODE) != string::npos)
             {
                m_bCumulAvgSpdSave = true;
-               strRH = strRemoveSubstr(&strRH, &GIS_AVG_OVERLANDFLOW_SPEED_CODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_AVG_SURFACE_WATER_SPEED_CODE);
             }
 
-            if (strRH.find(GIS_AVG_OVERLANDFLOW_DW_SPEED_CODE) != string::npos)
+            if (strRH.find(GIS_AVG_SURFACE_WATER_DW_SPEED_CODE) != string::npos)
             {
                m_bCumulAvgDWSpdSave = true;
-               strRH = strRemoveSubstr(&strRH, &GIS_AVG_OVERLANDFLOW_DW_SPEED_CODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_AVG_SURFACE_WATER_DW_SPEED_CODE);
             }
 
             if (strRH.find(GIS_SEDIMENT_CONCENTRATION_CODE) != string::npos)
@@ -603,10 +603,10 @@ bool CSimulation::bReadRunData(void)
             }
 
 #if defined _DEBUG
-            if (strRH.find(GIS_AVG_OVERLANDFLOW_FROM_EDGES_CODE) != string::npos)
+            if (strRH.find(GIS_AVG_SURFACE_WATER_FROM_EDGES_CODE) != string::npos)
             {
                m_bLostSave = true;
-               strRH = strRemoveSubstr(&strRH, &GIS_AVG_OVERLANDFLOW_FROM_EDGES_CODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_AVG_SURFACE_WATER_FROM_EDGES_CODE);
             }
 #endif
 
@@ -659,8 +659,8 @@ bool CSimulation::bReadRunData(void)
             m_bFlowDetachTS       =
             m_bSlumpDetachTS      =
             m_bToppleDetachTS     =
-            m_bDoFlowDepositionTS =
-            m_bSedLostTS          =
+            m_bDoSedLoadDepositTS =
+            m_bSedLoadLostTS          =
             m_bSedLoadTS          =
             m_bInfiltDepositTS    =
             m_bSplashRedistTS     =
@@ -700,10 +700,10 @@ bool CSimulation::bReadRunData(void)
                strRH = strRemoveSubstr(&strRH, &RUNON_TIME_SERIES_CODE);
             }
 
-            if (strRH.find(OVERLANDFLOW_TIME_SERIES_CODE) != string::npos)
+            if (strRH.find(SURFACE_WATER_TIME_SERIES_CODE) != string::npos)
             {
                m_bSurfaceWaterTS = true;
-               strRH = strRemoveSubstr(&strRH, &OVERLANDFLOW_TIME_SERIES_CODE);
+               strRH = strRemoveSubstr(&strRH, &SURFACE_WATER_TIME_SERIES_CODE);
             }
 
             if (strRH.find(WATER_LOST_TIME_SERIES_CODE) != string::npos)
@@ -718,34 +718,34 @@ bool CSimulation::bReadRunData(void)
                strRH = strRemoveSubstr(&strRH, &FLOW_DETACH_TIME_SERIES_CODE);
             }
 
-            if (strRH.find(SLUMP_DETACHMENT_TIME_SERIES_CODE) != string::npos)
+            if (strRH.find(SLUMP_DETACH_TIME_SERIES_CODE) != string::npos)
             {
                m_bSlumpDetachTS = true;
-               strRH = strRemoveSubstr(&strRH, &SLUMP_DETACHMENT_TIME_SERIES_CODE);
+               strRH = strRemoveSubstr(&strRH, &SLUMP_DETACH_TIME_SERIES_CODE);
             }
 
-            if (strRH.find(TOPPLE_DETACHMENT_TIME_SERIES_CODE) != string::npos)
+            if (strRH.find(TOPPLE_DETACH_TIME_SERIES_CODE) != string::npos)
             {
                m_bToppleDetachTS = true;
-               strRH = strRemoveSubstr(&strRH, &TOPPLE_DETACHMENT_TIME_SERIES_CODE);
+               strRH = strRemoveSubstr(&strRH, &TOPPLE_DETACH_TIME_SERIES_CODE);
             }
 
-            if (strRH.find(FLOW_DEPOSIT_TIME_SERIES_CODE) != string::npos)
+            if (strRH.find(SEDLOAD_DEPOSIT_TIME_SERIES_CODE) != string::npos)
             {
-               m_bDoFlowDepositionTS = true;
-               strRH = strRemoveSubstr(&strRH, &FLOW_DEPOSIT_TIME_SERIES_CODE);
+               m_bDoSedLoadDepositTS = true;
+               strRH = strRemoveSubstr(&strRH, &SEDLOAD_DEPOSIT_TIME_SERIES_CODE);
             }
 
-            if (strRH.find(SEDIMENT_LOST_TIME_SERIES_CODE) != string::npos)
+            if (strRH.find(SEDLOAD_LOST_TIME_SERIES_CODE) != string::npos)
             {
-               m_bSedLostTS = true;
-               strRH = strRemoveSubstr(&strRH, &SEDIMENT_LOST_TIME_SERIES_CODE);
+               m_bSedLoadLostTS = true;
+               strRH = strRemoveSubstr(&strRH, &SEDLOAD_LOST_TIME_SERIES_CODE);
             }
 
-            if (strRH.find(SEDIMENT_LOAD_TIME_SERIES_CODE) != string::npos)
+            if (strRH.find(SEDLOAD_TIME_SERIES_CODE) != string::npos)
             {
                m_bSedLoadTS = true;
-               strRH = strRemoveSubstr(&strRH, &SEDIMENT_LOAD_TIME_SERIES_CODE);
+               strRH = strRemoveSubstr(&strRH, &SEDLOAD_TIME_SERIES_CODE);
             }
 
             if (strRH.find(INFILT_DEPOSIT_TIME_SERIES_CODE) != string::npos)
@@ -754,16 +754,16 @@ bool CSimulation::bReadRunData(void)
                strRH = strRemoveSubstr(&strRH, &INFILT_DEPOSIT_TIME_SERIES_CODE);
             }
 
-            if (strRH.find(SPLASH_REDISTRIBUTION_TIME_SERIES_CODE) != string::npos)
+            if (strRH.find(SPLASH_REDIST_TIME_SERIES_CODE) != string::npos)
             {
                m_bSplashRedistTS = true;
-               strRH = strRemoveSubstr(&strRH, &SPLASH_REDISTRIBUTION_TIME_SERIES_CODE);
+               strRH = strRemoveSubstr(&strRH, &SPLASH_REDIST_TIME_SERIES_CODE);
             }
 
-            if (strRH.find(SPLASH_KINETIC_ENERGY_TIME_SERIES_CODE) != string::npos)
+            if (strRH.find(SPLASH_KE_TIME_SERIES_CODE) != string::npos)
             {
                m_bSplashKETS = true;
-               strRH = strRemoveSubstr(&strRH, &SPLASH_KINETIC_ENERGY_TIME_SERIES_CODE);
+               strRH = strRemoveSubstr(&strRH, &SPLASH_KE_TIME_SERIES_CODE);
             }
 
             if (strRH.find(SOIL_WATER_TIME_SERIES_CODE) != string::npos)
@@ -1374,14 +1374,14 @@ bool CSimulation::bReadRunData(void)
 
       // ----------------------------------------------------------- Infiltration -----------------------------------------------------
       case 35:
-         // Simulate infiltration?
+         // Simulate infilt?
          strRH = strToLower(&strRH);
          if (strRH.find('y') != string::npos)
             m_bDoInfiltration = true;
          else if (strRH.find('n') != string::npos)
             m_bDoInfiltration = false;
          else
-            strErr = "infiltration switch";
+            strErr = "infilt switch";
          break;
 
       case 36:
@@ -1639,8 +1639,8 @@ bool CSimulation::bReadRunData(void)
 
       case 47:
          // Maximum flow speed (mm/sec)
-         m_dFlowSpeedLimit = stod(strRH);
-         if (m_dFlowSpeedLimit <= 0)
+         m_dMaxFlowSpeed = stod(strRH);
+         if (m_dMaxFlowSpeed <= 0)
             strErr = "maximum flow speed must be greater than zero";
          break;
 
@@ -1882,7 +1882,7 @@ bool CSimulation::bReadRunData(void)
    if (! m_bRunOn)
       m_bRunOnTS = false;
 
-   // Don't output infiltration GIS/TS files if no infiltration
+   // Don't output infilt GIS/TS files if no infilt
    if (! m_bDoInfiltration)
    {
       m_bInfiltSave              =
@@ -1909,8 +1909,8 @@ bool CSimulation::bReadRunData(void)
    if (! m_bFlowErosion)
    {
       m_bFlowDetachTS       =
-      m_bDoFlowDepositionTS =
-      m_bSedLostTS          =
+      m_bDoSedLoadDepositTS =
+      m_bSedLoadLostTS          =
       m_bSedLoadTS          = false;
    }
 

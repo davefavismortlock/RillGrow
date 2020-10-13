@@ -2,7 +2,7 @@
    #define __SEDIMENT_H__
 /*=========================================================================================================================================
 
- This is cell_sediment.h: declarations for the RillGrow class used to represent sediment in a cell's overland flow
+ This is cell_sediment.h: declarations for the RillGrow class used to represent sediment in a cell's surface water
 
  Copyright (C) 2020 David Favis-Mortlock
 
@@ -21,48 +21,49 @@
 class CCell;                                 // Forward declaration
 
 
-class CSediment
+class CCellSedimentLoad
 {
 public:
    static CSimulation* m_pSim;
 
 private:
    double
-      m_dClaySedimentLoad,
-      m_dSiltSedimentLoad,
-      m_dSandSedimentLoad,
-      m_dCumulClaySedimentLoad,
-      m_dCumulSiltSedimentLoad,
-      m_dCumulSandSedimentLoad;
+      m_dClaySedLoad,
+      m_dSiltSedLoad,
+      m_dSandSedLoad,
+      m_dCumulClaySedLoad,
+      m_dCumulSiltSedLoad,
+      m_dCumulSandSedLoad;
 
    CCell* m_pCell;
 
 public:
-   CSediment(void);
-   ~CSediment(void);
+   CCellSedimentLoad(void);
+   ~CCellSedimentLoad(void);
 
    void SetParent(CCell* const);
 
-   void InitializeAllSizeSedimentLoad(void);
+   void InitializeAllSizeSedLoad(void);
 
-   double dGetAllSizeSedimentLoad(void) const;
-   double dGetCumulAllSizeSedimentLoad(void) const;
+   double dGetAllSizeSedLoad(void) const;
+   double dGetCumulAllSizeSedLoad(void) const;
 
-   void ChangeSedimentLoad(double const, double const, double const);
+   void AddToSedLoad(const double, const double, const double);
+   void RemoveFromSedLoad(double&, double&, double&);
 
-   void DoChangeClaySedimentLoad(double const);
-   double dGetClaySedimentLoad(void) const;
+   void RemoveFromClaySedLoad(double&);
+   double dGetClaySedLoad(void) const;
    double dSetClaySedLoadZero(void);
 
-   void DoChangeSiltSedimentLoad(double const);
-   double dGetSiltSedimentLoad(void) const;
+   void RemoveFromSiltSedLoad(double&);
+   double dGetSiltSedLoad(void) const;
    double dSetSiltSedLoadZero(void);
 
-   void DoChangeSandSedimentLoad(double const);
-   double dGetSandSedimentLoad(void) const;
-   double dSetSandSedimentLoadZero(void);
+   void RemoveFromSandSedLoad(double&);
+   double dGetSandSedLoad(void) const;
+   double dSetSandSedLoadZero(void);
 
-   double dGetAllSizeSedimentConcentration(void);
+   double dGetAllSizeSedConc(void);
 };
 
 #endif         // __SEDIMENT_H__

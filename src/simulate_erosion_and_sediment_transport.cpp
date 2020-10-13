@@ -70,13 +70,13 @@ void CSimulation::CalcTransportCapacity(int const nX, int const nY, int const nL
    Cell[nX][nY].pGetSurfaceWater()->SetTransportCapacity(dTransportCapacity);
 
    // Get the total sediment load (this id for all size classes)
-   double dSedimentLoad = Cell[nX][nY].pGetSediment()->dGetAllSizeSedimentLoad();
+   double dSedimentLoad = Cell[nX][nY].pGetSediment()->dGetAllSizeSedLoad();
 
    // Finally, compare sediment load and transport capacity
    if (dSedimentLoad > dTransportCapacity)
    {
       // Sediment load is more than transport capacity, so do some deposition
-      DoCellDeposition(nX, nY, dWaterDepth, dSedimentLoad, dTransportCapacity);
+      DoCellSedLoadDeposit(nX, nY, dWaterDepth, dSedimentLoad, dTransportCapacity);
    }
    else
    {
@@ -216,77 +216,116 @@ void CSimulation::DoCellErosion(int const nX, int const nY, int const nLowX, int
          dThickLost = tMin(Cell[nX][nY].pGetSoil()->dGetSoilSurfaceElevation() - m_dBaseLevel, dThickLost);
 
       // Erode 'this' cell, also add to sediment load and totals
-      if (dThickLost > TOLERANCE)
-         Cell[nX][nY].pGetSoil()->DoFlowDetach(dThickLost);
+      Cell[nX][nY].pGetSoil()->DoFlowDetach(dThickLost);
    }
    else
    {
-      // It is not an edge cell, so is the depth of soil lost greater than the TOLERANCE amount? (Need to check this to avoid removing miniscule depths)
-      if (dThickLost > TOLERANCE)
-      {
-         // Erode 'this' (source) and 'next' (destination) cells equally
-         double dHalfThickLost = dThickLost * 0.5;
+      // It is not an edge cell, so erode 'this' (source) and 'next' (destination) cells equally
+      double dHalfThickLost = dThickLost * 0.5;
 
-         // Erode 'this' cell, and add to sediment load and totals
-         Cell[nX][nY].pGetSoil()->DoFlowDetach(dHalfThickLost);
+      // Erode 'this' cell, and add to sediment load and totals
+      Cell[nX][nY].pGetSoil()->DoFlowDetach(dHalfThickLost);
 
-         // Also erode the 'next' cell, and add to sediment load and totals
-         Cell[nLowX][nLowY].pGetSoil()->DoFlowDetach(dHalfThickLost);
+      // Also erode the 'next' cell, and add to sediment load and totals
+      Cell[nLowX][nLowY].pGetSoil()->DoFlowDetach(dHalfThickLost);
 
-         // OK, now add to the potential headcut erosion: dElevSlope is in radians TODO try using water surface gradient (i.e. the hydraulic gradient) rather than soil surface gradient here, but made v little difference
-         double dElevSlope = atan((Cell[nX][nY].pGetSoil()->dGetSoilSurfaceElevation() - Cell[nLowX][nLowY].pGetSoil()->dGetSoilSurfaceElevation()) / dHLen);
+      // OK, now add to the potential headcut erosion: dElevSlope is in radians TODO try using water surface gradient (i.e. the hydraulic gradient) rather than soil surface gradient here, but made v little difference
+      double dElevSlope = atan((Cell[nX][nY].pGetSoil()->dGetSoilSurfaceElevation() - Cell[nLowX][nLowY].pGetSoil()->dGetSoilSurfaceElevation()) / dHLen);
 
-         // TODO BODGE
-         double dConst = 0.01;
-         double dThisRetreat = dConst * sin(dElevSlope);
+      // TODO BODGE
+      double dConst = 0.01;
+      double dThisRetreat = dConst * sin(dElevSlope);
 //          m_ofsLog << m_ulIter << " [" << nX << "][" << nY << "] dElevSlope (degrees)=" << dElevSlope * 180 / PI << " dThisRetreat=" << dThisRetreat << endl;
 
-         // AddToStoredRetreat nDirection
-         int nHeadcutDirection = nCalcOppositeDirection(nDirection);
-         Cell[nX][nY].AddToStoredRetreat(nHeadcutDirection, dThisRetreat);
-
-
-      }
+      // AddToStoredRetreat nDirection
+      int nHeadcutDirection = nCalcOppositeDirection(nDirection);
+      Cell[nX][nY].AddToStoredRetreat(nHeadcutDirection, dThisRetreat);
    }
 }
 
 
 /*=========================================================================================================================================
 
- Calculates deposition in a single wet cell
+ Calculates sediment load deposition on a single wet cell
 
 =========================================================================================================================================*/
-void CSimulation::DoCellDeposition(int const nX, int const nY, double const dWaterDepth, double const dSedimentLoad, double const dTransportCapacity)
+void CSimulation::DoCellSedLoadDeposit(int const nX, int const nY, double const dWaterDepth, double const dSedimentLoad, double const dTransportCapacity)
 {
-   // First calculate Reynold's Number, and a drag coefficient
-   double
-      dReynoldsNumber = dGetReynolds(nX, nY),
-      dDragCoefficient = 24.0 / dReynoldsNumber;
+   // Cheng equation
 
-   // Calculate the settling speed for the three sediment size classes using the terminal velocity equation: see https://en.wikipedia.org/wiki/Terminal_velocity
+   // Calc density of sediment - density of water
+   double dDelta = m_dDepositionGrainDensity - m_dRho;
+
    double
-      dClaySettlingSpeed = 1000 * sqrt((4 * m_dG * m_dClayDiameter) * m_dDensityDiffExpression / ( 3 * dDragCoefficient)),     // in mm/sec
-      dSiltSettlingSpeed = 1000 * sqrt((4 * m_dG * m_dSiltDiameter) * m_dDensityDiffExpression / ( 3 * dDragCoefficient)),
-      dSandSettlingSpeed = 1000 * sqrt((4 * m_dG * m_dSandDiameter) * m_dDensityDiffExpression / ( 3 * dDragCoefficient));
+      dStarPart = pow((dDelta * m_dG) / (m_dNu * m_dNu), 1.0 / 3.0),
+      dClayDiameter = 0.001 * ((m_dClaySiltBoundarySize - m_dClaySizeMin) / 2.0),            // in m
+      dDStarClay = dStarPart * dClayDiameter,
+      dSiltDiameter = 0.001 * ((m_dSiltSandBoundarySize - m_dClaySiltBoundarySize) / 2.0),   // in m
+      dDStarSilt = dStarPart * dSiltDiameter,
+      dSandDiameter = 0.001 * ((m_dSandSizeMax - m_dSiltSandBoundarySize) / 2.0),            // in mm
+      dDStarSand = dStarPart * dSandDiameter,
+      dClaySettlingSpeed = 1000 * pow(sqrt(25.0 + 1.2 * (dDStarClay * dDStarClay)) - 5.0, 1.5) * m_dNu / dClayDiameter,    // in mm/sec
+      dSiltSettlingSpeed = 1000 * pow(sqrt(25.0 + 1.2 * (dDStarSilt * dDStarSilt)) - 5.0, 1.5) * m_dNu / dSiltDiameter,    // in mm/sec
+      dSandSettlingSpeed = 1000 * pow(sqrt(25.0 + 1.2 * (dDStarSand * dDStarSand)) - 5.0, 1.5) * m_dNu / dSandDiameter;    // in mm/sec
+
+
+//    // First calculate Reynold's Number, and a drag coefficient
+//    double
+//       dReynoldsNumber = dGetReynolds(nX, nY),
+//       dDragCoefficient = 24.0 / dReynoldsNumber;
+//
+//    // Calculate the settling speed for the three sediment size classes using the terminal velocity equation: see https://en.wikipedia.org/wiki/Terminal_velocity
+//    double const DFUDGEFACTOR = 1;     // was 0.01;      // was 1.5;    // was 2
+//    double
+//       dClaySettlingSpeed = DFUDGEFACTOR * 1000 * sqrt((4 * m_dG * m_dClayDiameter) * m_dDensityDiffExpression / ( 3 * dDragCoefficient)),     // in mm/sec
+//       dSiltSettlingSpeed = DFUDGEFACTOR * 1000 * sqrt((4 * m_dG * m_dSiltDiameter) * m_dDensityDiffExpression / ( 3 * dDragCoefficient)),
+//       dSandSettlingSpeed = DFUDGEFACTOR * 1000 * sqrt((4 * m_dG * m_dSandDiameter) * m_dDensityDiffExpression / ( 3 * dDragCoefficient));
 
    // Now calculate the distance fallen during this timestep by a grain of each sediment size class
    double
       dClayDistance = m_dTimeStep * dClaySettlingSpeed,
       dSiltDistance = m_dTimeStep * dSiltSettlingSpeed,
-      dSandDistance = m_dTimeStep * dSandSettlingSpeed;
+      dSandDistance = m_dTimeStep * dSandSettlingSpeed,
+      dClayFrac = 0,
+      dSiltFrac = 0,
+      dSandFrac = 0;
 
-   // Assume that, for all sediment size classes, deposition is a linear function of the difference between sediment load and transport capacity: see equation 12 in Lei et al. (1998)
-   double dDiff = dSedimentLoad - dTransportCapacity;
+      if (dClayDistance >= dWaterDepth)
+         dClayFrac = 1;
+      else
+         dClayFrac = dClayDistance / dWaterDepth;
 
-   // Also assume that the sediment in each size class is well mixed vertically, and that the fraction deposited is proportional to distance fallen divided by water depth
-   double
-      dClayFrac = tMin(1.0, dClayDistance / dWaterDepth) * dDiff,
-      dSiltFrac = tMin(1.0, dSiltDistance / dWaterDepth) * dDiff,
-      dSandFrac = tMin(1.0, dSandDistance / dWaterDepth) * dDiff;
+      if (dSiltDistance >= dWaterDepth)
+         dSiltFrac = 1;
+      else
+         dSiltFrac = dSiltDistance / dWaterDepth;
 
-   // Finally, deposit these fractions of each sediment size class. Note that if there isn't enough being transported, then we will reduce the amount (= depth) which gets deposited
-   // TODO Note too that what is implied here is that deposited sediment becomes indistinguishable from the original soil. To be considered in a later version
-   Cell[nX][nY].pGetSoil()->DoFlowDeposit(dClayFrac, dSiltFrac, dSandFrac);
+      if (dSandDistance >= dWaterDepth)
+         dSandFrac = 1;
+      else
+         dSandFrac = dSandDistance / dWaterDepth;
+
+      assert(dClayFrac <= 1);
+      assert(dSiltFrac <= 1);
+      assert(dSandFrac <= 1);
+
+
+//    // Assume that, for all sediment size classes, deposition is a linear function of the difference between sediment load and transport capacity: see equation 12 in Lei et al. (1998)
+//    double dDiff = dSedimentLoad - dTransportCapacity;
+//
+//    // Assume that the fraction deposited is proportional to distance fallen divided by water depth (implies is well mixed) TODO need constant here?
+//    double
+//       dClayFrac = dClayDistance * dDiff / dWaterDepth,
+//       dSiltFrac = dSiltDistance * dDiff / dWaterDepth,
+//       dSandFrac = dSandDistance * dDiff / dWaterDepth;
+
+//    // Make sure fraction deposited remains below 1
+//    dClayFrac = tMin(1.0, dClayFrac);
+//    dSiltFrac = tMin(1.0, dSiltFrac);
+//    dSandFrac = tMin(1.0, dSandFrac);
+
+   // Finally, deposit these fractions of each sediment size class. Note that if there isn't enough being transported, then we will reduce the amount (= depth) which gets deposited. Note too that what is implied here is that deposited sediment becomes indistinguishable from the original soil. TODO To be considered in a later version
+   Cell[nX][nY].pGetSoil()->DoSedLoadDeposit(dClayFrac, dSiltFrac, dSandFrac);
 }
 
 
@@ -353,30 +392,63 @@ void CSimulation::AddSandFlowDeposit(double const dDeposit)
 
 /*=========================================================================================================================================
 
- Adds to the this-iteration clay-sized sediment load
+ Returns the this-iteration clay-sized sediment load
 
 =========================================================================================================================================*/
-void CSimulation::AddClaySedimentLoad(double const dChange)
+double CSimulation::dGetThisIterClaySedLoad(void)
+{
+   return m_dThisIterClaySedLoad;
+}
+
+/*=========================================================================================================================================
+
+ Returns the this-iteration silt-sized sediment load
+
+=========================================================================================================================================*/
+double CSimulation::dGetThisIterSiltSedLoad(void)
+{
+   return m_dThisIterSiltSedLoad;
+}
+
+/*=========================================================================================================================================
+
+ Returns the this-iteration sand-sized sediment load
+
+=========================================================================================================================================*/
+double CSimulation::dGetThisIterSandSedLoad(void)
+{
+   return m_dThisIterSandSedLoad;
+}
+
+/*=========================================================================================================================================
+
+ Changes the this-iteration clay-sized sediment load
+
+=========================================================================================================================================*/
+void CSimulation::ChangeThisIterClaySedLoad(double const dChange)
 {
    m_dThisIterClaySedLoad += dChange;
+   assert(m_dThisIterClaySedLoad >= 0);
 }
 
 /*=========================================================================================================================================
 
- Adds to the this-iteration silt-sized sediment load
+ Changes the this-iteration silt-sized sediment load
 
 =========================================================================================================================================*/
-void CSimulation::AddSiltSedimentLoad(double const dChange)
+void CSimulation::ChangeThisIterSiltSedLoad(double const dChange)
 {
    m_dThisIterSiltSedLoad += dChange;
+   assert(m_dThisIterSiltSedLoad >= 0);
 }
 
 /*=========================================================================================================================================
 
- Adds to the this-iteration sand-sized sediment load
+ Changes the this-iteration sand-sized sediment load
 
 =========================================================================================================================================*/
-void CSimulation::AddSandSedimentLoad(double const dChange)
+void CSimulation::ChangeThisIterSandSedLoad(double const dChange)
 {
-   m_dThisIterSandSedimentLoad += dChange;
+   m_dThisIterSandSedLoad += dChange;
+   assert(m_dThisIterSandSedLoad >= 0);
 }

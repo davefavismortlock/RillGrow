@@ -27,32 +27,32 @@ using std::vector;
 #include "cell_soil_layer.h"
 
 
-class CSoil
+class CCellSoil
 {
 public:
    static CSimulation* m_pSim;
 
 private:
    double
-      m_dClayFlowDetach,                           // This-timestep clay-sized overland flow detachment as a thickness (mm)
-      m_dSiltFlowDetach,                           // This-timestep silt-sized overland flow detachment as a thickness (mm)
-      m_dSandFlowDetach,                           // This-timestep sand-sized overland flow detachment as a thickness (mm)
-      m_dCumulClayFlowDetach,                      // Cumulative clay-sized overland flow detachment as a thickness (mm)
-      m_dCumulSiltFlowDetach,                      // Cumulative silt-sized overland flow detachment as a thickness (mm)
-      m_dCumulSandFlowDetach,                      // Cumulative sand-sized overland flow detachment as a thickness (mm)
-      m_dClayFlowDeposit,                          // This-timestep clay-sized overland flow deposition as a depth (mm)
-      m_dSiltFlowDeposit,                          // This-timestep silt-sized overland flow deposition as a depth (mm)
-      m_dSandFlowDeposit,                          // This-timestep sand-sized overland flow deposition as a depth (mm)
-      m_dCumulClayFlowDeposit,                     // Cumulative clay-sized overland flow detachment as a thickness (mm)
-      m_dCumulSiltFlowDeposit,                     // Cumulative silt-sized overland flow detachment as a thickness (mm)
-      m_dCumulSandFlowDeposit,                     // Cumulative sand-sized overland flow detachment as a thickness (mm)
+      m_dClayFlowDetach,                           // This-timestep clay-sized surface water detachment as a thickness (mm)
+      m_dSiltFlowDetach,                           // This-timestep silt-sized surface water detachment as a thickness (mm)
+      m_dSandFlowDetach,                           // This-timestep sand-sized surface water detachment as a thickness (mm)
+      m_dCumulClayFlowDetach,                      // Cumulative clay-sized surface water detachment as a thickness (mm)
+      m_dCumulSiltFlowDetach,                      // Cumulative silt-sized surface water detachment as a thickness (mm)
+      m_dCumulSandFlowDetach,                      // Cumulative sand-sized surface water detachment as a thickness (mm)
+      m_dClayFlowDeposit,                          // This-timestep clay-sized surface water deposition as a depth (mm)
+      m_dSiltFlowDeposit,                          // This-timestep silt-sized surface water deposition as a depth (mm)
+      m_dSandFlowDeposit,                          // This-timestep sand-sized surface water deposition as a depth (mm)
+      m_dCumulClayFlowDeposit,                     // Cumulative clay-sized surface water detachment as a thickness (mm)
+      m_dCumulSiltFlowDeposit,                     // Cumulative silt-sized surface water detachment as a thickness (mm)
+      m_dCumulSandFlowDeposit,                     // Cumulative sand-sized surface water detachment as a thickness (mm)
       m_dClaySplashDetach,                         // This-timestep clay-sized splash detachment as a thickness (mm)
       m_dSiltSplashDetach,                         // This-timestep silt-sized splash detachment as a thickness (mm)
       m_dSandSplashDetach,                         // This-timestep sand-sized splash detachment as a thickness (mm)
       m_dCumulClaySplashDetach,                    // Cumulative clay-sized splash detachment as a thickness (mm)
       m_dCumulSiltSplashDetach,                    // Cumulative silt-sized splash detachment as a thickness (mm)
       m_dCumulSandSplashDetach,                    // Cumulative sand-sized splash detachment as a thickness (mm)
-      m_dTotSplashDepositToDo,                     // Temporary field, used for splash deposition
+      m_dTemporarySplashDeposit,                   // Temporary field, used for splash deposition
       m_dClaySplashDeposit,                        // This-timestep clay-sized splash deposition as a thickness (mm)
       m_dSiltSplashDeposit,                        // This-timestep silt-sized splash deposition as a thickness (mm)
       m_dSandSplashDeposit,                        // This-timestep sand-sized splash deposition as a thickness (mm)
@@ -83,12 +83,12 @@ private:
       m_dCumulClayToppleDeposit,                   // Cumulative clay-sized toppling deposition as a thickness (mm)
       m_dCumulSiltToppleDeposit,                   // Cumulative silt-sized toppling deposition as a thickness (mm)
       m_dCumulSandToppleDeposit,                   // Cumulative sand-sized toppling deposition as a thickness (mm)
-      m_dClayInfiltDeposit,                        // This-timestep clay-sized infiltration deposition as a thickness (mm)
-      m_dSiltInfiltDeposit,                        // This-timestep silt-sized infiltration deposition as a thickness (mm)
-      m_dSandInfiltDeposit,                        // This-timestep sand-sized infiltration deposition as a thickness (mm)
-      m_dCumulClayInfiltDeposit,                   // Cumulative clay-sized infiltration deposition as a thickness (mm)
-      m_dCumulSiltInfiltDeposit,                   // Cumulative silt-sized infiltration deposition as a thickness (mm)
-      m_dCumulSandInfiltDeposit,                   // This-timestep sand-sized infiltration deposition as a thickness (mm)
+      m_dClayInfiltDeposit,                        // This-timestep clay-sized infilt deposition as a thickness (mm)
+      m_dSiltInfiltDeposit,                        // This-timestep silt-sized infilt deposition as a thickness (mm)
+      m_dSandInfiltDeposit,                        // This-timestep sand-sized infilt deposition as a thickness (mm)
+      m_dCumulClayInfiltDeposit,                   // Cumulative clay-sized infilt deposition as a thickness (mm)
+      m_dCumulSiltInfiltDeposit,                   // Cumulative silt-sized infilt deposition as a thickness (mm)
+      m_dCumulSandInfiltDeposit,                   // This-timestep sand-sized infilt deposition as a thickness (mm)
       m_dShearStress,                              // Current shear stress in kg/m s**2 (Pa)
       m_dCumulShearStress,                         // Cumulative shear stress in kg/m s**2 (Pa)
       m_dLaplacian,                                // For splash calcs
@@ -105,17 +105,17 @@ private:
       m_dCumulSiltHeadcutRetreatDeposit,           // Cumulative silt-sized deposition (mm) due to headcut retreat
       m_dCumulSandHeadcutRetreatDeposit;           // Cumulative sand-sized deposition (mm) due to headcut retreat
 
-   vector<CLayer> m_VLayer;
+   vector<CCellSoilLayer> m_VLayer;
 
    CCell* m_pCell;
 
 public:
-   CSoil(void);
-   ~CSoil(void);
+   CCellSoil(void);
+   ~CCellSoil(void);
 
    void SetParent(CCell* const);
 
-   CLayer* pLayerGetLayer(int const);
+   CCellSoilLayer* pLayerGetLayer(int const);
    void SetSoilLayers(double const, int const, vector<string> const*, vector<double> const*, vector<double> const*, vector<double> const*, vector<double> const*, vector<double> const*, vector<double> const*, vector<double> const*, vector<double> const*, vector<double> const*, vector<double> const*, vector<double> const*, vector<double> const*, vector<double> const*, vector<double> const*, vector<double>*, vector<double>*);
    double dGetSoilSurfaceElevation(void);
 
@@ -126,7 +126,7 @@ public:
 //    void ChangeTopLayerThickness(double const);
 
    void DoFlowDetach(double const);
-   void DoFlowDeposit(double const, double const, double const);
+   void DoSedLoadDeposit(double const, double const, double const);
 
    double dGetClayFlowDetach(void) const;
    double dGetSiltFlowDetach(void) const;
@@ -146,7 +146,7 @@ public:
    double dGetCumulSandFlowDeposition(void) const;
    double dGetCumulAllSizeFlowDeposition(void) const;
 
-   void DoSplashDetach(double const);
+   void DoSplashDetach(double const, double&, double&, double&);
    void SetSplashDepositionTemporary(double const);
    double dGetSplashDepositionTemporary(void) const;
    void DoSplashDeposit(double const, double const, double const);
