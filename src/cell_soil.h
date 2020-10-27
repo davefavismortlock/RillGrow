@@ -121,9 +121,9 @@ public:
 
    double dGetBulkDensityOfTopNonZeroLayer(void);
 
-   void InitializeDetachmentAndDeposition(bool const);
+   void InitializeDetachAndDeposit(bool const);
 
-//    void ChangeTopLayerThickness(double const);
+   void ChangeTopLayerThickness(double const);
 
    void DoFlowDetach(double const);
    void DoSedLoadDeposit(double const, double const, double const);
@@ -137,19 +137,19 @@ public:
    double dGetCumulSandFlowDetach(void) const;
    double dGetCumulAllSizeFlowDetach(void) const;
 
-   double dGetClayFlowDeposition(void) const;
-   double dGetSiltFlowDeposition(void) const;
-   double dGetSandFlowDeposition(void) const;
-   double dGetAllSizeFlowDeposition(void) const;
-   double dGetCumulClayFlowDeposition(void) const;
-   double dGetCumulSiltFlowDeposition(void) const;
-   double dGetCumulSandFlowDeposition(void) const;
-   double dGetCumulAllSizeFlowDeposition(void) const;
+   double dGetClayFlowDeposit(void) const;
+   double dGetSiltFlowDeposit(void) const;
+   double dGetSandFlowDeposit(void) const;
+   double dGetAllSizeFlowDeposit(void) const;
+   double dGetCumulClayFlowDeposit(void) const;
+   double dGetCumulSiltFlowDeposit(void) const;
+   double dGetCumulSandFlowDeposit(void) const;
+   double dGetCumulAllSizeFlowDeposit(void) const;
 
    void DoSplashDetach(double const, double&, double&, double&);
-   void SetSplashDepositionTemporary(double const);
-   double dGetSplashDepositionTemporary(void) const;
-   void DoSplashDeposit(double const, double const, double const);
+   void SetSplashDepositTemp(double const);
+   double dGetSplashDepositTemp(void) const;
+   void DoSplashToSedLoadOrDeposit(double const, double const, double const);
 
    double dGetClaySplashDetach(void) const;
    double dGetSiltSplashDetach(void) const;
@@ -169,9 +169,7 @@ public:
    double dGetCumulAllSizeSplashDeposit(void) const;
 
    void DoSlumpDetach(double const, double&, double&, double&);
-   void DoSlumpDeposit(double const, double const, double const);
-   void DoToppleDetach(double const, double&, double&, double&);
-   void DoToppleDeposit(double const, double const, double const);
+   void DoSlumpDepositOrToSedLoad(double const, double const, double const);
    void ZeroThisOperationSlump(void);
 
    double dGetClaySlumpDetach(void) const;
@@ -182,7 +180,17 @@ public:
    double dGetCumulSiltSlumpDetach(void) const;
    double dGetCumulSandSlumpDetach(void) const;
    double dGetCumulAllSizeSlumpDetach(void) const;
+
+   double dGetClaySlumpDeposit(void) const;
+   double dGetSiltSlumpDeposit(void) const;
+   double dGetSandSlumpDeposit(void) const;
+   double dGetCumulClaySlumpDeposit(void) const;
+   double dGetCumulSiltSlumpDeposit(void) const;
+   double dGetCumulSandSlumpDeposit(void) const;
    double dGetCumulAllSizeSlumpDeposit(void) const;
+
+   void DoToppleDetach(double const, double&, double&, double&);
+   void DoToppleDepositOrToSedLoad(double const, double const, double const);
 
    double dGetClayToppleDetach(void) const;
    double dGetSiltToppleDetach(void) const;
@@ -223,7 +231,19 @@ public:
    double dGetLaplacian(void) const;
 
    void DoHeadcutRetreatDetach(double const, double&, double&, double&);
-   void DoHeadcutRetreatDeposit(double const, double const, double const);
+   void DoHeadcutRetreatDepositOrToSedLoad(double const, double const, double const);
+   double dGetClayHeadcutRetreatDetach(void);
+   double dGetSiltHeadcutRetreatDetach(void);
+   double dGetSandHeadcutRetreatDetach(void);
+   double dGetCumulClayHeadcutRetreatDetach(void);
+   double dGetCumulSiltHeadcutRetreatDetach(void);
+   double dGetCumulSandHeadcutRetreatDetach(void);
+   double dGetClayHeadcutRetreatDeposit(void);
+   double dGetSiltHeadcutRetreatDeposit(void);
+   double dGetSandHeadcutRetreatDeposit(void);
+   double dGetCumulClayHeadcutRetreatDeposit(void);
+   double dGetCumulSiltHeadcutRetreatDeposit(void);
+   double dGetCumulSandHeadcutRetreatDeposit(void);
 };
 
 #endif         // __SOIL_H__

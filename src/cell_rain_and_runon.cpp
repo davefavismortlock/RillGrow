@@ -60,14 +60,11 @@ void CCellRainAndRunon::AddRain(double const dRain)
    // Was the cell previously dry?
    if (! m_pCell->pGetSurfaceWater()->bIsWet())
    {
-      // It was, so increment the count of wet cells
-      m_pSim->IncrNumWetCells();
-
-      // And initialize flow velocities on this cell
+      // It was, so initialize flow velocities on this cell
       m_pCell->pGetSurfaceWater()->InitializeAllFlowVelocity();
 
       // Initialize sediment load
-      m_pCell->pGetSediment()->InitializeAllSizeSedLoad();
+      m_pCell->pGetSedLoad()->InitializeAllSizeSedLoad();
    }
 
    // Increase the depth of surface water on the cell
@@ -80,13 +77,11 @@ double CCellRainAndRunon::dGetRain(void) const
    return m_dRain;
 }
 
-
 // Returns the cumulative rainfall on this cell
 double CCellRainAndRunon::dGetCumulRain(void) const
 {
    return m_dCumulRain;
 }
-
 
 // Sets this cell's rainfall variation multiplier
 void CCellRainAndRunon::SetRainVarM(double const dNewVar)
@@ -100,7 +95,6 @@ double CCellRainAndRunon::dGetRainVarM(void) const
    return m_dRainVarM;
 }
 
-
 // Increments this cell's runon, also adds to the surface water on the cell
 void CCellRainAndRunon::AddRunOn(double const dRunOn)
 {
@@ -110,14 +104,11 @@ void CCellRainAndRunon::AddRunOn(double const dRunOn)
    // Was the cell previously dry?
    if (! m_pCell->pGetSurfaceWater()->bIsWet())
    {
-      // It was, so increment the count of wet cells
-      m_pSim->IncrNumWetCells();
-
-      // And initialize flow velocities for this cell
+      // It was, so initialize flow velocities for this cell
       m_pCell->pGetSurfaceWater()->InitializeAllFlowVelocity();
 
       // Initialize sediment load
-      m_pCell->pGetSediment()->InitializeAllSizeSedLoad();
+      m_pCell->pGetSedLoad()->InitializeAllSizeSedLoad();
    }
 
    // Increase the depth of surface water

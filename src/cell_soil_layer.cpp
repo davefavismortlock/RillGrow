@@ -494,23 +494,23 @@ void CCellSoilLayer::DoLayerHeadcutRetreatErosion(double const dToErode, double&
 
 
 // This ugly-but-possibly-necessary method changes the thickness of a soil layer; it is for use in the AdjustUnboundedEdges() routine only
-// void CCellSoilLayer::ChangeThickness(double const dChange)
-// {
-//    double dTotalThickness = m_dClayThickness + m_dSiltThickness + m_dSandThickness;
-//
-//    if (dTotalThickness > 0)
-//    {
-//       // This is not a zero thickness layer, so change the thickness of each size component in proportion to that component's existing thickness
-//       m_dClayThickness += (dChange * m_dClayThickness / dTotalThickness);
-//       m_dSiltThickness += (dChange * m_dSiltThickness / dTotalThickness);
-//       m_dSandThickness += (dChange * m_dSandThickness / dTotalThickness);
-//    }
-//    else if (dChange > 0)
-//    {
-//       // This is a zero thickness layer: we can't remove from it, so if dChange is -ve then do nothing. If dChange is +ve then add to each size component equally
-//       m_dClayThickness += (dChange / 3);
-//       m_dSiltThickness += (dChange / 3);
-//       m_dSandThickness += (dChange / 3);
-//    }
-// }
+void CCellSoilLayer::ChangeThickness(double const dChange)
+{
+   double dTotalThickness = m_dClayThickness + m_dSiltThickness + m_dSandThickness;
+
+   if (dTotalThickness > 0)
+   {
+      // This is not a zero thickness layer, so change the thickness of each size component in proportion to that component's existing thickness
+      m_dClayThickness += (dChange * m_dClayThickness / dTotalThickness);
+      m_dSiltThickness += (dChange * m_dSiltThickness / dTotalThickness);
+      m_dSandThickness += (dChange * m_dSandThickness / dTotalThickness);
+   }
+   else if (dChange > 0)
+   {
+      // This is a zero thickness layer: we can't remove from it, so if dChange is -ve then do nothing. If dChange is +ve then add to each size component equally
+      m_dClayThickness += (dChange / 3);
+      m_dSiltThickness += (dChange / 3);
+      m_dSandThickness += (dChange / 3);
+   }
+}
 

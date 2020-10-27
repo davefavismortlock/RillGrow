@@ -421,10 +421,8 @@ bool CSimulation::bReadRunData(void)
             m_bCumulFlowDepositSave    =
             m_bSlumpSave               =
             m_bToppleSave              =
-            m_bCumulLoweringSave       = true;
-#if defined _DEBUG
+            m_bCumulLoweringSave       =
             m_bLostSave                = true;
-#endif
          }
          else
          {
@@ -602,13 +600,11 @@ bool CSimulation::bReadRunData(void)
                strRH = strRemoveSubstr(&strRH, &GIS_CUMUL_ALL_PROC_SURF_LOWER_CODE);
             }
 
-#if defined _DEBUG
             if (strRH.find(GIS_AVG_SURFACE_WATER_FROM_EDGES_CODE) != string::npos)
             {
                m_bLostSave = true;
                strRH = strRemoveSubstr(&strRH, &GIS_AVG_SURFACE_WATER_FROM_EDGES_CODE);
             }
-#endif
 
             // Check to see if all codes have been removed
             strRH = strTrimLeft(&strRH);
@@ -1326,36 +1322,60 @@ bool CSimulation::bReadRunData(void)
 
       case 29:
          // Run-on from which edges?
-         strRH = strToLower(&strRH);
-         if (strRH.find('t') != string::npos)
-            m_bRunOnThisEdge[EDGE_TOP] = true;
-         if (strRH.find('r') != string::npos)
-            m_bRunOnThisEdge[EDGE_RIGHT] = true;
-         if (strRH.find('b') != string::npos)
-            m_bRunOnThisEdge[EDGE_BOTTOM] = true;
-         if (strRH.find('l') != string::npos)
-            m_bRunOnThisEdge[EDGE_LEFT] = true;
+         if (m_bRunOn)
+         {
+            strRH = strToLower(&strRH);
+            if (strRH.find('t') != string::npos)
+            {
+               m_bRunOnThisEdge[EDGE_TOP]  =
+               m_bClosedThisEdge[EDGE_TOP] = true;
+            }
+            if (strRH.find('r') != string::npos)
+            {
+               m_bRunOnThisEdge[EDGE_RIGHT]  =
+               m_bClosedThisEdge[EDGE_RIGHT] = true;
+            }
+            if (strRH.find('b') != string::npos)
+            {
+               m_bRunOnThisEdge[EDGE_BOTTOM]  =
+               m_bClosedThisEdge[EDGE_BOTTOM] = true;
+            }
+            if (strRH.find('l') != string::npos)
+            {
+               m_bRunOnThisEdge[EDGE_LEFT]  =
+               m_bClosedThisEdge[EDGE_LEFT] = true;
+            }
+         }
          break;
 
       case 30:
          // Length of run-on area
-         m_dRunOnLen = stod(strRH);
-         if (m_bRunOn && (m_dRunOnLen <= 0))
-               strErr = "run-on length";
+         if (m_bRunOn)
+         {
+            m_dRunOnLen = stod(strRH);
+            if (m_bRunOn && (m_dRunOnLen <= 0))
+                  strErr = "run-on length";
+         }
          break;
 
       case 31:
          // Rainfall spatial variation multiplier for run-on area
-         m_dRunOnRainVarM = stod(strRH);
-         if (m_bRunOn && (m_dRunOnRainVarM <= 0))
-            strErr = "rainfall spatial variation multiplier for run-on area";
+         if (m_bRunOn)
+         {
+            m_dRunOnRainVarM = stod(strRH);
+            if (m_bRunOn && (m_dRunOnRainVarM <= 0))
+               strErr = "rainfall spatial variation multiplier for run-on area";
+         }
          break;
 
       case 32:
          // Flow speed on run-on area
-         m_dRunOnSpd = stod(strRH);
-         if (m_bRunOn && (m_dRunOnSpd <= 0))
-               strErr = "run-on flow speed";
+         if (m_bRunOn)
+         {
+            m_dRunOnSpd = stod(strRH);
+            if (m_bRunOn && (m_dRunOnSpd <= 0))
+                  strErr = "run-on flow speed";
+         }
          break;
 
       case 33:
@@ -1372,8 +1392,19 @@ bool CSimulation::bReadRunData(void)
             strErr = "off-edge parameter B";
          break;
 
-      // ----------------------------------------------------------- Infiltration -----------------------------------------------------
       case 35:
+         // Flume-like situation? I.e. assume that all tranported sediment leaves grid edge, and grid edge can be lowered
+         strRH = strToLower(&strRH);
+         if (strRH.find('y') != string::npos)
+            m_bFlumeTypeSim = true;
+         else if (strRH.find('n') != string::npos)
+            m_bFlumeTypeSim = false;
+         else
+            strErr = "flume-like simulation switch";
+         break;
+
+      // ----------------------------------------------------------- Infiltration -----------------------------------------------------
+      case 36:
          // Simulate infilt?
          strRH = strToLower(&strRH);
          if (strRH.find('y') != string::npos)
@@ -1384,7 +1415,7 @@ bool CSimulation::bReadRunData(void)
             strErr = "infilt switch";
          break;
 
-      case 36:
+      case 37:
          // Repeat for number of layers
          for (int nLayer = 0; nLayer < m_nNumSoilLayers; nLayer++)
          {
@@ -1503,7 +1534,7 @@ bool CSimulation::bReadRunData(void)
          break;
 
       // ----------------------------------------------------------- Overland Flow ----------------------------------------------------
-      case 37:
+      case 38:
          // Manning-type (m) or Darcy-Weisbach (d) flow velocity equation?
          strRH = strToLower(&strRH);
 
@@ -1517,7 +1548,7 @@ bool CSimulation::bReadRunData(void)
 
          break;
 
-      case 38:
+      case 39:
          // Parameter A if using Manning-type flow velocity equation
          if (m_bManningEqn)
          {
@@ -1529,7 +1560,7 @@ bool CSimulation::bReadRunData(void)
 
          break;
 
-      case 39:
+      case 40:
          // Parameter B if using Manning-type flow velocity equation
          if (m_bManningEqn)
          {
@@ -1541,7 +1572,7 @@ bool CSimulation::bReadRunData(void)
 
          break;
 
-      case 40:
+      case 41:
          // If using Darcy-Weisbach flow velocity equation, then friction factor is a constant (c), is based on Reynolds' number (r), or is calculated using the Lawrence (1997) formulation (l)
          if (m_bDarcyWeisbachEqn)
          {
@@ -1563,7 +1594,7 @@ bool CSimulation::bReadRunData(void)
 
          break;
 
-      case 41:
+      case 42:
          // Constant friction factor for Darcy-Weisbach equation, if using constant friction factor approach
          if (m_bDarcyWeisbachEqn && m_bFrictionFactorConstant)
          {
@@ -1575,7 +1606,7 @@ bool CSimulation::bReadRunData(void)
 
          break;
 
-      case 42:
+      case 43:
          // Parameter A if using Reynolds' number-based friction factor
          if (m_bDarcyWeisbachEqn && m_bFrictionFactorReynolds)
          {
@@ -1587,7 +1618,7 @@ bool CSimulation::bReadRunData(void)
 
          break;
 
-      case 43:
+      case 44:
          // Parameter B if using Reynolds' number-based friction factor
          if (m_bDarcyWeisbachEqn && m_bFrictionFactorReynolds)
          {
@@ -1599,7 +1630,7 @@ bool CSimulation::bReadRunData(void)
 
          break;
 
-      case 44:
+      case 45:
          // If using the Lawrence (1997) friction factor approach: D50 of roughness elements (mm) in the partially-inundated flow regime
          if (m_bDarcyWeisbachEqn && m_bFrictionFactorLawrence)
          {
@@ -1613,7 +1644,7 @@ bool CSimulation::bReadRunData(void)
 
          break;
 
-      case 45:
+      case 46:
          // If using the Lawrence (1997) friction factor approach: % of surface covered with roughness elements in the partially-inundated flow regime
          if (m_bDarcyWeisbachEqn && m_bFrictionFactorLawrence)
          {
@@ -1625,7 +1656,7 @@ bool CSimulation::bReadRunData(void)
 
          break;
 
-      case 46:
+      case 47:
          // If using the Lawrence (1997) friction factor approach: the ratio between the drag of roughness elements and the ideal situation in the partially-inundated flow regime
          if (m_bDarcyWeisbachEqn && m_bFrictionFactorLawrence)
          {
@@ -1637,7 +1668,7 @@ bool CSimulation::bReadRunData(void)
 
          break;
 
-      case 47:
+      case 48:
          // Maximum flow speed (mm/sec)
          m_dMaxFlowSpeed = stod(strRH);
          if (m_dMaxFlowSpeed <= 0)
@@ -1645,7 +1676,7 @@ bool CSimulation::bReadRunData(void)
          break;
 
       // ------------------------------------------------------------ Flow Erosion- ---------------------------------------------------
-      case 48:
+      case 49:
          // Simulate flow erosion?
          strRH = strToLower(&strRH);
 
@@ -1658,21 +1689,21 @@ bool CSimulation::bReadRunData(void)
 
          break;
 
-      case 49:
+      case 50:
          // K in detachment equation
          m_dK = stod(strRH);
          if (m_bFlowErosion && (m_dK <= 0))
             strErr = "constant k for detachment";
          break;
 
-      case 50:
+      case 51:
          // T in detachment equation
          m_dT = stod(strRH);
          if (m_bFlowErosion && (m_dT <= 0))
             strErr = "constant T for detachment";
          break;
 
-      case 51:
+      case 52:
          // CV of T in detachment equation
          m_dCVT = stod(strRH);
          if (m_bFlowErosion)
@@ -1682,7 +1713,7 @@ bool CSimulation::bReadRunData(void)
          }
          break;
 
-      case 52:
+      case 53:
          // CV of tau-b in detachment equation
          m_dCVTaub = stod(strRH);
          if (m_bFlowErosion && (m_dCVTaub <= 0))
@@ -1690,28 +1721,28 @@ bool CSimulation::bReadRunData(void)
          break;
 
       // -------------------------------------------------------- Transport Capacity --------------------------------------------------
-      case 53:
+      case 54:
          // Alpha in transport capacity equation
          m_dAlpha = stod(strRH);
          if (m_bFlowErosion && (m_dAlpha >= 0))
             strErr = "alpha for transport capacity";
          break;
 
-      case 54:
+      case 55:
          // Beta in transport capacity equation
          m_dBeta = stod(strRH);
          if (m_bFlowErosion && (m_dBeta <= 0))
             strErr = "beta for transport capacity";
          break;
 
-      case 55:
+      case 56:
          // Gamma in transport capacity equation
          m_dGamma = stod(strRH);
          if (m_bFlowErosion && (m_dGamma <= 0))
             strErr = "gamma for transport capacity";
          break;
 
-      case 56:
+      case 57:
          // Delta in transport capacity equation
          m_dDelta = stod(strRH);
          if (m_bFlowErosion && (m_dDelta <= 0))
@@ -1719,35 +1750,35 @@ bool CSimulation::bReadRunData(void)
          break;
 
       // ----------------------------------------------------------- Deposition -------------------------------------------------------
-      case 57:
+      case 58:
          // Grain density (kg/m**3)
          m_dDepositionGrainDensity = stod(strRH);
          if (m_bFlowErosion && (m_dDepositionGrainDensity <= 0))
             strErr = "grain density, for deposition";
          break;
 
-      case 58:
+      case 59:
          // Clay minimum size (mm)
          m_dClaySizeMin = stod(strRH);
          if (m_bFlowErosion && (m_dClaySizeMin < 0))
             strErr = "clay minimum size, for deposition";
          break;
 
-      case 59:
+      case 60:
          // Clay-silt threshold size (mm)
          m_dClaySiltBoundarySize = stod(strRH);
          if (m_bFlowErosion && (m_dClaySiltBoundarySize <= m_dClaySizeMin))
             strErr = "clay-silt threshold size, for deposition";
          break;
 
-      case 60:
+      case 61:
          // Silt-Sand threshold size (mm)
          m_dSiltSandBoundarySize = stod(strRH);
          if (m_bFlowErosion && (m_dSiltSandBoundarySize <= m_dClaySiltBoundarySize))
             strErr = "silt-sand threshold size, for deposition";
          break;
 
-      case 61:
+      case 62:
          // Sand maximum size (mm)
          m_dSandSizeMax = stod(strRH);
          if (m_bFlowErosion && (m_dSandSizeMax <= m_dSiltSandBoundarySize))
@@ -1755,7 +1786,7 @@ bool CSimulation::bReadRunData(void)
          break;
 
       // -------------------------------------------------------------- Slumping ------------------------------------------------------
-      case 62:
+      case 63:
          // Simulate slumping?
          strRH = strToLower(&strRH);
          if (strRH.find('y') != string::npos)
@@ -1766,28 +1797,28 @@ bool CSimulation::bReadRunData(void)
             strErr = "slumping switch";
          break;
 
-      case 63:
+      case 64:
          // Radius of soil shear stress 'patch'
          m_dSSSPatchSize = stod(strRH);                    // mm
          if (m_bSlumping && (m_dSSSPatchSize <= 0))
             strErr = "radius of soil shear stress 'patch', for slumping";
          break;
 
-      case 64:
+      case 65:
          // Threshold shear stress for slumping
          m_dCritSSSForSlump = stod(strRH);                    // kg/m s**2 (Pa)
          if (m_bSlumping && (m_dCritSSSForSlump < 0))
             strErr = "threshold shear stress for slumping";
          break;
 
-      case 65:
+      case 66:
          // Angle of rest for saturated slumped soil
          m_dSlumpAngleOfRest = stod(strRH);                        // in per cent
          if (m_bSlumping && (m_dSlumpAngleOfRest < 0))
             strErr = "angle of rest for slumped soil";
          break;
 
-      case 66:
+      case 67:
          // Critical angle for toppling soil (not saturated)
          m_dToppleCriticalAngle = stod(strRH);                     // in per cent
          if (m_bSlumping)
@@ -1797,7 +1828,7 @@ bool CSimulation::bReadRunData(void)
          }
          break;
 
-      case 67:
+      case 68:
          // Angle of rest for toppled soil (not saturated)
          m_dToppleAngleOfRest = stod(strRH);                       // in per cent
          if (m_bSlumping)
@@ -1811,7 +1842,7 @@ bool CSimulation::bReadRunData(void)
          break;
 
          // ---------------------------------------------------------- Headcut Retreat ---------------------------------------------------
-      case 68:
+      case 69:
          // Simulate headcut retreat?
          strRH = strToLower(&strRH);
          if (strRH.find('y') != string::npos)
@@ -1822,7 +1853,7 @@ bool CSimulation::bReadRunData(void)
             strErr = "headcut retreat switch";
          break;
 
-      case 69:
+      case 70:
          // Headcut retreat constant
          m_dHeadcutRetreatConst = stod(strRH);
          if (m_dHeadcutRetreatConst <= 0)
@@ -1830,21 +1861,21 @@ bool CSimulation::bReadRunData(void)
          break;
 
          // --------------------------------------------------- Various Physical Constants -----------------------------------------------
-      case 70:
+      case 71:
          // Density of water
          m_dRho = stod(strRH);                                    // kg/m**3
          if (m_dRho <= 0)
             strErr = "density of water";
          break;
 
-      case 71:
+      case 72:
          // Viscosity of water
          m_dNu = stod(strRH);                                     // m**2/sec
          if (m_dNu <= 0)
             strErr = "viscosity of water";
          break;
 
-      case 72:
+      case 73:
          // Gravitational acceleration
          m_dG = stod(strRH);                                      // m/sec**2
          if (m_dG <= 0)

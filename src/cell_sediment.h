@@ -33,7 +33,19 @@ private:
       m_dSandSedLoad,
       m_dCumulClaySedLoad,
       m_dCumulSiltSedLoad,
-      m_dCumulSandSedLoad;
+      m_dCumulSandSedLoad,
+      m_dFromSplashClaySedLoad,
+      m_dFromSplashSiltSedLoad,
+      m_dFromSplashSandSedLoad,
+      m_dFromSlumpClaySedLoad,
+      m_dFromSlumpSiltSedLoad,
+      m_dFromSlumpSandSedLoad,
+      m_dFromToppleClaySedLoad,
+      m_dFromToppleSiltSedLoad,
+      m_dFromToppleSandSedLoad,
+      m_dFromHeadcutRetreatClaySedLoad,
+      m_dFromHeadcutRetreatSiltSedLoad,
+      m_dFromHeadcutRetreatSandSedLoad;
 
    CCell* m_pCell;
 
@@ -64,6 +76,30 @@ public:
    double dSetSandSedLoadZero(void);
 
    double dGetAllSizeSedConc(void);
+
+   void AddToSplashSedLoad(const double, const double, const double);
+   double dGetClaySplashSedLoad(void);
+   double dGetSiltSplashSedLoad(void);
+   double dGetSandSplashSedLoad(void);
+
+   void AddToSlumpSedLoad(const double, const double, const double);
+   double dGetClaySlumpSedLoad(void);
+   double dGetSiltSlumpSedLoad(void);
+   double dGetSandSlumpSedLoad(void);
+
+   void AddToToppleSedLoad(const double, const double, const double);
+   double dGetClayToppleSedLoad(void);
+   double dGetSiltToppleSedLoad(void);
+   double dGetSandToppleSedLoad(void);
+
+   void AddToHeadcutRetreatSedLoad(const double, const double, const double);
+   double dGetClayHeadcutRetreatSedLoad(void);
+   double dGetSiltHeadcutRetreatSedLoad(void);
+   double dGetSandHeadcutRetreatSedLoad(void);
+
+   void InitializeSplashSedLoads(void);
+   void InitializeSlumpAndToppleSedLoads(void);
+   void InitializeHeadcutRetreatSedLoads(void);
 };
 
 #endif         // __SEDIMENT_H__

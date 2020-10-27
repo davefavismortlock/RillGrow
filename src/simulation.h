@@ -107,11 +107,9 @@ private:
       m_bDarcyWeisbachEqn,
       m_bFrictionFactorConstant,
       m_bFrictionFactorReynolds,
-      m_bFrictionFactorLawrence;
-
-#if defined _DEBUG
-      bool m_bLostSave;
-#endif
+      m_bFrictionFactorLawrence,
+      m_bLostSave,
+      m_bFlumeTypeSim;
 
    int
       m_nGISSave,
@@ -163,9 +161,6 @@ private:
       m_dRainSpeed,
       m_dPartKE,
       m_VdSplashEffN,
-      m_dClaySplashedError,
-      m_dSiltSplashedError,
-      m_dSandSplashedError,
       m_dCellSizeKC,
       m_dMeanCellWaterVol,
       m_dStdCellWaterVol,
@@ -201,14 +196,14 @@ private:
       m_dToppleAngleOfRest,
       m_dToppleAngleOfRestDiff,
       m_dToppleAngleOfRestDiffDiag,
-      m_dThisIterSurfaceWaterStored,
+      m_dThisIterStoredSurfaceWater,
       m_dThisIterClaySedLoad,
       m_dThisIterSiltSedLoad,
       m_dThisIterSandSedLoad,
       m_dThisIterRain,
       m_dThisIterRunOn,
       m_dThisIterKE,
-      m_dThisIterWaterLost,
+      m_dThisIterLostSurfaceWater,
       m_dThisIterClayFlowDetach,
       m_dThisIterSiltFlowDetach,
       m_dThisIterSandFlowDetach,
@@ -221,24 +216,30 @@ private:
       m_dThisIterClaySplashDetach,
       m_dThisIterSiltSplashDetach,
       m_dThisIterSandSplashDetach,
-      m_dThisIterClaySplashDepositOnly,
-      m_dThisIterSiltSplashDepositOnly,
-      m_dThisIterSandSplashDepositOnly,
-      m_dThisIterClaySplashDepositAndSedLoad,
-      m_dThisIterSiltSplashDepositAndSedLoad,
-      m_dThisIterSandSplashDepositAndSedLoad,
+      m_dThisIterClaySplashDeposit,
+      m_dThisIterSiltSplashDeposit,
+      m_dThisIterSandSplashDeposit,
+      m_dThisIterClaySplashToSedLoad,
+      m_dThisIterSiltSplashToSedLoad,
+      m_dThisIterSandSplashToSedLoad,
       m_dThisIterClaySlumpDetach,
       m_dThisIterSiltSlumpDetach,
       m_dThisIterSandSlumpDetach,
       m_dThisIterClaySlumpDeposit,
       m_dThisIterSiltSlumpDeposit,
       m_dThisIterSandSlumpDeposit,
+      m_dThisIterClaySlumpToSedLoad,
+      m_dThisIterSiltSlumpToSedLoad,
+      m_dThisIterSandSlumpToSedLoad,
       m_dThisIterClayToppleDetach,
       m_dThisIterSiltToppleDetach,
       m_dThisIterSandToppleDetach,
       m_dThisIterClayToppleDeposit,
       m_dThisIterSiltToppleDeposit,
       m_dThisIterSandToppleDeposit,
+      m_dThisIterClayToppleToSedLoad,
+      m_dThisIterSiltToppleToSedLoad,
+      m_dThisIterSandToppleToSedLoad,
       m_dThisIterInfiltration,
       m_dThisIterClayInfiltDeposit,
       m_dThisIterSiltInfiltDeposit,
@@ -246,6 +247,12 @@ private:
       m_dThisIterClayHeadcutRetreatDetach,
       m_dThisIterSiltHeadcutRetreatDetach,
       m_dThisIterSandHeadcutRetreatDetach,
+      m_dThisIterClayHeadcutRetreatDeposit,
+      m_dThisIterSiltHeadcutRetreatDeposit,
+      m_dThisIterSandHeadcutRetreatDeposit,
+      m_dThisIterClayHeadcutRetreatToSedLoad,
+      m_dThisIterSiltHeadcutRetreatToSedLoad,
+      m_dThisIterSandHeadcutRetreatToSedLoad,
       m_dThisIterExfiltration,
       m_dLastIterAvgHead,
       m_dThisIterTotHead,
@@ -301,7 +308,13 @@ private:
       m_dFFLawrenceD50,
       m_dFFLawrenceEpsilon,
       m_dFFLawrencePr,
-      m_dFFLawrenceCd;
+      m_dFFLawrenceCd,
+      m_dWaterErrorLast,
+      m_dSplashErrorLast,
+      m_dSlumpErrorLast,
+      m_dToppleErrorLast,
+      m_dHeadcutErrorLast,
+      m_dFlowErrorLast;
 
    // These grand totals are all long doubles, the aim is to minimize rounding errors when many very small numbers are added to a single much larger number, see e.g. http://www.ddj.com/cpp/184403224
    long double
@@ -313,14 +326,21 @@ private:
       m_ldGTotExfilt,
       m_ldGTotWaterLost,
       m_ldGTotFlowDetach,
-      m_ldGTotFlowDeposition,
+      m_ldGTotFlowDeposit,
       m_ldGTotSedLost,
       m_ldGTotSplashDetach,
       m_ldGTotSplashDeposit,
+      m_ldGTotSplashToSedLoad,
       m_ldGTotSlumpDetach,
+      m_ldGTotSlumpDeposit,
+      m_ldGTotSlumpToSedLoad,
       m_ldGTotToppleDetach,
       m_ldGTotToppleDeposit,
-      m_ldGTotInfiltDeposit;
+      m_ldGTotToppleToSedLoad,
+      m_ldGTotInfiltDeposit,
+      m_ldGTotHeadcutRetreatDetach,
+      m_ldGTotHeadcutRetreatDeposit,
+      m_ldGTotHeadcutRetreatToSedLoad;
 
    string
       m_strRGDir,
@@ -394,6 +414,7 @@ private:
    ofstream
       m_ofsOut,
       m_ofsLog,
+      m_ofsErrorTS,
       m_ofsTimestepTS,
       m_ofsAreaWetTS,
       m_ofsRainTS,
@@ -492,12 +513,10 @@ private:
    // Utility
    bool bIsTimeToQuit(void);
    bool bSetUpRainfallIntensity(void);
-#if defined _DEBUG
    void CheckMassBalance(void);
-#endif
    int nCheckForInstability(void);
    void UpdateGrandTotals(void);
-//    void AdjustUnboundedEdges(void);
+   void AdjustUnboundedEdges(void);
    static string strGetBuild(void);
    static string strGetComputerName(void);
    void DoCPUClockReset(void);
@@ -549,45 +568,6 @@ public:
    double dGetMissingValue(void) const;
    double dGetCellSide(void) const;
    double dGetCellSideDiag(void) const;
-
-   void IncrNumWetCells(void);
-   void DecrNumWetCells(void);
-
-   void AddThisIterSurfaceWater(double const);
-
-   double dGetThisIterClaySedLoad(void);
-   double dGetThisIterSiltSedLoad(void);
-   double dGetThisIterSandSedLoad(void);
-   void ChangeThisIterClaySedLoad(double const);
-   void ChangeThisIterSiltSedLoad(double const);
-   void ChangeThisIterSandSedLoad(double const);
-
-   void AddClayFlowDetach(double const);
-   void AddSiltFlowDetach(double const);
-   void AddSandFlowDetach(double const);
-
-   void AddClayFlowDeposit(double const);
-   void AddSiltFlowDeposit(double const);
-   void AddSandFlowDeposit(double const);
-
-   void AddClaySplashDepositOnly(double const);
-   void AddSiltSplashDepositOnly(double const);
-   void AddSandSplashDepositOnly(double const);
-   void AddClaySplashDepositAndSedLoad(double const);
-   void AddSiltSplashDepositAndSedLoad(double const);
-   void AddSandSplashDepositAndSedLoad(double const);
-
-   void AddClaySlumpDetach(double const);
-   void AddSiltSlumpDetach(double const);
-   void AddSandSlumpDetach(double const);
-
-   void AddClayToppleDetach(double const);
-   void AddSiltToppleDetach(double const);
-   void AddSandToppleDetach(double const);
-
-   void AddClayHeadcutRetreatDetach(double const);
-   void AddSiltHeadcutRetreatDetach(double const);
-   void AddSandHeadcutRetreatDetach(double const);
 
    double dGetRandGaussian(void);
 };

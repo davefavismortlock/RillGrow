@@ -296,68 +296,104 @@ int CSimulation::nReadMicrotopographyDEMData(void)
 ========================================================================================================================================*/
 void CSimulation::MarkEdgeCells(void)
 {
-   // Top edge
+   // Set the planview top row of the grid as edge cells
    for (int nX = 0; nX < m_nXGridMax; nX++)
    {
-      for (int nY = 0; nY < m_nYGridMax; nY++)
-      {
-         if (Cell[nX][nY].bIsMissingValue())
-         {
-            m_ulMissingValueCells++;
-            continue;
-         }
-
-         Cell[nX][nY].SetEdgeCell(DIRECTION_TOP);
-         break;
-      }
+      Cell[nX][0].SetEdgeCell(DIRECTION_TOP);
+      if (Cell[nX][0].bIsMissingValue())
+         m_ulMissingValueCells++;
    }
 
-   // Bottom edge
-   for (int nX = 0; nX < m_nXGridMax; nX++)
+   // Then search the rest of the grid, moving planview downwards, marking missing-value cells as edge cells. Keep going until we find a row with no missing-value cells
+   for (int nY = 1; nY < m_nYGridMax; nY++)
    {
-      for (int nY = m_nYGridMax-1; nY >= 0; nY--)
-      {
-         if (Cell[nX][nY].bIsMissingValue())
-         {
-            m_ulMissingValueCells++;
-            continue;
-         }
-
-         Cell[nX][nY].SetEdgeCell(DIRECTION_BOTTOM);
-         break;
-      }
-   }
-
-   // Left edge
-   for (int nY = 0; nY < m_nYGridMax; nY++)
-   {
+      bool bFound = false;
       for (int nX = 0; nX < m_nXGridMax; nX++)
       {
          if (Cell[nX][nY].bIsMissingValue())
          {
             m_ulMissingValueCells++;
-            continue;
+            bFound = true;
+            Cell[nX][nY].SetEdgeCell(DIRECTION_TOP);
          }
-
-         Cell[nX][nY].SetEdgeCell(DIRECTION_LEFT);
-         break;
       }
+      if (! bFound)
+         break;
    }
 
-   // Right edge
-   for (int nY = 0; nY < m_nYGridMax; nY++)
+   // Set the planview bottom row of the grid as edge cells
+   for (int nX = 0; nX < m_nXGridMax; nX++)
    {
-      for (int nX = m_nXGridMax-1; nX >= 0; nX--)
+      Cell[nX][m_nYGridMax-1].SetEdgeCell(DIRECTION_BOTTOM);
+      if (Cell[nX][m_nYGridMax-1].bIsMissingValue())
+         m_ulMissingValueCells++;
+   }
+
+   // Then search the rest of the grid, moving planview upwards, marking missing-value cells as edge cells. Keep going until we find a row with no missing-value cells
+   for (int nY = m_nYGridMax-2; nY >= 0; nY--)
+   {
+      bool bFound = false;
+      for (int nX = 0; nX < m_nXGridMax; nX++)
       {
          if (Cell[nX][nY].bIsMissingValue())
          {
             m_ulMissingValueCells++;
-            continue;
+            bFound = true;
+            Cell[nX][nY].SetEdgeCell(DIRECTION_BOTTOM);
          }
-
-         Cell[nX][nY].SetEdgeCell(DIRECTION_RIGHT);
-         break;
       }
+      if (! bFound)
+         break;
+   }
+
+   // Set the planview left column  of the grid as edge cells
+   for (int nY = 0; nY < m_nYGridMax; nY++)
+   {
+      Cell[0][nY].SetEdgeCell(DIRECTION_LEFT);
+      if (Cell[0][nY].bIsMissingValue())
+         m_ulMissingValueCells++;
+   }
+
+   // Then search the rest of the grid, moving planview rightwards, marking missing-value cells as edge cells. Keep going until we find a row with no missing-value cells
+   for (int nX = 1; nX < m_nXGridMax; nX++)
+   {
+      bool bFound = false;
+      for (int nY = 0; nY < m_nYGridMax; nY++)
+      {
+         if (Cell[nX][nY].bIsMissingValue())
+         {
+            m_ulMissingValueCells++;
+            bFound = true;
+            Cell[nX][nY].SetEdgeCell(DIRECTION_LEFT);
+         }
+      }
+      if (! bFound)
+         break;
+   }
+
+   // Set the planview right column  of the grid as edge cells
+   for (int nY = 0; nY < m_nYGridMax; nY++)
+   {
+      Cell[m_nXGridMax-1][nY].SetEdgeCell(DIRECTION_RIGHT);
+      if (Cell[m_nXGridMax-1][nY].bIsMissingValue())
+         m_ulMissingValueCells++;
+   }
+
+   // Then search the rest of the grid, moving planview rightwards, marking missing-value cells as edge cells. Keep going until we find a row with no missing-value cells
+   for (int nX = m_nXGridMax-2; nX >= 0; nX--)
+   {
+      bool bFound = false;
+      for (int nY = 0; nY < m_nYGridMax; nY++)
+      {
+         if (Cell[nX][nY].bIsMissingValue())
+         {
+            m_ulMissingValueCells++;
+            bFound = true;
+            Cell[nX][nY].SetEdgeCell(DIRECTION_RIGHT);
+         }
+      }
+      if (! bFound)
+         break;
    }
 }
 
@@ -670,11 +706,9 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
          strFilDat.append(GIS_SURFACE_WATER_DW_SPEED_FILENAME);
          break;
 
-#if defined _DEBUG
       case (GIS_AVG_SURFACE_WATER_FROM_EDGES) :
          strFilDat.append(GIS_AVG_SURFACE_WATER_FROM_EDGES_FILENAME);
          break;
-#endif
 
       case (GIS_STREAMPOWER) :
          strFilDat.append(GIS_STREAMPOWER_FILENAME);
@@ -918,11 +952,9 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
                dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetDWFlowSpd();
                break;
 
-#if defined _DEBUG
             case (GIS_AVG_SURFACE_WATER_FROM_EDGES) :
                dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetCumulSurfaceWaterLost() / m_dSimulatedTimeElapsed;
                break;
-#endif
 
             case (GIS_STREAMPOWER) :
                dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetStreamPower();
@@ -973,19 +1005,19 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
                break;
 
             case (GIS_CUMUL_ALL_SIZE_FLOW_DEPOSIT) :
-               dTmp = Cell[nX][nY].pGetSoil()->dGetCumulAllSizeFlowDeposition();
+               dTmp = Cell[nX][nY].pGetSoil()->dGetCumulAllSizeFlowDeposit();
                break;
 
             case (GIS_SEDIMENT_CONCENTRATION) :
-               dTmp = Cell[nX][nY].pGetSediment()->dGetAllSizeSedConc();
+               dTmp = Cell[nX][nY].pGetSedLoad()->dGetAllSizeSedConc();
                break;
 
             case (GIS_SEDIMENT_LOAD) :
-               dTmp = Cell[nX][nY].pGetSediment()->dGetAllSizeSedLoad();
+               dTmp = Cell[nX][nY].pGetSedLoad()->dGetAllSizeSedLoad();
                break;
 
             case (GIS_AVG_SEDIMENT_LOAD) :
-               dTmp = Cell[nX][nY].pGetSediment()->dGetCumulAllSizeSedLoad() / m_dSimulatedTimeElapsed;
+               dTmp = Cell[nX][nY].pGetSedLoad()->dGetCumulAllSizeSedLoad() / m_dSimulatedTimeElapsed;
                break;
 
             case (GIS_CUMUL_SLUMP_DETACH) :
@@ -1065,9 +1097,7 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
       case (GIS_CUMUL_ALL_SIZE_FLOW_DETACH) :
       case (GIS_CUMUL_ALL_SIZE_FLOW_DEPOSIT) :
       case (GIS_CUMUL_ALL_PROC_SURF_LOWER) :
-#if defined _DEBUG
       case (GIS_AVG_SURFACE_WATER_FROM_EDGES) :
-#endif
          strUnits = "mm";
          break;
 
@@ -1310,402 +1340,402 @@ bool CSimulation::bWriteGISFileInt(int const nDataItem, string const* pstrPlotTi
  This subroutine smooths the unbounded edges of the Cell array of the DEM to prevent excessive deepening of the edge. For each of the N_LOW_POINTS cells with the lowest elevation on each unbounded grid edge, a new elevation is calculated based on the elevations of nearby cells. This new low-point elevation may be lower or higher than the original value
 
 ========================================================================================================================================*/
-// void CSimulation::AdjustUnboundedEdges(void)
-// {
-//    int const DIST_ACROSS = 4;                 // Arbitrary, but seems to work OK
-//    int const DIST_IN     = 8;
-//    int const N_LOW_POINTS = 5;
-//    double const WEIGHT = 0.0;
-// //   double const WEIGHT = 0.5;    // 0.8 works OK for x11
-//
-//    // Is the planview bottom edge open?
-//    if (! m_bClosedThisEdge[EDGE_BOTTOM])
-//    {
-//       // We have flow off the planview bottom edge, we will look along this edge for N_LOW_POINTS low points
-//       int nLowEdgePoint[N_LOW_POINTS];
-//
-//       for (int n = 0; n < N_LOW_POINTS; n++)
-//       {
-//          // Find the elevation of the nth lowest point on this edge
-//          int nMinElevPos = 0;
-//          double dMinElev = DBL_MAX;
-//
-//          for (int nX = 0; nX < m_nXGridMax; nX++)
-//          {
-//             double dElev = Cell[nX][m_nYGridMax-1].pGetSoil()->dGetSoilSurfaceElevation();
-//             if (dElev < dMinElev)
-//             {
-//                // We have a low point, but have we found it previously?
-//                bool bFoundPrev = false;
-//                for (int m = 0; m < n; m++)
-//                {
-//                   if (nX == nLowEdgePoint[m])
-//                   {
-//                      bFoundPrev = true;
-//                      break;
-//                   }
-//                }
-//
-//                if (! bFoundPrev)
-//                {
-//                   // No, we have not found this one before
-//                   dMinElev = dElev;
-//                   nMinElevPos = nX;
-//                }
-//             }
-//          }
-//
-//          // Are we at or below base level, or have we hit the bottom of the lowest soil layer? If so, do nothing more with this low point
-//          double dBasementElevation = Cell[nMinElevPos][m_nYGridMax-1].dGetBasementElevation();
-//          if ((m_bHaveBaseLevel && dMinElev > m_dBaseLevel) || (dMinElev >= dBasementElevation))
-//             continue;
-//
-//          // We have found a new local minimum, so store it
-//          nLowEdgePoint[n] = nMinElevPos;
-//
-//          // Now find the average and minimum elevations from the DIST_ACROSS x DIST_IN cells surrounding this cell
-//          int nRead = 0;
-//          double
-//             dAvgElevAround = 0,
-//             dMinElevAround = DBL_MAX;
-//
-//          for (int j = m_nYGridMax-1; j >= (m_nYGridMax - DIST_IN); j--)
-//          {
-//             for (int i = (nMinElevPos - DIST_ACROSS); i <= (nMinElevPos + DIST_ACROSS); i++)
-//             {
-//                if ((i >= 0) && (i < m_nXGridMax))
-//                {
-//                   double dThisElev = Cell[i][j].pGetSoil()->dGetSoilSurfaceElevation();
-//                   dAvgElevAround += dThisElev;
-//                   nRead++;
-//
-//                   if (dThisElev < dMinElevAround)
-//                      dMinElevAround = dThisElev;
-//                }
-//             }
-//          }
-//
-//          // Calculate the local average
-//          if (nRead > 0)
-//             dAvgElevAround /= nRead;
-//          else
-//             dAvgElevAround = dMinElev;
-//
-//          // Calculate a new value, is a weighted mix of the local minimum and local average values
-//          double dNewMinElev = (WEIGHT * dMinElevAround) + ((1 - WEIGHT) * dAvgElevAround);
-//
-//          // Make sure that we don't go below 'base level'
-//          if (m_bHaveBaseLevel)
-//             dNewMinElev = tMax(dNewMinElev, m_dBaseLevel);
-//
-//          // Make sure that we don't go below the bottom of the lowest soil layer
-//          dNewMinElev = tMax(dNewMinElev, dBasementElevation);
-//
-//          // Is the new elevation value lower than the elevation of the low point?
-//          if (dNewMinElev > dMinElev)
-//          {
-//             // It is, so replace the elevation of the lowest-point cell with the new value
-//             Cell[nMinElevPos][m_nYGridMax-1].SetSoilSurfaceElevation(dNewMinElev);
-//
-// //             m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << setprecision(6);
-// //             m_ofsLog << m_ulIter << ": [" << nMinElevPos << "][" << m_nYGridMax-1 << "] from " << dMinElev << " to " << dNewMinElev;
-// //             m_ofsLog << " (" << (dMinElev < dNewMinElev ? "GAIN" : "loss") << " = " << tAbs(dMinElev - dNewMinElev);
-// //             m_ofsLog << " m_dPlotElevMin = " << m_dPlotElevMin << " m_dBaseLevel = " << m_dBaseLevel << " dMinElevAround = " << dMinElevAround << " dAvgElevAround = " << dAvgElevAround << ")" << endl;
-//          }
-//       }
-//    }
-//
-//    // Is the planview top edge open?
-//    if (! m_bClosedThisEdge[EDGE_TOP])
-//    {
-//       // We have flow off the planview top edge, we will look along this edge for N_LOW_POINTS low points
-//       int nLowEdgePoint[N_LOW_POINTS];
-//
-//       for (int n = 0; n < N_LOW_POINTS; n++)
-//       {
-//          // Find the elevation of the nth lowest point on this edge
-//          int nMinElevPos = 0;
-//          double dMinElev = DBL_MAX;
-//
-//          for (int nX = 0; nX < m_nXGridMax; nX++)
-//          {
-//             double dElev = Cell[nX][0].pGetSoil()->dGetSoilSurfaceElevation();
-//             if (dElev < dMinElev)
-//             {
-//                // We have a low point, but have we found it previously?
-//                bool bFoundPrev = false;
-//                for (int m = 0; m < n; m++)
-//                {
-//                   if (nX == nLowEdgePoint[m])
-//                   {
-//                      bFoundPrev = true;
-//                      break;
-//                   }
-//                }
-//
-//                if (! bFoundPrev)
-//                {
-//                   // No, we have not found this one before
-//                   dMinElev = dElev;
-//                   nMinElevPos = nX;
-//                }
-//             }
-//          }
-//
-//          // Are we at or below base level, or have we hit the bottom of the lowest soil layer? If so, do nothing more with this low point
-//          double dBasementElevation = Cell[nMinElevPos][0].dGetBasementElevation();
-//          if ((m_bHaveBaseLevel && dMinElev > m_dBaseLevel) || (dMinElev >= dBasementElevation))
-//             continue;
-//
-//          // We have found a new local minimum, so store it
-//          nLowEdgePoint[n] = nMinElevPos;
-//
-//          // Now find the average and minimum elevations from the DIST_ACROSS x DIST_IN cells surrounding this cell
-//          int nRead = 0;
-//          double
-//             dAvgElevAround = 0,
-//             dMinElevAround = DBL_MAX;
-//
-//          for (int j = 0; j < DIST_IN; j++)
-//          {
-//             for (int i = (nMinElevPos - DIST_ACROSS); i <= (nMinElevPos + DIST_ACROSS); i++)
-//             {
-//                if ((i >= 0) && (i < m_nXGridMax))
-//                {
-//                   double dThisElev = Cell[i][j].pGetSoil()->dGetSoilSurfaceElevation();
-//                   dAvgElevAround += dThisElev;
-//                   nRead++;
-//
-//                   if (dThisElev < dMinElevAround)
-//                      dMinElevAround = dThisElev;
-//                }
-//             }
-//          }
-//
-//          // Calculate the local average
-//          if (nRead > 0)
-//             dAvgElevAround /= nRead;
-//          else
-//             dAvgElevAround = dMinElev;
-//
-//          // Calculate a new value, is a weighted mix of the local minimum and local average values
-//          double dNewMinElev = (WEIGHT * dMinElevAround) + ((1 - WEIGHT) * dAvgElevAround);
-//
-//          // Make sure that we don't go below 'base level'
-//          if (m_bHaveBaseLevel)
-//             dNewMinElev = tMax(dNewMinElev, m_dBaseLevel);
-//
-//          // Make sure that we don't go below the bottom of the lowest soil layer
-//          dNewMinElev = tMax(dNewMinElev, dBasementElevation);
-//
-//          // Is the new elevation value lower than the elevation of the low point?
-//          if (dNewMinElev > dMinElev)
-//          {
-//             // It is, so replace the elevation of the lowest-point cell with the new value
-//             Cell[nMinElevPos][0].SetSoilSurfaceElevation(dNewMinElev);
-//
-// //             m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << setprecision(6);
-// //             m_ofsLog << m_ulIter << ": [" << nMinElevPos << "][" << 0 << "] from " << dMinElev << " to " << dNewMinElev;
-// //             m_ofsLog << " (" << (dMinElev < dNewMinElev ? "GAIN" : "loss") << " = " << tAbs(dMinElev - dNewMinElev);
-// //             m_ofsLog << " m_dPlotElevMin = " << m_dPlotElevMin << " m_dBaseLevel = " << m_dBaseLevel << " dMinElevAround = " << dMinElevAround << " dAvgElevAround = " << dAvgElevAround << ")" << endl;
-//          }
-//       }
-//    }
-//
-//    // Is the planview left edge open?
-//    if (! m_bClosedThisEdge[EDGE_LEFT])
-//    {
-//       // We have flow off the planview left edge, we will look along this edge for N_LOW_POINTS low points
-//       int nLowEdgePoint[N_LOW_POINTS];
-//
-//       for (int n = 0; n < N_LOW_POINTS; n++)
-//       {
-//          // Find the elevation of the nth lowest point on this edge
-//          int nMinElevPos = 0;
-//          double dMinElev = DBL_MAX;
-//
-//          for (int nY = 0; nY < m_nYGridMax; nY++)
-//          {
-//             double dElev = Cell[0][nMinElevPos].pGetSoil()->dGetSoilSurfaceElevation();
-//             if (dElev < dMinElev)
-//             {
-//                // We have a low point, but have we found it previously?
-//                bool bFoundPrev = false;
-//                for (int m = 0; m < n; m++)
-//                {
-//                   if (nY == nLowEdgePoint[m])
-//                   {
-//                      bFoundPrev = true;
-//                      break;
-//                   }
-//                }
-//
-//                if (! bFoundPrev)
-//                {
-//                   // No, we have not found this one before
-//                   dMinElev = dElev;
-//                   nMinElevPos = nY;
-//                }
-//             }
-//          }
-//
-//          // Are we at or below base level, or have we hit the bottom of the lowest soil layer? If so, do nothing more with this low point
-//          double dBasementElevation = Cell[0][nMinElevPos].dGetBasementElevation();
-//          if ((m_bHaveBaseLevel && dMinElev > m_dBaseLevel) || (dMinElev >= dBasementElevation))
-//             continue;
-//
-//          // We have found a new local minimum, so store it
-//          nLowEdgePoint[n] = nMinElevPos;
-//
-//          // Now find the average and minimum elevations from the DIST_ACROSS x DIST_IN cells surrounding this cell
-//          int nRead = 0;
-//          double
-//             dAvgElevAround = 0,
-//             dMinElevAround = DBL_MAX;
-//
-//          for (int j = 0; j < DIST_IN; j++)
-//          {
-//             for (int i = (nMinElevPos - DIST_ACROSS); i <= (nMinElevPos + DIST_ACROSS); i++)
-//             {
-//                if ((i >= 0) && (i < m_nYGridMax))
-//                {
-//                   double dThisElev = Cell[j][i].pGetSoil()->dGetSoilSurfaceElevation();
-//                   dAvgElevAround += dThisElev;
-//                   nRead++;
-//
-//                   if (dThisElev < dMinElevAround)
-//                      dMinElevAround = dThisElev;
-//                }
-//             }
-//          }
-//
-//          // Calculate the local average
-//          if (nRead > 0)
-//             dAvgElevAround /= nRead;
-//          else
-//             dAvgElevAround = dMinElev;
-//
-//          // Calculate a new value, is a weighted mix of the local minimum and local average values
-//          double dNewMinElev = (WEIGHT * dMinElevAround) + ((1 - WEIGHT) * dAvgElevAround);
-//
-//          // Make sure that we don't go below 'base level'
-//          if (m_bHaveBaseLevel)
-//             dNewMinElev = tMax(dNewMinElev, m_dBaseLevel);
-//
-//          // Make sure that we don't go below the bottom of the lowest soil layer
-//          dNewMinElev = tMax(dNewMinElev, dBasementElevation);
-//
-//          // Is the new elevation value lower than the elevation of the low point?
-//          if (dNewMinElev > dMinElev)
-//          {
-//             // It is, so replace the elevation of the lowest-point cell with the new value
-//             Cell[0][nMinElevPos].SetSoilSurfaceElevation(dNewMinElev);
-//
-// //             m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << setprecision(6);
-// //             m_ofsLog << m_ulIter << ": [" << 0 << "][" << nMinElevPos << "] from " << dMinElev << " to " << dNewMinElev;
-// //             m_ofsLog << " (" << (dMinElev < dNewMinElev ? "GAIN" : "loss") << " = " << tAbs(dMinElev - dNewMinElev);
-// //             m_ofsLog << " m_dPlotElevMin = " << m_dPlotElevMin << " m_dBaseLevel = " << m_dBaseLevel << " dMinElevAround = " << dMinElevAround << " dAvgElevAround = " << dAvgElevAround << ")" << endl;
-//          }
-//       }
-//    }
-//
-//    // Is the planview right edge open?
-//    if (! m_bClosedThisEdge[EDGE_RIGHT])
-//    {
-//       // We have flow off the planview right edge, we will look along this edge for N_LOW_POINTS low points
-//       int nLowEdgePoint[N_LOW_POINTS];
-//
-//       for (int n = 0; n < N_LOW_POINTS; n++)
-//       {
-//          // Find the elevation of the nth lowest point on this edge
-//          int nMinElevPos = 0;
-//          double dMinElev = DBL_MAX;
-//
-//          for (int nY = 0; nY < m_nYGridMax; nY++)
-//          {
-//             double dElev = Cell[m_nXGridMax-1][nY].pGetSoil()->dGetSoilSurfaceElevation();
-//             if (dElev < dMinElev)
-//             {
-//                // We have a low point, but have we found it previously?
-//                bool bFoundPrev = false;
-//                for (int m = 0; m < n; m++)
-//                {
-//                   if (nY == nLowEdgePoint[m])
-//                   {
-//                      bFoundPrev = true;
-//                      break;
-//                   }
-//                }
-//
-//                if (! bFoundPrev)
-//                {
-//                   // No, we have not found this one before
-//                   dMinElev = dElev;
-//                   nMinElevPos = nY;
-//                }
-//             }
-//          }
-//
-//          // Are we at or below base level, or have we hit the bottom of the lowest soil layer? If so, do nothing more with this low point
-//          double dBasementElevation = Cell[m_nXGridMax-1][nMinElevPos].dGetBasementElevation();
-//          if ((m_bHaveBaseLevel && dMinElev > m_dBaseLevel) || (dMinElev >= dBasementElevation))
-//             continue;
-//
-//          // We have found a new local minimum, so store it
-//          nLowEdgePoint[n] = nMinElevPos;
-//
-//          // Now find the average and minimum elevations from the DIST_ACROSS x DIST_IN cells surrounding this cell
-//          int nRead = 0;
-//          double
-//             dAvgElevAround = 0,
-//             dMinElevAround = DBL_MAX;
-//
-//          for (int j = m_nXGridMax-1; j >= (m_nXGridMax - DIST_IN); j--)
-//          {
-//             for (int i = (nMinElevPos - DIST_ACROSS); i <= (nMinElevPos + DIST_ACROSS); i++)
-//             {
-//                if ((i >= 0) && (i < m_nYGridMax))
-//                {
-//                   double dThisElev = Cell[j][i].pGetSoil()->dGetSoilSurfaceElevation();
-//                   dAvgElevAround += dThisElev;
-//                   nRead++;
-//
-//                   if (dThisElev < dMinElevAround)
-//                      dMinElevAround = dThisElev;
-//                }
-//             }
-//          }
-//
-//          // Calculate the local average
-//          if (nRead > 0)
-//             dAvgElevAround /= nRead;
-//          else
-//             dAvgElevAround = dMinElev;
-//
-//          // Calculate a new value, is a weighted mix of the local minimum and local average values
-//          double dNewMinElev = (WEIGHT * dMinElevAround) + ((1 - WEIGHT) * dAvgElevAround);
-//
-//          // Make sure that we don't go below 'base level'
-//          if (m_bHaveBaseLevel)
-//             dNewMinElev = tMax(dNewMinElev, m_dBaseLevel);
-//
-//          // Make sure that we don't go below the bottom of the lowest soil layer
-//          dNewMinElev = tMax(dNewMinElev, dBasementElevation);
-//
-//          // Is the new elevation value lower than the elevation of the low point?
-//          if (dNewMinElev > dMinElev)
-//          {
-//             // It is, so replace the elevation of the lowest-point cell with the new value
-//             Cell[m_nXGridMax-1][nMinElevPos].SetSoilSurfaceElevation(dNewMinElev);
-//
-// //             m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << setprecision(6);
-// //             m_ofsLog << m_ulIter << ": [" << m_nXGridMax-1 << "][" << nMinElevPos << "] from " << dMinElev << " to " << dNewMinElev;
-// //             m_ofsLog << " (" << (dMinElev < dNewMinElev ? "GAIN" : "loss") << " = " << tAbs(dMinElev - dNewMinElev);
-// //             m_ofsLog << " m_dPlotElevMin = " << m_dPlotElevMin << " m_dBaseLevel = " << m_dBaseLevel << " dMinElevAround = " << dMinElevAround << " dAvgElevAround = " << dAvgElevAround << ")" << endl;
-//          }
-//       }
-//    }
-// }
+void CSimulation::AdjustUnboundedEdges(void)
+{
+   int const DIST_ACROSS = 4;                 // Arbitrary, but seems to work OK
+   int const DIST_IN     = 8;
+   int const N_LOW_POINTS = 5;
+   double const WEIGHT = 0.0;
+//   double const WEIGHT = 0.5;    // 0.8 works OK for x11
+
+   // Is the planview bottom edge open?
+   if (! m_bClosedThisEdge[EDGE_BOTTOM])
+   {
+      // We have flow off the planview bottom edge, we will look along this edge for N_LOW_POINTS low points
+      int nLowEdgePoint[N_LOW_POINTS];
+
+      for (int n = 0; n < N_LOW_POINTS; n++)
+      {
+         // Find the elevation of the nth lowest point on this edge
+         int nMinElevPos = 0;
+         double dMinElev = DBL_MAX;
+
+         for (int nX = 0; nX < m_nXGridMax; nX++)
+         {
+            double dElev = Cell[nX][m_nYGridMax-1].pGetSoil()->dGetSoilSurfaceElevation();
+            if (dElev < dMinElev)
+            {
+               // We have a low point, but have we found it previously?
+               bool bFoundPrev = false;
+               for (int m = 0; m < n; m++)
+               {
+                  if (nX == nLowEdgePoint[m])
+                  {
+                     bFoundPrev = true;
+                     break;
+                  }
+               }
+
+               if (! bFoundPrev)
+               {
+                  // No, we have not found this one before
+                  dMinElev = dElev;
+                  nMinElevPos = nX;
+               }
+            }
+         }
+
+         // Are we at or below base level, or have we hit the bottom of the lowest soil layer? If so, do nothing more with this low point
+         double dBasementElevation = Cell[nMinElevPos][m_nYGridMax-1].dGetBasementElevation();
+         if ((m_bHaveBaseLevel && dMinElev > m_dBaseLevel) || (dMinElev >= dBasementElevation))
+            continue;
+
+         // We have found a new local minimum, so store it
+         nLowEdgePoint[n] = nMinElevPos;
+
+         // Now find the average and minimum elevations from the DIST_ACROSS x DIST_IN cells surrounding this cell
+         int nRead = 0;
+         double
+            dAvgElevAround = 0,
+            dMinElevAround = DBL_MAX;
+
+         for (int j = m_nYGridMax-1; j >= (m_nYGridMax - DIST_IN); j--)
+         {
+            for (int i = (nMinElevPos - DIST_ACROSS); i <= (nMinElevPos + DIST_ACROSS); i++)
+            {
+               if ((i >= 0) && (i < m_nXGridMax))
+               {
+                  double dThisElev = Cell[i][j].pGetSoil()->dGetSoilSurfaceElevation();
+                  dAvgElevAround += dThisElev;
+                  nRead++;
+
+                  if (dThisElev < dMinElevAround)
+                     dMinElevAround = dThisElev;
+               }
+            }
+         }
+
+         // Calculate the local average
+         if (nRead > 0)
+            dAvgElevAround /= nRead;
+         else
+            dAvgElevAround = dMinElev;
+
+         // Calculate a new value, is a weighted mix of the local minimum and local average values
+         double dNewMinElev = (WEIGHT * dMinElevAround) + ((1 - WEIGHT) * dAvgElevAround);
+
+         // Make sure that we don't go below 'base level'
+         if (m_bHaveBaseLevel)
+            dNewMinElev = tMax(dNewMinElev, m_dBaseLevel);
+
+         // Make sure that we don't go below the bottom of the lowest soil layer
+         dNewMinElev = tMax(dNewMinElev, dBasementElevation);
+
+         // Is the new elevation value lower than the elevation of the low point?
+         if (dNewMinElev > dMinElev)
+         {
+            // It is, so replace the elevation of the lowest-point cell with the new value
+            Cell[nMinElevPos][m_nYGridMax-1].SetSoilSurfaceElevation(dNewMinElev);
+
+//             m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << setprecision(6);
+//             m_ofsLog << m_ulIter << ": [" << nMinElevPos << "][" << m_nYGridMax-1 << "] from " << dMinElev << " to " << dNewMinElev;
+//             m_ofsLog << " (" << (dMinElev < dNewMinElev ? "GAIN" : "loss") << " = " << tAbs(dMinElev - dNewMinElev);
+//             m_ofsLog << " m_dPlotElevMin = " << m_dPlotElevMin << " m_dBaseLevel = " << m_dBaseLevel << " dMinElevAround = " << dMinElevAround << " dAvgElevAround = " << dAvgElevAround << ")" << endl;
+         }
+      }
+   }
+
+   // Is the planview top edge open?
+   if (! m_bClosedThisEdge[EDGE_TOP])
+   {
+      // We have flow off the planview top edge, we will look along this edge for N_LOW_POINTS low points
+      int nLowEdgePoint[N_LOW_POINTS];
+
+      for (int n = 0; n < N_LOW_POINTS; n++)
+      {
+         // Find the elevation of the nth lowest point on this edge
+         int nMinElevPos = 0;
+         double dMinElev = DBL_MAX;
+
+         for (int nX = 0; nX < m_nXGridMax; nX++)
+         {
+            double dElev = Cell[nX][0].pGetSoil()->dGetSoilSurfaceElevation();
+            if (dElev < dMinElev)
+            {
+               // We have a low point, but have we found it previously?
+               bool bFoundPrev = false;
+               for (int m = 0; m < n; m++)
+               {
+                  if (nX == nLowEdgePoint[m])
+                  {
+                     bFoundPrev = true;
+                     break;
+                  }
+               }
+
+               if (! bFoundPrev)
+               {
+                  // No, we have not found this one before
+                  dMinElev = dElev;
+                  nMinElevPos = nX;
+               }
+            }
+         }
+
+         // Are we at or below base level, or have we hit the bottom of the lowest soil layer? If so, do nothing more with this low point
+         double dBasementElevation = Cell[nMinElevPos][0].dGetBasementElevation();
+         if ((m_bHaveBaseLevel && dMinElev > m_dBaseLevel) || (dMinElev >= dBasementElevation))
+            continue;
+
+         // We have found a new local minimum, so store it
+         nLowEdgePoint[n] = nMinElevPos;
+
+         // Now find the average and minimum elevations from the DIST_ACROSS x DIST_IN cells surrounding this cell
+         int nRead = 0;
+         double
+            dAvgElevAround = 0,
+            dMinElevAround = DBL_MAX;
+
+         for (int j = 0; j < DIST_IN; j++)
+         {
+            for (int i = (nMinElevPos - DIST_ACROSS); i <= (nMinElevPos + DIST_ACROSS); i++)
+            {
+               if ((i >= 0) && (i < m_nXGridMax))
+               {
+                  double dThisElev = Cell[i][j].pGetSoil()->dGetSoilSurfaceElevation();
+                  dAvgElevAround += dThisElev;
+                  nRead++;
+
+                  if (dThisElev < dMinElevAround)
+                     dMinElevAround = dThisElev;
+               }
+            }
+         }
+
+         // Calculate the local average
+         if (nRead > 0)
+            dAvgElevAround /= nRead;
+         else
+            dAvgElevAround = dMinElev;
+
+         // Calculate a new value, is a weighted mix of the local minimum and local average values
+         double dNewMinElev = (WEIGHT * dMinElevAround) + ((1 - WEIGHT) * dAvgElevAround);
+
+         // Make sure that we don't go below 'base level'
+         if (m_bHaveBaseLevel)
+            dNewMinElev = tMax(dNewMinElev, m_dBaseLevel);
+
+         // Make sure that we don't go below the bottom of the lowest soil layer
+         dNewMinElev = tMax(dNewMinElev, dBasementElevation);
+
+         // Is the new elevation value lower than the elevation of the low point?
+         if (dNewMinElev > dMinElev)
+         {
+            // It is, so replace the elevation of the lowest-point cell with the new value
+            Cell[nMinElevPos][0].SetSoilSurfaceElevation(dNewMinElev);
+
+//             m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << setprecision(6);
+//             m_ofsLog << m_ulIter << ": [" << nMinElevPos << "][" << 0 << "] from " << dMinElev << " to " << dNewMinElev;
+//             m_ofsLog << " (" << (dMinElev < dNewMinElev ? "GAIN" : "loss") << " = " << tAbs(dMinElev - dNewMinElev);
+//             m_ofsLog << " m_dPlotElevMin = " << m_dPlotElevMin << " m_dBaseLevel = " << m_dBaseLevel << " dMinElevAround = " << dMinElevAround << " dAvgElevAround = " << dAvgElevAround << ")" << endl;
+         }
+      }
+   }
+
+   // Is the planview left edge open?
+   if (! m_bClosedThisEdge[EDGE_LEFT])
+   {
+      // We have flow off the planview left edge, we will look along this edge for N_LOW_POINTS low points
+      int nLowEdgePoint[N_LOW_POINTS];
+
+      for (int n = 0; n < N_LOW_POINTS; n++)
+      {
+         // Find the elevation of the nth lowest point on this edge
+         int nMinElevPos = 0;
+         double dMinElev = DBL_MAX;
+
+         for (int nY = 0; nY < m_nYGridMax; nY++)
+         {
+            double dElev = Cell[0][nMinElevPos].pGetSoil()->dGetSoilSurfaceElevation();
+            if (dElev < dMinElev)
+            {
+               // We have a low point, but have we found it previously?
+               bool bFoundPrev = false;
+               for (int m = 0; m < n; m++)
+               {
+                  if (nY == nLowEdgePoint[m])
+                  {
+                     bFoundPrev = true;
+                     break;
+                  }
+               }
+
+               if (! bFoundPrev)
+               {
+                  // No, we have not found this one before
+                  dMinElev = dElev;
+                  nMinElevPos = nY;
+               }
+            }
+         }
+
+         // Are we at or below base level, or have we hit the bottom of the lowest soil layer? If so, do nothing more with this low point
+         double dBasementElevation = Cell[0][nMinElevPos].dGetBasementElevation();
+         if ((m_bHaveBaseLevel && dMinElev > m_dBaseLevel) || (dMinElev >= dBasementElevation))
+            continue;
+
+         // We have found a new local minimum, so store it
+         nLowEdgePoint[n] = nMinElevPos;
+
+         // Now find the average and minimum elevations from the DIST_ACROSS x DIST_IN cells surrounding this cell
+         int nRead = 0;
+         double
+            dAvgElevAround = 0,
+            dMinElevAround = DBL_MAX;
+
+         for (int j = 0; j < DIST_IN; j++)
+         {
+            for (int i = (nMinElevPos - DIST_ACROSS); i <= (nMinElevPos + DIST_ACROSS); i++)
+            {
+               if ((i >= 0) && (i < m_nYGridMax))
+               {
+                  double dThisElev = Cell[j][i].pGetSoil()->dGetSoilSurfaceElevation();
+                  dAvgElevAround += dThisElev;
+                  nRead++;
+
+                  if (dThisElev < dMinElevAround)
+                     dMinElevAround = dThisElev;
+               }
+            }
+         }
+
+         // Calculate the local average
+         if (nRead > 0)
+            dAvgElevAround /= nRead;
+         else
+            dAvgElevAround = dMinElev;
+
+         // Calculate a new value, is a weighted mix of the local minimum and local average values
+         double dNewMinElev = (WEIGHT * dMinElevAround) + ((1 - WEIGHT) * dAvgElevAround);
+
+         // Make sure that we don't go below 'base level'
+         if (m_bHaveBaseLevel)
+            dNewMinElev = tMax(dNewMinElev, m_dBaseLevel);
+
+         // Make sure that we don't go below the bottom of the lowest soil layer
+         dNewMinElev = tMax(dNewMinElev, dBasementElevation);
+
+         // Is the new elevation value lower than the elevation of the low point?
+         if (dNewMinElev > dMinElev)
+         {
+            // It is, so replace the elevation of the lowest-point cell with the new value
+            Cell[0][nMinElevPos].SetSoilSurfaceElevation(dNewMinElev);
+
+//             m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << setprecision(6);
+//             m_ofsLog << m_ulIter << ": [" << 0 << "][" << nMinElevPos << "] from " << dMinElev << " to " << dNewMinElev;
+//             m_ofsLog << " (" << (dMinElev < dNewMinElev ? "GAIN" : "loss") << " = " << tAbs(dMinElev - dNewMinElev);
+//             m_ofsLog << " m_dPlotElevMin = " << m_dPlotElevMin << " m_dBaseLevel = " << m_dBaseLevel << " dMinElevAround = " << dMinElevAround << " dAvgElevAround = " << dAvgElevAround << ")" << endl;
+         }
+      }
+   }
+
+   // Is the planview right edge open?
+   if (! m_bClosedThisEdge[EDGE_RIGHT])
+   {
+      // We have flow off the planview right edge, we will look along this edge for N_LOW_POINTS low points
+      int nLowEdgePoint[N_LOW_POINTS];
+
+      for (int n = 0; n < N_LOW_POINTS; n++)
+      {
+         // Find the elevation of the nth lowest point on this edge
+         int nMinElevPos = 0;
+         double dMinElev = DBL_MAX;
+
+         for (int nY = 0; nY < m_nYGridMax; nY++)
+         {
+            double dElev = Cell[m_nXGridMax-1][nY].pGetSoil()->dGetSoilSurfaceElevation();
+            if (dElev < dMinElev)
+            {
+               // We have a low point, but have we found it previously?
+               bool bFoundPrev = false;
+               for (int m = 0; m < n; m++)
+               {
+                  if (nY == nLowEdgePoint[m])
+                  {
+                     bFoundPrev = true;
+                     break;
+                  }
+               }
+
+               if (! bFoundPrev)
+               {
+                  // No, we have not found this one before
+                  dMinElev = dElev;
+                  nMinElevPos = nY;
+               }
+            }
+         }
+
+         // Are we at or below base level, or have we hit the bottom of the lowest soil layer? If so, do nothing more with this low point
+         double dBasementElevation = Cell[m_nXGridMax-1][nMinElevPos].dGetBasementElevation();
+         if ((m_bHaveBaseLevel && dMinElev > m_dBaseLevel) || (dMinElev >= dBasementElevation))
+            continue;
+
+         // We have found a new local minimum, so store it
+         nLowEdgePoint[n] = nMinElevPos;
+
+         // Now find the average and minimum elevations from the DIST_ACROSS x DIST_IN cells surrounding this cell
+         int nRead = 0;
+         double
+            dAvgElevAround = 0,
+            dMinElevAround = DBL_MAX;
+
+         for (int j = m_nXGridMax-1; j >= (m_nXGridMax - DIST_IN); j--)
+         {
+            for (int i = (nMinElevPos - DIST_ACROSS); i <= (nMinElevPos + DIST_ACROSS); i++)
+            {
+               if ((i >= 0) && (i < m_nYGridMax))
+               {
+                  double dThisElev = Cell[j][i].pGetSoil()->dGetSoilSurfaceElevation();
+                  dAvgElevAround += dThisElev;
+                  nRead++;
+
+                  if (dThisElev < dMinElevAround)
+                     dMinElevAround = dThisElev;
+               }
+            }
+         }
+
+         // Calculate the local average
+         if (nRead > 0)
+            dAvgElevAround /= nRead;
+         else
+            dAvgElevAround = dMinElev;
+
+         // Calculate a new value, is a weighted mix of the local minimum and local average values
+         double dNewMinElev = (WEIGHT * dMinElevAround) + ((1 - WEIGHT) * dAvgElevAround);
+
+         // Make sure that we don't go below 'base level'
+         if (m_bHaveBaseLevel)
+            dNewMinElev = tMax(dNewMinElev, m_dBaseLevel);
+
+         // Make sure that we don't go below the bottom of the lowest soil layer
+         dNewMinElev = tMax(dNewMinElev, dBasementElevation);
+
+         // Is the new elevation value lower than the elevation of the low point?
+         if (dNewMinElev > dMinElev)
+         {
+            // It is, so replace the elevation of the lowest-point cell with the new value
+            Cell[m_nXGridMax-1][nMinElevPos].SetSoilSurfaceElevation(dNewMinElev);
+
+//             m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << setprecision(6);
+//             m_ofsLog << m_ulIter << ": [" << m_nXGridMax-1 << "][" << nMinElevPos << "] from " << dMinElev << " to " << dNewMinElev;
+//             m_ofsLog << " (" << (dMinElev < dNewMinElev ? "GAIN" : "loss") << " = " << tAbs(dMinElev - dNewMinElev);
+//             m_ofsLog << " m_dPlotElevMin = " << m_dPlotElevMin << " m_dBaseLevel = " << m_dBaseLevel << " dMinElevAround = " << dMinElevAround << " dAvgElevAround = " << dAvgElevAround << ")" << endl;
+         }
+      }
+   }
+}
 
 
 /*========================================================================================================================================
@@ -1825,13 +1855,11 @@ bool CSimulation::bSaveGISFiles(void)
          return (false);
    }
 
-#if defined _DEBUG
    if (m_bLostSave)
    {
       if (! bWriteGISFileFloat(GIS_AVG_SURFACE_WATER_FROM_EDGES, &GIS_AVG_SURFACE_WATER_FROM_EDGES_TITLE))
          return (false);
    }
-#endif
 
    if (m_bStreamPowerSave)
    {

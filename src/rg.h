@@ -139,7 +139,7 @@ using std::to_string;
 #endif
 
 //========================================================== Hard-Wired Constants =========================================================
-string const   PROGNAME                                     = "RillGrow serial (13 October 2020 version)";
+string const   PROGNAME                                     = "RillGrow serial (27 October 2020 version)";
 string const   SHORTNAME                                    = "RG";
 string const   RG_INI                                       = "rg.ini";
 
@@ -218,9 +218,9 @@ string const   ERR                                          = "ERROR: ";
 string const   WARN                                         = "WARNING: ";
 
 string const      PERITERHEAD1 =
-   "                  <-------------- HYDROLOGY -------------><FLOW EROSION/DEPOSITION><---- SPLASH --->          <--SLUMP-><-TOPPLE-><-INFILT-><HEADCUT>";
+   "                  <--------------- HYDROLOGY ------------><FLOW EROSION/DEPOSITION><---- SPLASH --->           <--SLUMP-><-TOPPLE-><-INFILT-><HEADCUT>";
 string const      PERITERHEAD2 =
-   "Iteration  Elapsed   Rain Runon Infilt OffEdge  SurfaceWtr   Detach Deposit OffEdge   Detach Deposit   Sedload    Redist    Redist   Deposit   Detach";
+   "Iteration  Elapsed   Rain Runon Infilt OffEdge  SurfaceWtr   Detach Deposit OffEdge   Detach Deposit    Sedload    Redist    Redist   Deposit   Detach";
 string const      PERITERHEAD   =
    "PER-ITERATION RESULTS ======================================================================================================================================";
 string const      ENDRAINHEAD   =
@@ -329,10 +329,8 @@ string const   GIS_SURFACE_WATER_DW_SPEED_FILENAME           = "flow_speed_dw";
 string const   GIS_AVG_SURFACE_WATER_DW_SPEED_FILENAME       = "avg_flow_speed_dw";
 string const   GIS_AVG_SURFACE_WATER_DW_SPEED_CODE           = "avg_flowspeed_dw";
 
-#if defined _DEBUG
 string const   GIS_AVG_SURFACE_WATER_FROM_EDGES_FILENAME     = "lost_from_edge";
 string const   GIS_AVG_SURFACE_WATER_FROM_EDGES_CODE         = "fromedge";
-#endif
 
 string const   GIS_STREAMPOWER_FILENAME                     = "stream_power";
 string const   GIS_STREAMPOWER_CODE                         = "streampower";
@@ -464,12 +462,12 @@ int const     GIS_CUMUL_BINARY_HEADCUT_RETREAT              = 39;
 string const  GIS_CUMUL_BINARY_HEADCUT_RETREAT_TITLE        = "Cumulative binary headcut retreat";
 int const     GIS_CUMUL_ALL_PROC_SURF_LOWER                 = 40;
 string const  GIS_CUMUL_ALL_PROC_SURF_LOWER_TITLE           = "Cumulative surface lowering, all processes";
-#if defined _DEBUG
 int const     GIS_AVG_SURFACE_WATER_FROM_EDGES              = 201;
 string const  GIS_AVG_SURFACE_WATER_FROM_EDGES_TITLE        = "Total lost from edges";
-#endif
 
 // Time series codes
+string const  ERROR_TIME_SERIES_NAME                        = "error";
+
 string const  TIMESTEP_TIME_SERIES_NAME                     = "timestep";
 string const  TIMESTEP_TIME_SERIES_CODE                     = "timestep";
 

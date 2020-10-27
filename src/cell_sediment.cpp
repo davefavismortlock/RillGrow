@@ -28,7 +28,16 @@ CCellSedimentLoad::CCellSedimentLoad(void)
    m_dSandSedLoad(0),
    m_dCumulClaySedLoad(0),
    m_dCumulSiltSedLoad(0),
-   m_dCumulSandSedLoad(0)
+   m_dCumulSandSedLoad(0),
+   m_dFromSplashClaySedLoad(0),
+   m_dFromSplashSiltSedLoad(0),
+   m_dFromSplashSandSedLoad(0),
+   m_dFromSlumpClaySedLoad(0),
+   m_dFromSlumpSiltSedLoad(0),
+   m_dFromSlumpSandSedLoad(0),
+   m_dFromHeadcutRetreatClaySedLoad(0),
+   m_dFromHeadcutRetreatSiltSedLoad(0),
+   m_dFromHeadcutRetreatSandSedLoad(0)
    {
    m_pCell = NULL;
 }
@@ -64,63 +73,89 @@ double CCellSedimentLoad::dGetAllSizeSedLoad(void) const
 }
 
 
-// Adds to this cell's sediment load, and the this-iteration total sediment load
+// Adds to this cell's sediment load
 void CCellSedimentLoad::AddToSedLoad(const double dAddClayDepth, const double dAddSiltDepth, const double dAddSandDepth)
 {
-   assert(dAddClayDepth > 0);
-   assert(dAddSiltDepth > 0);
-   assert(dAddSandDepth > 0);
+   assert(dAddClayDepth >= 0);
+   assert(dAddSiltDepth >= 0);
+   assert(dAddSandDepth >= 0);
 
-   // OK, add to this cell's sediment load
-   m_dClaySedLoad += dAddClayDepth;
-   m_dSiltSedLoad += dAddSiltDepth;
-   m_dSandSedLoad += dAddSandDepth;
+   if (dAddClayDepth > 0)
+   {
+      // OK, add to this cell's sediment load
+      m_dClaySedLoad += dAddClayDepth;
 
-   // Add to this cell's cumulative sediment load
-   m_dCumulClaySedLoad += dAddClayDepth;
-   m_dCumulSiltSedLoad += dAddSiltDepth;
-   m_dCumulSandSedLoad += dAddSandDepth;
+      // Add to this cell's cumulative sediment load
+      m_dCumulClaySedLoad += dAddClayDepth;
+   }
 
-   // Add to the this-iteration total sediment load
-   m_pSim->ChangeThisIterClaySedLoad(dAddClayDepth);
-   m_pSim->ChangeThisIterSiltSedLoad(dAddSiltDepth);
-   m_pSim->ChangeThisIterSandSedLoad(dAddSandDepth);
+   if (dAddSiltDepth > 0)
+   {
+      // OK, add to this cell's sediment load
+      m_dSiltSedLoad += dAddSiltDepth;
+
+      // Add to this cell's cumulative sediment load
+      m_dCumulSiltSedLoad += dAddSiltDepth;
+   }
+
+   if (dAddSandDepth > 0)
+   {
+      // OK, add to this cell's sediment load
+      m_dSandSedLoad += dAddSandDepth;
+
+      // Add to this cell's cumulative sediment load
+      m_dCumulSandSedLoad += dAddSandDepth;
+   }
 }
 
-// Removes from this cell's sediment load, and the this-iteration total sediment load; the three paramters are set to the values actually removed
+// Removes from this cell's sediment load; the three paramters are set to the values actually removed
 void CCellSedimentLoad::RemoveFromSedLoad(double& dAddClayDepth, double& dAddSiltDepth, double& dAddSandDepth)
 {
-   assert(dAddClayDepth > 0);
-   assert(dAddSiltDepth > 0);
-   assert(dAddSandDepth > 0);
+   assert(dAddClayDepth >= 0);
+   assert(dAddSiltDepth >= 0);
+   assert(dAddSandDepth >= 0);
 
-   // Is there enough clay sediment in this cell's sediment load? If not, constrain
-   dAddClayDepth = tMin(m_dClaySedLoad, dAddClayDepth);
+   if (dAddClayDepth > 0)
+   {
+      // Is there enough clay sediment in this cell's sediment load? If not, constrain
+      dAddClayDepth = tMin(m_dClaySedLoad, dAddClayDepth);
 
-   // Is there enough silt sediment in this cell's sediment load? If not, constrain
-   dAddSiltDepth = tMin(m_dSiltSedLoad, dAddSiltDepth);
+      // OK, remove from this cell's sediment load
+      m_dClaySedLoad -= dAddClayDepth;
 
-   // Is there enough sand sediment in this cell's sediment load? If not, constrain
-   dAddSandDepth = tMin(m_dSandSedLoad, dAddSandDepth);
+      assert(m_dClaySedLoad >= 0);
 
-   // OK, remove from this cell's sediment load
-   m_dClaySedLoad -= dAddClayDepth;
-   m_dSiltSedLoad -= dAddSiltDepth;
-   m_dSandSedLoad -= dAddSandDepth;
+      // Remove from this cell's cumulative sediment load
+      m_dCumulClaySedLoad -= dAddClayDepth;
+   }
 
-   assert(m_dClaySedLoad >= 0);
-   assert(m_dSiltSedLoad >= 0);
-   assert(m_dSandSedLoad >= 0);
+   if (dAddSiltDepth > 0)
+   {
+      // Is there enough silt sediment in this cell's sediment load? If not, constrain
+      dAddSiltDepth = tMin(m_dSiltSedLoad, dAddSiltDepth);
 
-   // Remove from this cell's cumulative sediment load
-   m_dCumulClaySedLoad -= dAddClayDepth;
-   m_dCumulSiltSedLoad -= dAddSiltDepth;
-   m_dCumulSandSedLoad -= dAddSandDepth;
+      // OK, remove from this cell's sediment load
+      m_dSiltSedLoad -= dAddSiltDepth;
 
-   // Remove from the this-iteration total sediment load
-   m_pSim->ChangeThisIterClaySedLoad(-dAddClayDepth);
-   m_pSim->ChangeThisIterSiltSedLoad(-dAddSiltDepth);
-   m_pSim->ChangeThisIterSandSedLoad(-dAddSandDepth);
+      assert(m_dSiltSedLoad >= 0);
+
+      // Remove from this cell's cumulative sediment load
+      m_dCumulSiltSedLoad -= dAddSiltDepth;
+   }
+
+   if (dAddSandDepth > 0)
+   {
+      // Is there enough sand sediment in this cell's sediment load? If not, constrain
+      dAddSandDepth = tMin(m_dSandSedLoad, dAddSandDepth);
+
+      // OK, remove from this cell's sediment load
+      m_dSandSedLoad -= dAddSandDepth;
+
+      assert(m_dSandSedLoad >= 0);
+
+      // Remove from this cell's cumulative sediment load
+      m_dCumulSandSedLoad -= dAddSandDepth;
+   }
 }
 
 // Removes from this cell's clay-sized sediment load
@@ -133,8 +168,6 @@ void CCellSedimentLoad::RemoveFromClaySedLoad(double& dDepthToRemove)
    assert(m_dClaySedLoad >= 0);
 
    m_dCumulClaySedLoad -= dDepthToRemove;
-
-   m_pSim->ChangeThisIterClaySedLoad(-dDepthToRemove);
 }
 
 double CCellSedimentLoad::dGetClaySedLoad(void) const
@@ -151,8 +184,6 @@ double CCellSedimentLoad::dSetClaySedLoadZero(void)
    // Change cumulative value
    m_dCumulClaySedLoad -= dSedimentLoad;
 
-   m_pSim->ChangeThisIterClaySedLoad(-dSedimentLoad);
-
    return dSedimentLoad;
 }
 
@@ -167,8 +198,6 @@ void CCellSedimentLoad::RemoveFromSiltSedLoad(double& dDepthToRemove)
    assert(m_dSiltSedLoad >= 0);
 
    m_dCumulSiltSedLoad -= dDepthToRemove;
-
-   m_pSim->ChangeThisIterSiltSedLoad(-dDepthToRemove);
 }
 
 double CCellSedimentLoad::dGetSiltSedLoad(void) const
@@ -185,8 +214,6 @@ double CCellSedimentLoad::dSetSiltSedLoadZero(void)
    // Change cumulative value
    m_dCumulSiltSedLoad -= dSedimentLoad;
 
-   m_pSim->ChangeThisIterSiltSedLoad(-dSedimentLoad);
-
    return dSedimentLoad;
 }
 
@@ -201,8 +228,6 @@ void CCellSedimentLoad::RemoveFromSandSedLoad(double& dDepthToRemove)
    assert(m_dSandSedLoad >= 0);
 
    m_dCumulSandSedLoad -= dDepthToRemove;
-
-   m_pSim->ChangeThisIterSandSedLoad(-dDepthToRemove);
 }
 
 double CCellSedimentLoad::dGetSandSedLoad(void) const
@@ -219,8 +244,6 @@ double CCellSedimentLoad::dSetSandSedLoadZero(void)
    // Change cumulative value
    m_dCumulSandSedLoad -= dSedimentLoad;
 
-   m_pSim->ChangeThisIterSandSedLoad(-dSedimentLoad);
-
    return dSedimentLoad;
 }
 
@@ -233,4 +256,133 @@ double CCellSedimentLoad::dGetAllSizeSedConc(void)
       return 0;
 
    return 100 * (m_dClaySedLoad + m_dSiltSedLoad + m_dSandSedLoad) / dWaterDepth;
+}
+
+// Add to the cell's values for this-iteration sediment load derived from splash
+void CCellSedimentLoad::AddToSplashSedLoad(const double dClay, const double dSilt, const double dSand)
+{
+   m_dFromSplashClaySedLoad += dClay;
+   m_dFromSplashSiltSedLoad += dSilt;
+   m_dFromSplashSandSedLoad += dSand;
+}
+
+// Returns the cell's this-iteration value for clay sediment load derived from splash
+double CCellSedimentLoad::dGetClaySplashSedLoad(void)
+{
+   return m_dFromSplashClaySedLoad;
+}
+
+// Returns the cell's this-iteration value for silt sediment load derived from splash
+double CCellSedimentLoad::dGetSiltSplashSedLoad(void)
+{
+   return m_dFromSplashSiltSedLoad;
+}
+
+// Returns the cell's this-iteration value for sand sediment load derived from splash
+double CCellSedimentLoad::dGetSandSplashSedLoad(void)
+{
+   return m_dFromSplashSandSedLoad;
+}
+
+// Add to the cell's values for this-iteration (actually, several iterations) sediment load derived from slumping
+void CCellSedimentLoad::AddToSlumpSedLoad(const double dClay, const double dSilt, const double dSand)
+{
+   m_dFromSlumpClaySedLoad += dClay;
+   m_dFromSlumpSiltSedLoad += dSilt;
+   m_dFromSlumpSandSedLoad += dSand;
+}
+
+// Returns the cell's this-iteration (actually, several iterations) value for clay sediment load derived from slumping
+double CCellSedimentLoad::dGetClaySlumpSedLoad(void)
+{
+   return m_dFromSlumpClaySedLoad;
+}
+
+// Returns the cell's this-iteration value (actually, several iterations) for silt sediment load derived from slumping
+double CCellSedimentLoad::dGetSiltSlumpSedLoad(void)
+{
+   return m_dFromSlumpSiltSedLoad;
+}
+
+// Returns the cell's this-iteration value (actually, several iterations) for sand sediment load derived from slumping
+double CCellSedimentLoad::dGetSandSlumpSedLoad(void)
+{
+   return m_dFromSlumpSandSedLoad;
+}
+
+
+
+// Add to the cell's values for this-iteration (actually, several iterations) sediment load derived from toppling
+void CCellSedimentLoad::AddToToppleSedLoad(const double dClay, const double dSilt, const double dSand)
+{
+   m_dFromToppleClaySedLoad += dClay;
+   m_dFromToppleSiltSedLoad += dSilt;
+   m_dFromToppleSandSedLoad += dSand;
+}
+
+// Returns the cell's this-iteration (actually, several iterations) value for clay sediment load derived from toppling
+double CCellSedimentLoad::dGetClayToppleSedLoad(void)
+{
+   return m_dFromToppleClaySedLoad;
+}
+
+// Returns the cell's this-iteration value (actually, several iterations) for silt sediment load derived from toppling
+double CCellSedimentLoad::dGetSiltToppleSedLoad(void)
+{
+   return m_dFromToppleSiltSedLoad;
+}
+
+// Returns the cell's this-iteration value (actually, several iterations) for sand sediment load derived from toppling
+double CCellSedimentLoad::dGetSandToppleSedLoad(void)
+{
+   return m_dFromToppleSandSedLoad;
+}
+
+void CCellSedimentLoad::AddToHeadcutRetreatSedLoad(const double dClay, const double dSilt, const double dSand)
+{
+   m_dFromHeadcutRetreatClaySedLoad += dClay;
+   m_dFromHeadcutRetreatSiltSedLoad += dSilt;
+   m_dFromHeadcutRetreatSandSedLoad += dSand;
+}
+
+double CCellSedimentLoad::dGetClayHeadcutRetreatSedLoad(void)
+{
+   return m_dFromHeadcutRetreatClaySedLoad;
+}
+
+double CCellSedimentLoad::dGetSiltHeadcutRetreatSedLoad(void)
+{
+   return m_dFromHeadcutRetreatSiltSedLoad;
+}
+
+double CCellSedimentLoad::dGetSandHeadcutRetreatSedLoad(void)
+{
+   return m_dFromHeadcutRetreatSandSedLoad;
+}
+
+void CCellSedimentLoad::InitializeSplashSedLoads(void)
+{
+   m_dFromSplashClaySedLoad =
+   m_dFromSplashSiltSedLoad =
+   m_dFromSplashSandSedLoad = 0;
+}
+
+void CCellSedimentLoad::InitializeSlumpAndToppleSedLoads(void)
+{
+   m_dFromSplashClaySedLoad =
+   m_dFromSplashSiltSedLoad =
+   m_dFromSplashSandSedLoad =
+   m_dFromSlumpClaySedLoad  =
+   m_dFromSlumpSiltSedLoad  =
+   m_dFromSlumpSandSedLoad  =
+   m_dFromToppleClaySedLoad =
+   m_dFromToppleSiltSedLoad =
+   m_dFromToppleSandSedLoad = 0;
+}
+
+void CCellSedimentLoad::InitializeHeadcutRetreatSedLoads(void)
+{
+   m_dFromHeadcutRetreatClaySedLoad =
+   m_dFromHeadcutRetreatSiltSedLoad =
+   m_dFromHeadcutRetreatSandSedLoad = 0;
 }

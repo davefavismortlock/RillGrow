@@ -29,10 +29,13 @@
 void CSimulation::DoRunOnFromOneEdge(int const nEdge)
 {
    // There is run-on from this edge
-   double dEdgeLen = m_nYGridMax;         // Start by assuming run-on from the left or right edges
+   double dEdgeLen = 0;
    if ((nEdge == EDGE_TOP) || (nEdge == EDGE_BOTTOM))
-      // Nope, run-on is from the top or bottom edge
+      // Run-on is from the top or bottom edge
       dEdgeLen = m_nXGridMax;
+   else
+      // Run-on is from the left or right edge
+      dEdgeLen = m_nYGridMax;
 
    // Calculate the average number of raindrops falling during a timestep of this duration. Note that this assumes that m_dRunOnLen is an extension orthogonal to the run-on edge, and is in mm
    double dRunOnAvgNDrops = m_dTimeStep * m_dRainIntensity * m_dRunOnLen * m_dCellSide * dEdgeLen / (3600 * m_dMeanCellWaterVol);
@@ -50,7 +53,6 @@ void CSimulation::DoRunOnFromOneEdge(int const nEdge)
 
       // Set the depth for a 'representative' single drop, correct for spatial variation in rainfall (assume rainfall is the same all over run-on area), and assume we have dDrops of these (assume identical: an unrealistic assumption but convenient. Note that this has the effect of making rainfall onto run-on area more variable, because otherwise would get some cancelling of variability per iteration)
       double dTmpDpth = m_dMeanCellWaterVol * m_dInvCellSquare * m_dRunOnRainVarM * dDrops;
-      m_dThisIterRunOn += dTmpDpth;
 
       // Now add the same fraction of this depth of water to every cell at this edge of the plot. Note that this implies that there is no infilt on the run-on area
       dTmpDpth /= dEdgeLen;
@@ -187,9 +189,6 @@ void CSimulation::DoAllRain(void)
 
       // Add to rainfall amount and water depth for this cell on the Cell array
       Cell[nX][nY].pGetRainAndRunon()->AddRain(dTmpDpth);
-
-      // Also add to the this-iteration total of rain
-      m_dThisIterRain += dTmpDpth;
    }
 }
 

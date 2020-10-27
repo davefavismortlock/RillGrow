@@ -277,7 +277,6 @@ void CSimulation::WriteRunDetails(void)
       WrapLongString(&strTmp);
    }
 
-#if defined _DEBUG
    if (m_bLostSave)
    {
       strTmp.append(GIS_AVG_SURFACE_WATER_FROM_EDGES_CODE);
@@ -285,7 +284,6 @@ void CSimulation::WriteRunDetails(void)
 
       WrapLongString(&strTmp);
    }
-#endif
 
    if (m_bCumulAvgDWSpdSave)
    {
@@ -701,6 +699,7 @@ if (! m_strRainVarMFile.empty())
    m_ofsOut << " Off-edge parameter A                                  \t: " << m_dOffEdgeParamA << endl;
    m_ofsOut << " Off-edge parameter B                                  \t: " << m_dOffEdgeParamB << endl;
    m_ofsOut << "*Off-edge head constant                                \t: " << m_dOffEdgeConst << endl;
+   m_ofsOut << " Flume-like simulation?                                \t: " << (m_bFlumeTypeSim ? "y" : "n") << endl;
    m_ofsOut << endl;
 
    // ---------------------------------------------------------- Infiltration ------------------------------------------------------------
@@ -916,11 +915,9 @@ int CSimulation::nWriteFilesAtEnd(void)
       if (! bWriteGISFileFloat(GIS_TOP_SURFACE, &GIS_TOP_SURFACE_TITLE))
          return (RTN_ERR_GISFILEWRITE);
 
-#if defined _DEBUG
    if (m_bLostSave)
       if (! bWriteGISFileFloat(GIS_AVG_SURFACE_WATER_FROM_EDGES, &GIS_AVG_SURFACE_WATER_FROM_EDGES_TITLE))
          return (RTN_ERR_GISFILEWRITE);
-#endif
 
    if (m_bStreamPowerSave)
       if (! bWriteGISFileFloat(GIS_STREAMPOWER, &GIS_STREAMPOWER_TITLE))
@@ -1080,7 +1077,7 @@ void CSimulation::WriteGrandTotals(void)
    dTmpTot += dTmp;
    m_ofsOut << "Infiltration - exfilt " << setw(10) << dTmp << endl;
 
-   dTmp = 100 * m_dThisIterSurfaceWaterStored * m_dCellSquare / (m_ldGTotRain + m_ldGTotRunOnWater);
+   dTmp = 100 * m_dThisIterStoredSurfaceWater * m_dCellSquare / (m_ldGTotRain + m_ldGTotRunOnWater);
    dTmpTot += dTmp;
    m_ofsOut << "Storage at end              " << setw(10) << dTmp << endl;
 
@@ -1107,8 +1104,8 @@ void CSimulation::WriteGrandTotals(void)
 
    m_ofsOut << "Sediment Balance (% of total detached by flow" << (m_bSplash ? " + splash" : "") << (m_bSlumping ? " + slumping + toppling" : "") << ")" << endl;
 
-   long double ldGTotEroded = m_ldGTotFlowDetach + m_ldGTotSplashDetach + m_ldGTotSlumpDetach + m_ldGTotToppleDetach;
-   long double ldGTotNetDeposited = ldGTotEroded - (((m_dThisIterClaySedLoad + m_dThisIterSiltSedLoad + m_dThisIterSandSedLoad) * m_dCellSquare) + m_ldGTotSedLost);
+   long double ldGTotEroded = m_ldGTotFlowDetach + m_ldGTotSplashDetach + m_ldGTotSlumpDetach + m_ldGTotToppleDetach + m_ldGTotHeadcutRetreatDetach;
+   long double ldGTotNetDeposited = m_ldGTotFlowDeposit + m_ldGTotSplashDeposit + m_ldGTotSlumpDeposit + m_ldGTotToppleDeposit + m_ldGTotInfiltDeposit + m_ldGTotHeadcutRetreatDeposit;
    dTmpTot = 0;
 
    dTmp = 100 * ldGTotNetDeposited / ldGTotEroded;
@@ -1140,10 +1137,10 @@ void CSimulation::WriteGrandTotals(void)
    m_ofsOut << endl;
 
    // Flow deposition
-   m_ofsOut << "Deposition (including subsequently re-eroded sediment) due to flow" << endl;
-   m_ofsOut << "Average = " << m_ldGTotFlowDeposition / fTotArea << " mm" << endl;
-   m_ofsOut << "        = " << 10 * m_ldGTotFlowDeposition / fTotArea  << " m**3/ha" << endl;       // convert mm3/mm2 to m3/ha
-   m_ofsOut << "        = " << 10 * m_ldGTotFlowDeposition * m_dBulkDensityForOutputCalcs / fTotArea << " t/ha" << endl;
+   m_ofsOut << "Deposition (including subsequently re-eroded sediment)" << endl;
+   m_ofsOut << "Average = " << m_ldGTotFlowDeposit / fTotArea << " mm" << endl;
+   m_ofsOut << "        = " << 10 * m_ldGTotFlowDeposit / fTotArea  << " m**3/ha" << endl;       // convert mm3/mm2 to m3/ha
+   m_ofsOut << "        = " << 10 * m_ldGTotFlowDeposit * m_dBulkDensityForOutputCalcs / fTotArea << " t/ha" << endl;
    m_ofsOut << endl;
 
    // Splash detachment
@@ -1161,11 +1158,32 @@ void CSimulation::WriteGrandTotals(void)
    m_ofsOut << "        = " << 10 * m_ldGTotSplashDeposit * m_dBulkDensityForOutputCalcs / fTotArea << " t/ha" << endl;
    m_ofsOut << endl;
 
+   // Splash to sed load
+   m_ofsOut << "Contribution to sediment load from splash" << endl;
+   m_ofsOut << "Average = " << m_ldGTotSplashToSedLoad / fTotArea << " mm" << endl;
+   m_ofsOut << "        = " << 10 * m_ldGTotSplashToSedLoad / fTotArea << " m**3/ha" << endl;      // convert mm3/mm2 to m3/ha
+   m_ofsOut << "        = " << 10 * m_ldGTotSplashToSedLoad * m_dBulkDensityForOutputCalcs / fTotArea << " t/ha" << endl;
+   m_ofsOut << endl;
+
    // Slumping detachment
    m_ofsOut << "Elevation decrease due to slumping" << endl;
    m_ofsOut << "Average = " << m_ldGTotSlumpDetach / fTotArea << " mm" << endl;
    m_ofsOut << "        = " << 10 * m_ldGTotSlumpDetach / fTotArea << " m**3/ha" << endl;        // convert mm3/mm2 to m3/ha
    m_ofsOut << "        = " << 10 * m_ldGTotSlumpDetach * m_dBulkDensityForOutputCalcs / fTotArea << " t/ha" << endl;
+   m_ofsOut << endl;
+
+   // Slumping deposition
+   m_ofsOut << "Elevation increase due to slumping" << endl;
+   m_ofsOut << "Average = " << m_ldGTotSlumpDeposit / fTotArea << " mm" << endl;
+   m_ofsOut << "        = " << 10 * m_ldGTotSlumpDeposit / fTotArea << " m**3/ha" << endl;        // convert mm3/mm2 to m3/ha
+   m_ofsOut << "        = " << 10 * m_ldGTotSlumpDeposit * m_dBulkDensityForOutputCalcs / fTotArea << " t/ha" << endl;
+   m_ofsOut << endl;
+
+   // Slumping to sed load
+   m_ofsOut << "Contribution to sediment load from slumping" << endl;
+   m_ofsOut << "Average = " << m_ldGTotSlumpToSedLoad / fTotArea << " mm" << endl;
+   m_ofsOut << "        = " << 10 * m_ldGTotSlumpToSedLoad / fTotArea << " m**3/ha" << endl;      // convert mm3/mm2 to m3/ha
+   m_ofsOut << "        = " << 10 * m_ldGTotSlumpToSedLoad * m_dBulkDensityForOutputCalcs / fTotArea << " t/ha" << endl;
    m_ofsOut << endl;
 
    // Toppling detachment
@@ -1182,6 +1200,13 @@ void CSimulation::WriteGrandTotals(void)
    m_ofsOut << "        = " << 10 * m_ldGTotToppleDeposit * m_dBulkDensityForOutputCalcs / fTotArea << " t/ha" << endl;
    m_ofsOut << endl;
 
+   // Toppling to sed load
+   m_ofsOut << "Contribution to sediment load from toppling" << endl;
+   m_ofsOut << "Average = " << m_ldGTotToppleToSedLoad / fTotArea << " mm" << endl;
+   m_ofsOut << "        = " << 10 * m_ldGTotToppleToSedLoad / fTotArea << " m**3/ha" << endl;      // convert mm3/mm2 to m3/ha
+   m_ofsOut << "        = " << 10 * m_ldGTotToppleToSedLoad * m_dBulkDensityForOutputCalcs / fTotArea << " t/ha" << endl;
+   m_ofsOut << endl;
+
    // Infiltration deposition
    m_ofsOut << "Elevation increase (including subsequently re-eroded sediment) due to infilt deposition" << endl;
    m_ofsOut << "Average = " << m_ldGTotInfiltDeposit / fTotArea << " mm" << endl;
@@ -1189,13 +1214,35 @@ void CSimulation::WriteGrandTotals(void)
    m_ofsOut << "        = " << 10 * m_ldGTotInfiltDeposit * m_dBulkDensityForOutputCalcs / fTotArea << " t/ha" << endl;
    m_ofsOut << endl << endl;
 
+   // Headcut retreat detachment
+   m_ofsOut << "Elevation decrease due to headcut retreat" << endl;
+   m_ofsOut << "Average = " << m_ldGTotHeadcutRetreatDetach / fTotArea << " mm" << endl;
+   m_ofsOut << "        = " << 10 * m_ldGTotHeadcutRetreatDetach / fTotArea << " m**3/ha" << endl;        // convert mm3/mm2 to m3/ha
+   m_ofsOut << "        = " << 10 * m_ldGTotHeadcutRetreatDetach * m_dBulkDensityForOutputCalcs / fTotArea << " t/ha" << endl;
+   m_ofsOut << endl;
+
+   // Headcut retreat deposition
+   m_ofsOut << "Elevation increase (including subsequently re-eroded sediment) due to headcut retreat" << endl;
+   m_ofsOut << "Average = " << m_ldGTotHeadcutRetreatDeposit / fTotArea << " mm" << endl;
+   m_ofsOut << "        = " << 10 * m_ldGTotHeadcutRetreatDeposit / fTotArea << " m**3/ha" << endl;       // convert mm3/mm2 to m3/ha
+   m_ofsOut << "        = " << 10 * m_ldGTotHeadcutRetreatDeposit * m_dBulkDensityForOutputCalcs / fTotArea << " t/ha" << endl;
+   m_ofsOut << endl;
+
+   // Headcut retreat to sed load
+   m_ofsOut << "Contribution to sediment load from headcut retreat" << endl;
+   m_ofsOut << "Average = " << m_ldGTotHeadcutRetreatToSedLoad / fTotArea << " mm" << endl;
+   m_ofsOut << "        = " << 10 * m_ldGTotHeadcutRetreatToSedLoad / fTotArea << " m**3/ha" << endl;      // convert mm3/mm2 to m3/ha
+   m_ofsOut << "        = " << 10 * m_ldGTotHeadcutRetreatToSedLoad * m_dBulkDensityForOutputCalcs / fTotArea << " t/ha" << endl;
+   m_ofsOut << endl;
+
    // Show relative contributions of each detachment process to total sediment lost
    m_ofsOut << RELCONTRIBLOSTHEAD << endl;
 
-   m_ofsOut << "Detachment due to flow (%)            " << setw(10) << 100 * m_ldGTotFlowDetach / m_ldGTotSedLost << endl;
-   m_ofsOut << "Elevation decrease due to splash (%)  " << setw(10) << 100 * m_ldGTotSplashDetach / m_ldGTotSedLost << endl;
-   m_ofsOut << "Elevation decrease due to slumping (%)" << setw(10) << 100 * m_ldGTotSlumpDetach / m_ldGTotSedLost << endl;
-   m_ofsOut << "Elevation decrease due to toppling (%)" << setw(10) << 100 * m_ldGTotToppleDeposit / m_ldGTotSedLost << endl;
+   m_ofsOut << "Detachment due to flow (%)                   " << setw(10) << 100 * m_ldGTotFlowDetach / m_ldGTotSedLost << endl;
+   m_ofsOut << "Elevation decrease due to splash (%)         " << setw(10) << 100 * m_ldGTotSplashDetach / m_ldGTotSedLost << endl;
+   m_ofsOut << "Elevation decrease due to slumping (%)       " << setw(10) << 100 * m_ldGTotSlumpDetach / m_ldGTotSedLost << endl;
+   m_ofsOut << "Elevation decrease due to toppling (%)       " << setw(10) << 100 * m_ldGTotToppleDetach / m_ldGTotSedLost << endl;
+   m_ofsOut << "Elevation decrease due to headcut retreat (%)" << setw(10) << 100 * m_ldGTotHeadcutRetreatDetach / m_ldGTotSedLost << endl;
    m_ofsOut << endl << "Note: potential double-counting here, due to subsequent deposition and re-detachment." << endl;
    m_ofsOut << endl << endl;
 
@@ -1220,9 +1267,26 @@ bool CSimulation::bSetUpTSFiles(void)
 {
    string strTSFile;
 
+   // First the error TS file
+   strTSFile = m_strOutputPath;
+   strTSFile.append(ERROR_TIME_SERIES_NAME);
+   strTSFile.append(CSV_EXT);
+
+   // Open error time-series CSV file
+   m_ofsErrorTS.open(strTSFile.c_str(), ios::out | ios::trunc);
+   if (! m_ofsErrorTS)
+   {
+      // Error, cannot open error time-series file
+      cerr << ERR << "cannot open " << strTSFile << " for output" << endl;
+      return (false);
+   }
+
+   // Write header line
+   m_ofsErrorTS << "'Iteration'" << "\t,\t" << "'Elapsed'" << "\t,\t" << "'Timestep (sec)'" << "\t,\t" << "Water error" << "\t,\t" << "Splash error" << "\t,\t" << "Slump error" << "\t,\t" << "Topple error" << "\t,\t" << "Headcut error" << "\t,\t" << "Flow error" << endl;
+
    if (m_bTimeStepTS)
    {
-      // First, do timestep TS
+      // Next do timestep TS
       strTSFile = m_strOutputPath;
       strTSFile.append(TIMESTEP_TIME_SERIES_NAME);
       strTSFile.append(CSV_EXT);
@@ -1618,8 +1682,8 @@ bool CSimulation::bWritePerIterationResults(void)
       m_ofsOut << setw(7) << m_dThisIterInfiltration * m_dCellSquare;
    else
       m_ofsOut << "      -";
-   m_ofsOut << setw(8)  << m_dThisIterWaterLost * m_dCellSquare;
-   m_ofsOut << setw(12) << m_dThisIterSurfaceWaterStored * m_dCellSquare;
+   m_ofsOut << setw(8)  << m_dThisIterLostSurfaceWater * m_dCellSquare;
+   m_ofsOut << setw(12) << m_dThisIterStoredSurfaceWater * m_dCellSquare;
    m_ofsOut << " ";
 
    // Output per-iteration flow erosion details, all displayed as volumes (mm3)
@@ -1633,12 +1697,12 @@ bool CSimulation::bWritePerIterationResults(void)
       // OK, we are calculating splash, and we are doing so this iteration, so output per-iteration splash redistribution, all as volumes (mm3)
 //       m_ofsOut << setprecision(1);
       m_ofsOut << setw(8) << (m_dThisIterClaySplashDetach + m_dThisIterSiltSplashDetach + m_dThisIterSandSplashDetach) * m_dCellSquare;
-      m_ofsOut << setw(8) << (m_dThisIterClaySplashDepositOnly + m_dThisIterSiltSplashDepositOnly + m_dThisIterSandSplashDepositOnly) * m_dCellSquare;
+      m_ofsOut << setw(8) << (m_dThisIterClaySplashDeposit + m_dThisIterSiltSplashDeposit + m_dThisIterSandSplashDeposit) * m_dCellSquare;
    }
    else
       m_ofsOut << "       -       -";
 
-   m_ofsOut << setw(10) << (m_dThisIterClaySedLoad + m_dThisIterSiltSedLoad + m_dThisIterSandSedLoad) * m_dCellSquare;
+   m_ofsOut << setw(11) << (m_dThisIterClaySedLoad + m_dThisIterSiltSedLoad + m_dThisIterSandSedLoad) * m_dCellSquare;
 
    if (m_bSlumpThisIter)
    {
@@ -1691,7 +1755,13 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
 {
    static double sdLastSimulatedTimeElapsed = 0;
 
-   /// First do the ones which are output every iteration
+   // First do imprecision errors (always written): output the iteration and the timestep (in sec)
+   m_ofsErrorTS << m_ulIter << "\t,\t" << m_dSimulatedTimeElapsed << "\t,\t" << m_dTimeStep << "\t,\t" << m_dWaterErrorLast << "\t,\t" << m_dSplashErrorLast << "\t,\t" << m_dSlumpErrorLast << "\t,\t" << m_dToppleErrorLast << "\t,\t" << m_dHeadcutErrorLast << "\t,\t" << m_dFlowErrorLast << endl;
+
+   // Did an imprecision errors time series file write error occur?
+   if (m_ofsErrorTS.fail())
+      return (false);
+
    if (m_bTimeStepTS)
    {
       // Output the iteration and the timestep (in sec)
@@ -1735,7 +1805,7 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bSurfaceWaterTS)
    {
       // Convert surface water in mm3 to litres/sec
-      m_ofsSurfaceWaterTS << m_dSimulatedTimeElapsed << "\t,\t" << m_dThisIterSurfaceWaterStored * m_dCellSquare * 1e-6 / m_dTimeStep << endl;
+      m_ofsSurfaceWaterTS << m_dSimulatedTimeElapsed << "\t,\t" << m_dThisIterStoredSurfaceWater * m_dCellSquare * 1e-6 / m_dTimeStep << endl;
 
       // Did a surface water time series file write error occur?
       if (m_ofsSurfaceWaterTS.fail())
@@ -1745,7 +1815,7 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bSurfaceWaterLostTS)
    {
       // Convert water lost (i.e. discharge) in mm3 to litres/sec
-      m_ofsSurfaceWaterLostTS << m_dSimulatedTimeElapsed << "\t,\t" << m_dThisIterWaterLost * m_dCellSquare * 1e-6 / m_dTimeStep << endl;
+      m_ofsSurfaceWaterLostTS << m_dSimulatedTimeElapsed << "\t,\t" << m_dThisIterLostSurfaceWater * m_dCellSquare * 1e-6 / m_dTimeStep << endl;
 
       // Did a surface water lost time series file write error occur?
       if (m_ofsSurfaceWaterLostTS.fail())

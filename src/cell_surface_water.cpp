@@ -23,18 +23,17 @@
 
 CCellSurfaceWater::CCellSurfaceWater(void)
 :
+   m_bFlowThisIter(false),
    m_nFlowDirection(DIRECTION_NONE),
    m_nInundationClass(NO_FLOW),
    m_dSurfaceWaterDepth(0),
    m_dCumulSurfaceWaterDepth(0),
+   m_dSurfaceWaterDepthLost(0),
+   m_dCumulSurfaceWaterDepthLost(0),
    m_dStreamPower(0),
    m_dTransCap(0),
    m_dFrictionFactor(0)
 {
-#if defined _DEBUG
-   m_dCumulSurfaceWaterDepthLost = 0;
-#endif
-
    m_pCell = NULL;
 }
 
@@ -48,12 +47,24 @@ void CCellSurfaceWater::SetParent(CCell* const pParent)
    m_pCell = pParent;
 }
 
+void CCellSurfaceWater::SetFlowThisIter(void)
+{
+   m_bFlowThisIter = true;
+}
+
+bool CCellSurfaceWater::bFlowThisIter(void)
+{
+   return m_bFlowThisIter;
+}
 
 void CCellSurfaceWater::InitializeFlow(void)
 {
+   m_bFlowThisIter = false;
+
    m_nFlowDirection = DIRECTION_NONE;
    m_nInundationClass = NO_FLOW;
 
+   m_dSurfaceWaterDepthLost =
    m_dStreamPower =
    m_dTransCap = 0;
 }
@@ -83,27 +94,24 @@ int CCellSurfaceWater::nGetFlowDirection(void) const
    return m_nFlowDirection;
 }
 
-// Adds to this cell's surface water depth. Also handles the per-iteration count of wet cells and the per-iteration total of surface water
+// Adds to this cell's surface water depth. Also handles the this-iteration total of surface water
 void CCellSurfaceWater::AddSurfaceWater(double const dAddDepth)
 {
    assert(dAddDepth > 0);
-   if (m_dSurfaceWaterDepth == 0)
-      // The cell was previously dry, so update the per-iteration count of wet cells
-      m_pSim->IncrNumWetCells();
 
    m_dSurfaceWaterDepth += dAddDepth;
    m_dCumulSurfaceWaterDepth += dAddDepth;
 
-   // Add to the this-iteration total depth of surface water
-   m_pSim->AddThisIterSurfaceWater(dAddDepth);
-
    assert(m_dSurfaceWaterDepth >= 0);
+
+   // And make sure that this cell is not processed a second time this iteration
+   m_bFlowThisIter = true;
 }
 
 // Removes from this cell's surface water depth; if there is insufficient water, then the function returns false and sets the parameter to the depth actually removed, it also  handles the per-simulation count of wet cells and the per-iteration total of surface water
 void CCellSurfaceWater::RemoveSurfaceWater(double& dRemoveDepth)
 {
-   if (dRemoveDepth >  m_dSurfaceWaterDepth)
+   if (dRemoveDepth > m_dSurfaceWaterDepth)
    {
       dRemoveDepth = m_dSurfaceWaterDepth;
       this->SetSurfaceWaterZero();
@@ -119,12 +127,6 @@ void CCellSurfaceWater::RemoveSurfaceWater(double& dRemoveDepth)
 // Sets this cell's surface water depth to zero, also decrements the count of wet cells and removes from the this-iteration surface water total
 void CCellSurfaceWater::SetSurfaceWaterZero(void)
 {
-   // Subtract from the this-iteration total depth of surface water
-   m_pSim->AddThisIterSurfaceWater(-m_dSurfaceWaterDepth);
-
-   // Decrement the count of wet cells
-   m_pSim->DecrNumWetCells();
-
    m_dCumulSurfaceWaterDepth -= m_dSurfaceWaterDepth;
    m_dSurfaceWaterDepth = 0;
 
@@ -150,12 +152,17 @@ double CCellSurfaceWater::dGetCumulSurfaceWater(void) const
    return m_dCumulSurfaceWaterDepth;
 }
 
-
-#if defined _DEBUG
 // Increments the total depth of water lost from the grid via this cell (only meaningful for edge cells)
 void CCellSurfaceWater::AddSurfaceWaterLost(double const dAddWater)
 {
+   m_dSurfaceWaterDepthLost += dAddWater;
    m_dCumulSurfaceWaterDepthLost += dAddWater;
+}
+
+// Returns the this-iteration depth of water lost from the grid via this cell (only meaningful for edge cells)
+double CCellSurfaceWater::dGetSurfaceWaterLost(void) const
+{
+   return m_dSurfaceWaterDepthLost;
 }
 
 // Returns the cumulative depth of water lost from the grid via this cell (only meaningful for edge cells)
@@ -163,7 +170,6 @@ double CCellSurfaceWater::dGetCumulSurfaceWaterLost(void) const
 {
    return m_dCumulSurfaceWaterDepthLost;
 }
-#endif
 
 // Initialize flow velocities
 void CCellSurfaceWater::InitializeAllFlowVelocity(void)

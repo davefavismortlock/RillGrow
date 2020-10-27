@@ -581,7 +581,7 @@ int CSimulation::nCheckForInstability(void)
          return (RTN_ERR_SPLASHDETMAX);
 
       // If an absurd per-cell average splash deposition has occurred this iteration, then abort the run
-      if (tAbs(m_dThisIterClaySplashDepositAndSedLoad + m_dThisIterSiltSplashDepositAndSedLoad + m_dThisIterSandSplashDepositAndSedLoad) / m_ulNActiveCells > ERROR_SPLASH_DEPOSIT_MAX)
+      if (tAbs(m_dThisIterClaySplashToSedLoad + m_dThisIterSiltSplashToSedLoad + m_dThisIterSandSplashToSedLoad) / m_ulNActiveCells > ERROR_SPLASH_DEPOSIT_MAX)
          return (RTN_ERR_SPLASHDEPMAX);
    }
 

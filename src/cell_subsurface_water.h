@@ -27,8 +27,10 @@ class CCellSubsurfaceWater
 {
 private:
    double
-      m_dInfiltWaterLost,                    // Overland flow lost to infilt, as a depth (mm)
-      m_dCumulInfiltWaterLost;               // Cumulative surface water lost to infilt, as a depth (mm)
+      m_dInfiltWater,                        // Infiltrated soil water, as a depth (mm)
+      m_dCumulInfiltWater,                   // Cumulative infiltrated soil water, as a depth (mm)
+      m_dExfiltWater,                        // Exfiltrated soil water, as a depth (mm)
+      m_dCumulExfiltWater;                   // Cumulative exfiltrated soil water, as a depth (mm)
 
    CCell* m_pCell;
 
@@ -40,9 +42,13 @@ public:
 
    void DoInfiltration(double&);
    void InfiltrateAndMakeDry(void);
-   void SetZeroThisIterInfiltration(void);
+   void InitializeInfiltration(void);
    double dGetInfiltration(void) const;
    double dGetCumulInfiltration(void) const;
+
+   void DoExfiltration(double const);
+   double dGetExfiltration(void) const;
+   double dGetCumulExfiltration(void) const;
 
    double dGetTopLayerSoilWater(void);
 };

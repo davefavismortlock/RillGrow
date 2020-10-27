@@ -69,9 +69,6 @@ void CSimulation::DoAllInfiltration()
    {
       for (int nY = 0; nY < m_nYGridMax; nY++)
       {
-         // Zero this cell's values for water lost by infilt and sediment deposited due to infilt
-         Cell[nX][nY].pGetSoilWater()->SetZeroThisIterInfiltration();
-
          // Start at the top soil layer and work downwards
          for (int nLayer = 0; nLayer < m_nNumSoilLayers; nLayer++)
          {
@@ -170,9 +167,6 @@ void CSimulation::DoCellInfiltration(int const nX, int const nY, int const nLaye
       {
          // This is the top layer, so remove from the surface water and update total infilt for this cell. Note that if there is insufficient surface water, dDepthToInfiltrate is reduced
          Cell[nX][nY].pGetSoilWater()->DoInfiltration(dDepthToInfiltrate);
-
-         // Update the this-operation (value is kept for several iterations) total depth of infiltrated water
-         m_dThisIterInfiltration += dDepthToInfiltrate;
       }
       else
       {
@@ -183,17 +177,13 @@ void CSimulation::DoCellInfiltration(int const nX, int const nY, int const nLaye
    }
    else
    {
-      // All water lost to infilt
+      // All water lost to infiltration
       dDepthToInfiltrate = dWaterDepthAbove;
 
       if (nLayer == 0)
       {
          // This is the top layer, so remove the water, update total infilt for this cell, assume that any in-transport sediment is deposited and add this to the per-iteration total of infitration-deposited sediment
          Cell[nX][nY].pGetSoilWater()->InfiltrateAndMakeDry();
-
-         // Update this-operation (value is kept for several iterations) total depth of infiltrated water
-         m_dThisIterInfiltration += dDepthToInfiltrate;
-
       }
       else
       {
@@ -246,11 +236,8 @@ void CSimulation::DoCellExfiltration(int const nX, int const nY, int const nLaye
       // This is the top layer
 //       m_ofsLog << m_ulIter << " [" << nX << "][" << nY << "] exfilt to surface water = " << dExcess << endl;
 
-      // Remove water from this layer and add it to the surface water
-      pLayer->ChangeSoilWater(-dExcess);
-      Cell[nX][nY].pGetSurfaceWater()->AddSurfaceWater(dExcess);
-
-      m_dThisIterExfiltration += dExcess;
+      // Exfiltrate i.e. remove water from this layer and add it to the surface water
+      Cell[nX][nY].pGetSoilWater()->DoExfiltration(dExcess);
 
       return;
    }

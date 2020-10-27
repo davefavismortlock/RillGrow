@@ -41,9 +41,9 @@ private:
       m_dStoredRetreat[8];                                  // Stored (i.e. within-cell) headcut retreat along directions 1 to 8
 
    CCellSoil m_Soil;
-   CCellRainAndRunon m_RainAndRunon;
+   CCellRainAndRunon m_RainAndRunOn;
    CCellSurfaceWater m_SurfaceWater;
-   CCellSedimentLoad m_Sediment;
+   CCellSedimentLoad m_SedLoad;
    CCellSubsurfaceWater m_SoilWater;
 
 public:
@@ -77,9 +77,9 @@ public:
    CCellSoil* pGetSoil(void);
    CCellRainAndRunon* pGetRainAndRunon(void);
    CCellSurfaceWater* pGetSurfaceWater(void);
-   CCellSedimentLoad* pGetSediment(void);
+   CCellSedimentLoad* pGetSedLoad(void);
    CCellSubsurfaceWater* pGetSoilWater(void);
 
-   void InitializeAtStartOfIteration(bool const);
+   void CalcIterTotalsAndInit(bool&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, bool const);
 };
 #endif         // __CELL_H__

@@ -93,7 +93,7 @@ public:
    void ChangeSoilWater(double const);
    double dGetSoilWater(void) const;
 
-//    void ChangeThickness(double const);
+   void ChangeThickness(double const);
 
    void DoLayerHeadcutRetreatErosion(double const, double&, double&, double&);
 };

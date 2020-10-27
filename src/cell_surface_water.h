@@ -23,28 +23,26 @@ class CSimulation;                                 // Ditto
 
 #include "2d_vec.h"
 
-
 class CCellSurfaceWater
 {
 public:
    static CSimulation* m_pSim;
 
 private:
+   bool
+      m_bFlowThisIter;                             // Switch to prevent processing twice in the same iteration
    int
       m_nFlowDirection,
       m_nInundationClass;                          // 0 = dry, 1 = shallow flow, 2 = marginally inundated, 3 = well inundated
 
    double
       m_dSurfaceWaterDepth,                        // Water on soil surface, as a depth (mm)
-      m_dCumulSurfaceWaterDepth,                   // Cumulative deoth of water on soil surface (mm)
+      m_dCumulSurfaceWaterDepth,                   // Cumulative depth of water on soil surface (mm)
+      m_dSurfaceWaterDepthLost,                    // This-iteration depth lost via edge cell (mm)
+      m_dCumulSurfaceWaterDepthLost,               // Cumulative depth lost via edge cell (mm)
       m_dStreamPower,
       m_dTransCap,
       m_dFrictionFactor;
-
-#if defined _DEBUG
-   double
-      m_dCumulSurfaceWaterDepthLost;               // Total lost from grid via this edge cell, as a depth (mm)
-#endif
 
    C2DVec
       m_vFlowVelocity,                             // Flow velocity
@@ -61,6 +59,8 @@ public:
    void SetParent(CCell* const);
 
    void InitializeFlow(void);
+   void SetFlowThisIter(void);
+   bool bFlowThisIter(void);
 
    void SetInundation(int const);
    int nGetInundation(void) const;
@@ -75,10 +75,9 @@ public:
    bool bIsWet(void) const;
    double dGetCumulSurfaceWater(void) const;
 
-#if defined _DEBUG
    void AddSurfaceWaterLost(double const);
+   double dGetSurfaceWaterLost(void) const;
    double dGetCumulSurfaceWaterLost(void) const;
-#endif
 
    void InitializeAllFlowVelocity(void);
    void ZeroAllFlowVelocity(void);

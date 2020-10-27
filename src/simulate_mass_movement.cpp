@@ -312,7 +312,7 @@ void CSimulation::DoAllSlump(void)
                   dDiff -= dCrit;
                   dDiff /= 2;
 
-                  // Remove the soil from the higher cell, and move it (as sediment load) to the lower cell
+                  // Remove the soil from the higher cell, and move it to the lower cell
                   double
                      dClayDetached = 0,
                      dSiltDetached = 0,
@@ -320,13 +320,8 @@ void CSimulation::DoAllSlump(void)
 
                   Cell[nX][nY].pGetSoil()->DoSlumpDetach(dDiff, dClayDetached, dSiltDetached, dSandDetached);
 
-                  // Now add the detached soil to the 'To' cell (as part of the top soil layer, not as sediment load)
-                  Cell[nXTmp][nYTmp].pGetSoil()->DoSlumpDeposit(dClayDetached, dSiltDetached, dSandDetached);
-
-                  // To keep the mass balance calcs working correctly, also store slump deposition
-                  m_dThisIterClaySlumpDeposit += dClayDetached;
-                  m_dThisIterSiltSlumpDeposit += dSiltDetached;
-                  m_dThisIterSandSlumpDeposit += dSandDetached;
+                  // Now add the detached soil to the 'To' cell (as part of the top soil layer if dry, or to the sediment load if wet)
+                  Cell[nXTmp][nYTmp].pGetSoil()->DoSlumpDepositOrToSedLoad(dClayDetached, dSiltDetached, dSandDetached);
 
 //                   m_ofsLog << m_ulIter << " [" << nX << "][" << nY << "] slump detach="  << -dDiff << ", [" << nXTmp << "][" << nYTmp << "] deposit=" << dDiff << endl;
 
@@ -592,7 +587,7 @@ void CSimulation::TryToppleCellsAbove(int const nX, int const nY, int nRecursion
 
 /*=========================================================================================================================================
 
- Does toppling, i.e. moves sediment from one cell onto another
+ Does toppling, i.e. moves sediment from an over-steepened cell to an adjacent cell. If the target cell is wet, then the sediment is moved into that cell's sediment load
 
 =========================================================================================================================================*/
 void CSimulation::DoToppleCells(int const nX, int const nY, int const nXTmp, int const nYTmp, double dDiff, bool const bDiag)
@@ -615,77 +610,11 @@ void CSimulation::DoToppleCells(int const nX, int const nY, int const nXTmp, int
    Cell[nXTmp][nYTmp].pGetSoil()->DoToppleDetach(dDiff, dClayDetached, dSiltDetached, dSandDetached);
 
    // And now do the deposition
-   Cell[nX][nY].pGetSoil()->DoToppleDeposit(dClayDetached, dSiltDetached, dSandDetached);
-
-   // Add to the since-last-time totals
-   m_dThisIterClayToppleDeposit += dClayDetached;
-   m_dThisIterSiltToppleDeposit += dSiltDetached;
-   m_dThisIterSandToppleDeposit += dSandDetached;
+   Cell[nX][nY].pGetSoil()->DoToppleDepositOrToSedLoad(dClayDetached, dSiltDetached, dSandDetached);
 
 //#if defined _DEBUG
 //   m_ofsLog << m_ulIter << " [" << nX << "][" << nY << "] topple deposit="  << dDiff << ", [" << nXTmp << "][" << nYTmp << "] detach=" << -dDiff << endl;
 //#endif
-}
-
-
-/*=========================================================================================================================================
-
- Adds to the this-operation slump detachment value for clay-sized sediment
-
-=========================================================================================================================================*/
-void CSimulation::AddClaySlumpDetach(double const dDetach)
-{
-   m_dThisIterClaySlumpDetach += dDetach;
-}
-
-/*=========================================================================================================================================
-
-Adds to the this-operation slump detachment value for silt-sized sediment
-
-=========================================================================================================================================*/
-void CSimulation::AddSiltSlumpDetach(double const dDetach)
-{
-   m_dThisIterSiltSlumpDetach += dDetach;
-}
-
-/*=========================================================================================================================================
-
-Adds to the this-operation slump detachment value for sand-sized sediment
-
-=========================================================================================================================================*/
-void CSimulation::AddSandSlumpDetach(double const dDetach)
-{
-   m_dThisIterSandSlumpDetach += dDetach;
-}
-
-/*=========================================================================================================================================
-
-Adds to the this-operation toppling detachment value for clay-sized sediment
-
-=========================================================================================================================================*/
-void CSimulation::AddClayToppleDetach(double const dDetach)
-{
-   m_dThisIterClayToppleDetach += dDetach;
-}
-
-/*=========================================================================================================================================
-
-Adds to the this-operation toppling detachment value for silt-sized sediment
-
-=========================================================================================================================================*/
-void CSimulation::AddSiltToppleDetach(double const dDetach)
-{
-   m_dThisIterSiltToppleDetach += dDetach;
-}
-
-/*=========================================================================================================================================
-
-Adds to the this-operation toppling detachment value for sand-sized sediment
-
-=========================================================================================================================================*/
-void CSimulation::AddSandToppleDetach(double const dDetach)
-{
-   m_dThisIterSandToppleDetach += dDetach;
 }
 
 
@@ -806,7 +735,7 @@ void CSimulation::DoAllHeadcutRetreat(void)
 
 /*=========================================================================================================================================
 
- Moves soil from one cell to an adjacent cell for headcut retreat
+ Moves soil from one cell to an adjacent cell for headcut retreat. If the target cell is wet, the sediment is added to the cell's sediment load
 
 =========================================================================================================================================*/
 void CSimulation::DoHeadcutRetreatMoveSoil(int const nDir, int const nFromX, int const nFromY, int const nToX, int const nToY, double const dDiff)
@@ -822,44 +751,11 @@ void CSimulation::DoHeadcutRetreatMoveSoil(int const nDir, int const nFromX, int
    Cell[nFromX][nFromY].pGetSoil()->DoHeadcutRetreatDetach(dHalfDiff, dClayDetached, dSiltDetached, dSandDetached);
 
    // Now add the detached soil to the 'To' cell (as part of the top soil layer, not as sediment load)
-   Cell[nToX][nToY].pGetSoil()->DoHeadcutRetreatDeposit(dClayDetached, dSiltDetached, dSandDetached);
+   Cell[nToX][nToY].pGetSoil()->DoHeadcutRetreatDepositOrToSedLoad(dClayDetached, dSiltDetached, dSandDetached);
 
    Cell[nFromX][nFromY].SetStoredRetreat(nDir, 0);
    Cell[nToX][nToY].SetStoredRetreat(nDir, 0);
 
    //    m_ofsLog << m_ulIter << " headcut retreat, from [" << nFromX << "][" << nFromY << "] to [" << nToX << "][" << nToY << "] depth=" << dHalfDiff << " (clay=" << dClayDetached << ", silt=" << dSiltDetached << ", sand=" << dSandDetached << ")" << endl;
-}
-
-
-/*=========================================================================================================================================
-
- Adds to the this-operation headcut retreat detachment value for clay-sized sediment
-
-=========================================================================================================================================*/
-void CSimulation::AddClayHeadcutRetreatDetach(double const dDetach)
-{
-   m_dThisIterClayHeadcutRetreatDetach += dDetach;
-}
-
-
-/*=========================================================================================================================================
-
- Adds to the this-operation headcut retreat detachment value for silt-sized sediment
-
-=========================================================================================================================================*/
-void CSimulation::AddSiltHeadcutRetreatDetach(double const dDetach)
-{
-   m_dThisIterSiltHeadcutRetreatDetach += dDetach;
-}
-
-
-/*=========================================================================================================================================
-
- Adds to the this-operation headcut retreat detachment value for sand-sized sediment
-
-=========================================================================================================================================*/
-void CSimulation::AddSandHeadcutRetreatDetach(double const dDetach)
-{
-   m_dThisIterSandHeadcutRetreatDetach += dDetach;
 }
 
