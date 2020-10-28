@@ -1038,8 +1038,8 @@ void CSimulation::WriteGrandTotals(void)
    // Run-on?
    if (m_bRunOn)
    {
-      m_ofsOut << "Mean run-on rainfall intensity = " << 3600 * m_ldGTotRunOnWater  / (m_dSimulatedRainDuration * m_dRunOnLen * m_nXGridMax * m_dCellSide) << " mm/hr, should be " << m_dSpecifiedRainIntensity * m_dRunOnRainVarM << " mm/hr" << endl;
-      m_ofsOut << "Mean run-on raindrop volume    = " << m_ldGTotRunOnWater / m_ldGTotRunOnDrops << " mm**3, should be " << m_dMeanCellWaterVol * m_dRunOnRainVarM << " mm**3" << endl;
+      m_ofsOut << "Mean run-on rainfall intensity = " << 3600 * m_ldGTotRunOn  / (m_dSimulatedRainDuration * m_dRunOnLen * m_nXGridMax * m_dCellSide) << " mm/hr, should be " << m_dSpecifiedRainIntensity * m_dRunOnRainVarM << " mm/hr" << endl;
+      m_ofsOut << "Mean run-on raindrop volume    = " << m_ldGTotRunOn / m_ldGTotRunOnDrops << " mm**3, should be " << m_dMeanCellWaterVol * m_dRunOnRainVarM << " mm**3" << endl;
       if (! m_strRainVarMFile.empty())
          m_ofsOut << "Note: a rainfall variation correction of " << m_dRunOnRainVarM << "x was applied, from " << m_strRainVarMFile << endl;
       m_ofsOut << endl;
@@ -1053,10 +1053,9 @@ void CSimulation::WriteGrandTotals(void)
 
    // Write out infilt grand totals
    m_ofsOut << ENDINFILTHEAD << endl;
-   m_ofsOut << "Mean infilt during period of rainfall (" << m_dSimulatedRainDuration / 60 << " mins) = " << 3600 * m_ldGTotInfilt / (m_dSimulatedRainDuration * fTotArea) << " mm/hr" << endl;
-   m_ofsOut << "Mean infilt during whole simulation (" << m_dSimulationDuration / 60 << " mins) = " << 3600 * m_ldGTotInfilt / (m_dSimulationDuration * fTotArea) << " mm/hr" << endl;
+   m_ofsOut << "Mean infiltration during period of rainfall (" << m_dSimulatedRainDuration / 60 << " mins) = " << 3600 * m_ldGTotInfilt / (m_dSimulatedRainDuration * fTotArea) << " mm/hr" << endl;
+   m_ofsOut << "Mean infiltration during whole simulation (" << m_dSimulationDuration / 60 << " mins) = " << 3600 * m_ldGTotInfilt / (m_dSimulationDuration * fTotArea) << " mm/hr" << endl;
    m_ofsOut << endl << endl;
-
 
    // Next, write out hydrology grand totals
    m_ofsOut << ENDHYDHEAD << endl;
@@ -1070,18 +1069,21 @@ void CSimulation::WriteGrandTotals(void)
       m_ofsOut << endl << "Note: this is the rate during the period of rainfall (" << m_dSimulatedRainDuration / 60 << " mins)" << endl;
    m_ofsOut << endl;
 
-   double dTmpTot = 0, dTmp;
+   double
+      dTmpTot = 0,
+      dTmp,
+      dWaterIn = m_ldGTotRain + m_ldGTotRunOn;
    m_ofsOut << "Water Balance (% of total rainfall" << (m_bRunOn ? " + run-on" : "") << ")" << endl;
 
-   dTmp = 100 * (m_ldGTotInfilt - m_ldGTotExfilt) / (m_ldGTotRain + m_ldGTotRunOnWater);
+   dTmp = (dWaterIn > 0 ? 100 * (m_ldGTotInfilt - m_ldGTotExfilt) / dWaterIn : 0);
    dTmpTot += dTmp;
-   m_ofsOut << "Infiltration - exfilt " << setw(10) << dTmp << endl;
+   m_ofsOut << "Infiltration - exfiltration " << setw(10) << dTmp << endl;
 
-   dTmp = 100 * m_dThisIterStoredSurfaceWater * m_dCellSquare / (m_ldGTotRain + m_ldGTotRunOnWater);
+   dTmp = (dWaterIn > 0 ? 100 * m_dThisIterStoredSurfaceWater * m_dCellSquare / dWaterIn : 0);
    dTmpTot += dTmp;
    m_ofsOut << "Storage at end              " << setw(10) << dTmp << endl;
 
-   dTmp = 100 * m_ldGTotWaterLost / (m_ldGTotRain + m_ldGTotRunOnWater);
+   dTmp = (dWaterIn > 0 ? 100 * m_ldGTotWaterLost / dWaterIn : 0);
    dTmpTot += dTmp;
    m_ofsOut << "Off edge                    " << setw(10) << dTmp << endl;
 
@@ -1108,22 +1110,22 @@ void CSimulation::WriteGrandTotals(void)
    long double ldGTotNetDeposited = m_ldGTotFlowDeposit + m_ldGTotSplashDeposit + m_ldGTotSlumpDeposit + m_ldGTotToppleDeposit + m_ldGTotInfiltDeposit + m_ldGTotHeadcutRetreatDeposit;
    dTmpTot = 0;
 
-   dTmp = 100 * ldGTotNetDeposited / ldGTotEroded;
+   dTmp = (ldGTotEroded > 0 ? 100 * ldGTotNetDeposited / ldGTotEroded : 0);
    dTmpTot += dTmp;
    m_ofsOut << "Deposition                  " << setw(10) << dTmp << endl;
 
-   dTmp = 100 * ((m_dThisIterClaySedLoad + m_dThisIterSiltSedLoad + m_dThisIterSandSedLoad) * m_dCellSquare) / ldGTotEroded;
+   dTmp = (ldGTotEroded > 0 ? 100 * ((m_dThisIterClaySedLoad + m_dThisIterSiltSedLoad + m_dThisIterSandSedLoad) * m_dCellSquare) / ldGTotEroded : 0);
    dTmpTot += dTmp;
    m_ofsOut << "Storage at end              " << setw(10) << dTmp << endl;
 
-   dTmp = 100 * m_ldGTotSedLost / ldGTotEroded;
+   dTmp = (ldGTotEroded > 0 ? 100 * m_ldGTotSedLost / ldGTotEroded : 0);
    dTmpTot += dTmp;
    m_ofsOut << "Off edge                    " << setw(10) << dTmp << endl;
 
    m_ofsOut << "TOTAL                       " << setw(10) << dTmpTot << endl;
 
    m_ofsOut << endl;
-   m_ofsOut << "Sediment delivery ratio     " << setw(10) << m_ldGTotSedLost / ldGTotEroded << endl;
+   m_ofsOut << "Sediment delivery ratio     " << setw(10) << (ldGTotEroded > 0 ? m_ldGTotSedLost / ldGTotEroded : 0) << endl;
    m_ofsOut << endl << endl;
 
    // Show grand totals for detachment and deposition
@@ -1208,11 +1210,11 @@ void CSimulation::WriteGrandTotals(void)
    m_ofsOut << endl;
 
    // Infiltration deposition
-   m_ofsOut << "Elevation increase (including subsequently re-eroded sediment) due to infilt deposition" << endl;
+   m_ofsOut << "Elevation increase (including subsequently re-eroded sediment) due to infiltration deposition" << endl;
    m_ofsOut << "Average = " << m_ldGTotInfiltDeposit / fTotArea << " mm" << endl;
    m_ofsOut << "        = " << 10 * m_ldGTotInfiltDeposit / fTotArea << " m**3/ha" << endl;       // convert mm3/mm2 to m3/ha
    m_ofsOut << "        = " << 10 * m_ldGTotInfiltDeposit * m_dBulkDensityForOutputCalcs / fTotArea << " t/ha" << endl;
-   m_ofsOut << endl << endl;
+   m_ofsOut << endl;
 
    // Headcut retreat detachment
    m_ofsOut << "Elevation decrease due to headcut retreat" << endl;
@@ -1233,26 +1235,26 @@ void CSimulation::WriteGrandTotals(void)
    m_ofsOut << "Average = " << m_ldGTotHeadcutRetreatToSedLoad / fTotArea << " mm" << endl;
    m_ofsOut << "        = " << 10 * m_ldGTotHeadcutRetreatToSedLoad / fTotArea << " m**3/ha" << endl;      // convert mm3/mm2 to m3/ha
    m_ofsOut << "        = " << 10 * m_ldGTotHeadcutRetreatToSedLoad * m_dBulkDensityForOutputCalcs / fTotArea << " t/ha" << endl;
-   m_ofsOut << endl;
+   m_ofsOut << endl << endl;
 
    // Show relative contributions of each detachment process to total sediment lost
    m_ofsOut << RELCONTRIBLOSTHEAD << endl;
 
-   m_ofsOut << "Detachment due to flow (%)                   " << setw(10) << 100 * m_ldGTotFlowDetach / m_ldGTotSedLost << endl;
-   m_ofsOut << "Elevation decrease due to splash (%)         " << setw(10) << 100 * m_ldGTotSplashDetach / m_ldGTotSedLost << endl;
-   m_ofsOut << "Elevation decrease due to slumping (%)       " << setw(10) << 100 * m_ldGTotSlumpDetach / m_ldGTotSedLost << endl;
-   m_ofsOut << "Elevation decrease due to toppling (%)       " << setw(10) << 100 * m_ldGTotToppleDetach / m_ldGTotSedLost << endl;
-   m_ofsOut << "Elevation decrease due to headcut retreat (%)" << setw(10) << 100 * m_ldGTotHeadcutRetreatDetach / m_ldGTotSedLost << endl;
+   m_ofsOut << "Detachment due to flow (%)                   " << setw(10) << (m_ldGTotSedLost > 0 ? 100 * m_ldGTotFlowDetach / m_ldGTotSedLost : 0) << endl;
+   m_ofsOut << "Elevation decrease due to splash (%)         " << setw(10) << (m_ldGTotSedLost > 0 ? 100 * m_ldGTotSplashDetach / m_ldGTotSedLost : 0)  << endl;
+   m_ofsOut << "Elevation decrease due to slumping (%)       " << setw(10) << (m_ldGTotSedLost > 0 ? 100 * m_ldGTotSlumpDetach / m_ldGTotSedLost : 0) << endl;
+   m_ofsOut << "Elevation decrease due to toppling (%)       " << setw(10) << (m_ldGTotSedLost > 0 ? 100 * m_ldGTotToppleDetach / m_ldGTotSedLost : 0) << endl;
+   m_ofsOut << "Elevation decrease due to headcut retreat (%)" << setw(10) << (m_ldGTotSedLost > 0 ? 100 * m_ldGTotHeadcutRetreatDetach / m_ldGTotSedLost : 0) << endl;
    m_ofsOut << endl << "Note: potential double-counting here, due to subsequent deposition and re-detachment." << endl;
    m_ofsOut << endl << endl;
 
    // Show relative contributions of each detachment process to total soil detached
    m_ofsOut << RELCONTRIBDETACHHEAD << endl;
 
-   m_ofsOut << "Detachment due to flow (%)            " << setw(10) << 100 * m_ldGTotFlowDetach / ldGTotEroded << endl;
-   m_ofsOut << "Elevation decrease due to splash (%)  " << setw(10) << 100 * m_ldGTotSplashDetach / ldGTotEroded << endl;
-   m_ofsOut << "Elevation decrease due to slumping (%)" << setw(10) << 100 * m_ldGTotSlumpDetach / ldGTotEroded << endl;
-   m_ofsOut << "Elevation decrease due to toppling (%)" << setw(10) << 100 * m_ldGTotToppleDeposit / ldGTotEroded << endl;
+   m_ofsOut << "Detachment due to flow (%)            " << setw(10) << (ldGTotEroded > 0 ? 100 * m_ldGTotFlowDetach / ldGTotEroded : 0) << endl;
+   m_ofsOut << "Elevation decrease due to splash (%)  " << setw(10) << (ldGTotEroded > 0 ? 100 * m_ldGTotSplashDetach / ldGTotEroded : 0) << endl;
+   m_ofsOut << "Elevation decrease due to slumping (%)" << setw(10) << (ldGTotEroded > 0 ? 100 * m_ldGTotSlumpDetach / ldGTotEroded : 0) << endl;
+   m_ofsOut << "Elevation decrease due to toppling (%)" << setw(10) << (ldGTotEroded > 0 ? 100 * m_ldGTotToppleDeposit / ldGTotEroded : 0) << endl;
    m_ofsOut << endl << endl;
 
 }
@@ -1282,7 +1284,7 @@ bool CSimulation::bSetUpTSFiles(void)
    }
 
    // Write header line
-   m_ofsErrorTS << "'Iteration'" << "\t,\t" << "'Elapsed'" << "\t,\t" << "'Timestep (sec)'" << "\t,\t" << "Water error" << "\t,\t" << "Splash error" << "\t,\t" << "Slump error" << "\t,\t" << "Topple error" << "\t,\t" << "Headcut error" << "\t,\t" << "Flow error" << endl;
+   m_ofsErrorTS << "'Iteration'" << ",\t" << "'Elapsed'" << ",\t" << "'Timestep (sec)'" << ",\t" << "Water error" << ",\t" << "Splash error" << ",\t" << "Slump error" << ",\t" << "Topple error" << ",\t" << "Headcut error" << ",\t" << "Flow error" << endl;
 
    if (m_bTimeStepTS)
    {
@@ -1301,7 +1303,7 @@ bool CSimulation::bSetUpTSFiles(void)
       }
 
       // Write header line
-      m_ofsTimestepTS << "'Iteration'" << "\t,\t" << "'Elapsed'" << "\t,\t" << "'Timestep (sec)'" << "\t,\t" << "Poss. max flow speed (mm/sec)" << endl;
+      m_ofsTimestepTS << "'Iteration'" << ",\t" << "'Elapsed'" << ",\t" << "'Timestep (sec)'" << ",\t" << "Poss. max flow speed (mm/sec)" << endl;
    }
 
    if (m_bAreaWetTS)
@@ -1321,7 +1323,7 @@ bool CSimulation::bSetUpTSFiles(void)
       }
 
       // Write header line
-      m_ofsAreaWetTS << "'Elapsed'" << "\t,\t" << "'Percent wet cells'" << endl;
+      m_ofsAreaWetTS << "'Elapsed'" << ",\t" << "'Percent wet cells'" << endl;
    }
 
    if (m_bRainTS)
@@ -1341,7 +1343,7 @@ bool CSimulation::bSetUpTSFiles(void)
       }
 
       // Write header line
-      m_ofsRainTS << "'Elapsed'" << "\t,\t" << "'Rain depth (mm/sec)'" << endl;
+      m_ofsRainTS << "'Elapsed'" << ",\t" << "'Rain depth (mm/sec)'" << endl;
    }
 
    if (m_bRunOnTS)
@@ -1361,7 +1363,7 @@ bool CSimulation::bSetUpTSFiles(void)
       }
 
       // Write header line
-      m_ofsRunOnTS << "'Elapsed'" << "\t,\t" << "'Runon (l/sec)'" << endl;
+      m_ofsRunOnTS << "'Elapsed'" << ",\t" << "'Runon (l/sec)'" << endl;
    }
 
    if (m_bSurfaceWaterTS)
@@ -1381,7 +1383,7 @@ bool CSimulation::bSetUpTSFiles(void)
       }
 
       // Write header line
-      m_ofsSurfaceWaterTS << "'Elapsed'" << "\t,\t" << "'Surface water (l/sec)'" << endl;
+      m_ofsSurfaceWaterTS << "'Elapsed'" << ",\t" << "'Surface water (l/sec)'" << endl;
    }
 
    if (m_bSurfaceWaterLostTS)
@@ -1401,7 +1403,7 @@ bool CSimulation::bSetUpTSFiles(void)
       }
 
       // Write header line
-      m_ofsSurfaceWaterLostTS << "'Elapsed'" << "\t,\t" << "'Since last'" << "\t,\t" << "'Discharge (l/sec)'" << endl;
+      m_ofsSurfaceWaterLostTS << "'Elapsed'" << ",\t" << "'Discharge (l/sec)'" << endl;
    }
 
    if (m_bFlowDetachTS)
@@ -1421,7 +1423,7 @@ bool CSimulation::bSetUpTSFiles(void)
       }
 
       // Write header line
-      m_ofsFlowDetachTS << "'Elapsed'" << "\t,\t" << "'Clay flow detachment (g/sec)'" << "\t,\t" << "'Silt flow detachment (g/sec)'" << "\t,\t" << "'Sand flow detachment (g/sec)'" << endl;
+      m_ofsFlowDetachTS << "'Elapsed'" << ",\t" << "'Clay flow detachment (g/sec)'" << ",\t" << "'Silt flow detachment (g/sec)'" << ",\t" << "'Sand flow detachment (g/sec)'" << endl;
    }
 
    if (m_bDoSedLoadDepositTS)
@@ -1441,7 +1443,7 @@ bool CSimulation::bSetUpTSFiles(void)
       }
 
       // Write header line
-      m_ofsFlowDepositSS << "'Elapsed'" << "\t,\t" << "'Clay flow deposition (g/sec)'" << "\t,\t" << "'Silt flow deposition (g/sec)'" << "\t,\t" << "'Sand flow deposition (g/sec)'" << endl;
+      m_ofsFlowDepositSS << "'Elapsed'" << ",\t" << "'Clay flow deposition (g/sec)'" << ",\t" << "'Silt flow deposition (g/sec)'" << ",\t" << "'Sand flow deposition (g/sec)'" << endl;
    }
 
    if (m_bSedLoadLostTS)
@@ -1461,7 +1463,7 @@ bool CSimulation::bSetUpTSFiles(void)
       }
 
       // Write header line
-      m_ofsSedLostTS << "'Elapsed'" << "\t,\t" << "'Clay sediment lost (g/sec)'" << "\t,\t" << "'Silt sediment lost (g/sec)'" << "\t,\t" << "'Sand sediment lost (g/sec)'" << endl;
+      m_ofsSedLostTS << "'Elapsed'" << ",\t" << "'Clay sediment lost (g/sec)'" << ",\t" << "'Silt sediment lost (g/sec)'" << ",\t" << "'Sand sediment lost (g/sec)'" << endl;
    }
 
    if (m_bSedLoadTS)
@@ -1481,7 +1483,7 @@ bool CSimulation::bSetUpTSFiles(void)
       }
 
       // Write header line
-      m_ofsSedLoadTS << "'Elapsed'" << "\t,\t" << "'Since last'" << "\t,\t" << "'Clay sediment load (g/sec)'" << "\t,\t" << "'Silt sediment load (g/sec)'" << "\t,\t" << "'Sand sediment load (g/sec)'" << endl;
+      m_ofsSedLoadTS << "'Elapsed'" << ",\t" << "'Clay sediment load (g/sec)'" << ",\t" << "'Silt sediment load (g/sec)'" << ",\t" << "'Sand sediment load (g/sec)'" << endl;
    }
 
    if (m_bInfiltTS)
@@ -1501,7 +1503,7 @@ bool CSimulation::bSetUpTSFiles(void)
       }
 
       // Write header line
-      m_ofsInfiltTS << "'Elapsed'" << "\t,\t" << "'Infiltration (l/sec)'" << endl;
+      m_ofsInfiltTS << "'Elapsed'" << ",\t" << "'Infiltration (l/sec)'" << endl;
    }
 
    if (m_bExfiltTS)
@@ -1521,7 +1523,7 @@ bool CSimulation::bSetUpTSFiles(void)
       }
 
       // Write header line
-      m_ofsExfiltTS << "'Elapsed'" << "\t,\t" << "'Exfiltration (l/sec)'" << endl;
+      m_ofsExfiltTS << "'Elapsed'" << ",\t" << "'Exfiltration (l/sec)'" << endl;
    }
 
    if (m_bInfiltDepositTS)
@@ -1541,7 +1543,7 @@ bool CSimulation::bSetUpTSFiles(void)
       }
 
       // Write header line
-      m_ofsInfiltDepositTS << "'Elapsed'" << "\t,\t" << "'Since last'" << "\t,\t" << "'Clay deposition from infilt (g/sec)'" << "\t,\t" << "'Silt deposition from infilt (g/sec)'" << "\t,\t" << "'Sand deposition from infilt (g/sec)'" << endl;
+      m_ofsInfiltDepositTS << "'Elapsed'" << ",\t" << "'Clay deposition from infilt (g/sec)'" << ",\t" << "'Silt deposition from infilt (g/sec)'" << ",\t" << "'Sand deposition from infilt (g/sec)'" << endl;
    }
 
    if (m_bSplashRedistTS)
@@ -1561,7 +1563,7 @@ bool CSimulation::bSetUpTSFiles(void)
       }
 
       // Write header line
-      m_ofsSplashDetachTS << "'Elapsed'" << "\t,\t" << "'Clay splash detachment (g/sec)'" << "\t,\t" << "'Silt splash detachment (g/sec)'" << "\t,\t" << "'Sand splash detachment (g/sec)'" << endl;
+      m_ofsSplashDetachTS << "'Elapsed'" << ",\t" << "'Clay splash detachment (g/sec)'" << ",\t" << "'Silt splash detachment (g/sec)'" << ",\t" << "'Sand splash detachment (g/sec)'" << endl;
    }
 
    if (m_bSplashKETS)
@@ -1581,7 +1583,7 @@ bool CSimulation::bSetUpTSFiles(void)
       }
 
       // Write header line
-      m_ofsSplashKETS << "'Elapsed'" << "\t,\t" << "'Splash KE (J/sec)'" << endl;
+      m_ofsSplashKETS << "'Elapsed'" << ",\t" << "'Splash KE (J/sec)'" << endl;
    }
 
 
@@ -1602,7 +1604,7 @@ bool CSimulation::bSetUpTSFiles(void)
       }
 
       // Write header line
-      m_ofsSlumpDetachTS << "'Elapsed'" << "\t,\t" << "'Since last'" << "\t,\t" << "'Clay slump detachment (g/sec)'" << "\t,\t" << "'Silt slump detachment (g/sec)'" << "\t,\t" << "'Sand slump detachment (g/sec)'" << endl;
+      m_ofsSlumpDetachTS << "'Elapsed'" << ",\t" << "'Clay slump detachment (g/sec)'" << ",\t" << "'Silt slump detachment (g/sec)'" << ",\t" << "'Sand slump detachment (g/sec)'" << endl;
    }
 
    if (m_bToppleDetachTS)
@@ -1622,7 +1624,7 @@ bool CSimulation::bSetUpTSFiles(void)
       }
 
       // Write header line
-      m_ofsToppleDetachTS << "'Elapsed'" << "\t,\t" << "'Clay toppling detachment (g/sec)'" << "\t,\t" << "'Silt toppling detachment (g/sec)'" << "\t,\t" << "'Sand toppling detachment (g/sec)'" << endl;
+      m_ofsToppleDetachTS << "'Elapsed'" << ",\t" << "'Clay toppling detachment (g/sec)'" << ",\t" << "'Silt toppling detachment (g/sec)'" << ",\t" << "'Sand toppling detachment (g/sec)'" << endl;
    }
 
    if (m_bSoilWaterTS)
@@ -1644,7 +1646,7 @@ bool CSimulation::bSetUpTSFiles(void)
       // Write header line
       m_ofsSoilWaterTS << "'Elapsed'";
       for (int nLayer = 0; nLayer < m_nNumSoilLayers; nLayer++)
-         m_ofsSoilWaterTS << "\t,\t" << "'Soil water for layer " << nLayer+1 << " (l)'";
+         m_ofsSoilWaterTS << ",\t" << "'Soil water for layer " << nLayer+1 << " (l)'";
       m_ofsSoilWaterTS << endl;
    }
 
@@ -1756,7 +1758,7 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    static double sdLastSimulatedTimeElapsed = 0;
 
    // First do imprecision errors (always written): output the iteration and the timestep (in sec)
-   m_ofsErrorTS << m_ulIter << "\t,\t" << m_dSimulatedTimeElapsed << "\t,\t" << m_dTimeStep << "\t,\t" << m_dWaterErrorLast << "\t,\t" << m_dSplashErrorLast << "\t,\t" << m_dSlumpErrorLast << "\t,\t" << m_dToppleErrorLast << "\t,\t" << m_dHeadcutErrorLast << "\t,\t" << m_dFlowErrorLast << endl;
+   m_ofsErrorTS << m_ulIter << ",\t" << m_dSimulatedTimeElapsed << ",\t" << m_dTimeStep << ",\t" << m_dWaterErrorLast << ",\t" << m_dSplashErrorLast << ",\t" << m_dSlumpErrorLast << ",\t" << m_dToppleErrorLast << ",\t" << m_dHeadcutErrorLast << ",\t" << m_dFlowErrorLast << endl;
 
    // Did an imprecision errors time series file write error occur?
    if (m_ofsErrorTS.fail())
@@ -1765,7 +1767,7 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bTimeStepTS)
    {
       // Output the iteration and the timestep (in sec)
-      m_ofsTimestepTS << m_ulIter << "\t,\t" << m_dSimulatedTimeElapsed << "\t,\t" << m_dTimeStep << "\t,\t" << m_dPossMaxSpeedNextIter << endl;
+      m_ofsTimestepTS << m_ulIter << ",\t" << m_dSimulatedTimeElapsed << ",\t" << m_dTimeStep << ",\t" << m_dPossMaxSpeedNextIter << endl;
 
       // Did a timestep time series file write error occur?
       if (m_ofsTimestepTS.fail())
@@ -1775,7 +1777,7 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bAreaWetTS)
    {
       // Output as a percentage of the total area
-      m_ofsAreaWetTS << m_dSimulatedTimeElapsed << "\t,\t" << 100.0 * static_cast<double>(m_ulNWet) / static_cast<double>(m_ulNActiveCells) << endl;
+      m_ofsAreaWetTS << m_dSimulatedTimeElapsed << ",\t" << 100.0 * static_cast<double>(m_ulNWet) / static_cast<double>(m_ulNActiveCells) << endl;
 
       // Did a rainfall time series file write error occur?
       if (m_ofsAreaWetTS.fail())
@@ -1785,7 +1787,7 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bRainTS)
    {
       // Output as a depth in mm
-      m_ofsRainTS << m_dSimulatedTimeElapsed << "\t,\t" << m_dThisIterRain * m_dCellSquare << endl;
+      m_ofsRainTS << m_dSimulatedTimeElapsed << ",\t" << m_dThisIterRain * m_dCellSquare << endl;
 
       // Did a rainfall time series file write error occur?
       if (m_ofsRainTS.fail())
@@ -1795,7 +1797,7 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bRunOnTS)
    {
       // Convert run-on water in mm3 to litres/sec
-      m_ofsRunOnTS << m_dSimulatedTimeElapsed << "\t,\t" << m_dThisIterRunOn * m_dCellSquare * 1e-6 / m_dTimeStep << endl;
+      m_ofsRunOnTS << m_dSimulatedTimeElapsed << ",\t" << m_dThisIterRunOn * m_dCellSquare * 1e-6 / m_dTimeStep << endl;
 
       // Did a run-on time series file write error occur?
       if (m_ofsRunOnTS.fail())
@@ -1805,7 +1807,7 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bSurfaceWaterTS)
    {
       // Convert surface water in mm3 to litres/sec
-      m_ofsSurfaceWaterTS << m_dSimulatedTimeElapsed << "\t,\t" << m_dThisIterStoredSurfaceWater * m_dCellSquare * 1e-6 / m_dTimeStep << endl;
+      m_ofsSurfaceWaterTS << m_dSimulatedTimeElapsed << ",\t" << m_dThisIterStoredSurfaceWater * m_dCellSquare * 1e-6 / m_dTimeStep << endl;
 
       // Did a surface water time series file write error occur?
       if (m_ofsSurfaceWaterTS.fail())
@@ -1815,7 +1817,7 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bSurfaceWaterLostTS)
    {
       // Convert water lost (i.e. discharge) in mm3 to litres/sec
-      m_ofsSurfaceWaterLostTS << m_dSimulatedTimeElapsed << "\t,\t" << m_dThisIterLostSurfaceWater * m_dCellSquare * 1e-6 / m_dTimeStep << endl;
+      m_ofsSurfaceWaterLostTS << m_dSimulatedTimeElapsed << ",\t" << m_dThisIterLostSurfaceWater * m_dCellSquare * 1e-6 / m_dTimeStep << endl;
 
       // Did a surface water lost time series file write error occur?
       if (m_ofsSurfaceWaterLostTS.fail())
@@ -1825,7 +1827,7 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bFlowDetachTS)
    {
       // Output flow detachment for each size class, convert from mm3 to g (bulk density is in kg/m3, so multiply by 1e6 to get it into g/mm3) then into g/sec
-      m_ofsFlowDetachTS << m_dSimulatedTimeElapsed << "\t,\t" << m_dThisIterClayFlowDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << "\t,\t" << m_dThisIterSiltFlowDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << "\t,\t" << m_dThisIterSandFlowDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << endl;
+      m_ofsFlowDetachTS << m_dSimulatedTimeElapsed << ",\t" << m_dThisIterClayFlowDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dThisIterSiltFlowDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dThisIterSandFlowDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << endl;
 
       // Did a flow detachment time series file write error occur?
       if (m_ofsFlowDetachTS.fail())
@@ -1835,7 +1837,7 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bDoSedLoadDepositTS)
    {
       // Output flow deposition for each size class, convert from mm3 to g (bulk density is in kg/m3, so multiply by 1e6 to get it into g/mm3) then into g/sec
-      m_ofsFlowDepositSS << m_dSimulatedTimeElapsed << "\t,\t" << m_dThisIterClayFlowDeposit * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << "\t,\t" << m_dThisIterSiltFlowDeposit * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << "\t,\t" << m_dThisIterSandFlowDeposit * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << endl;
+      m_ofsFlowDepositSS << m_dSimulatedTimeElapsed << ",\t" << m_dThisIterClayFlowDeposit * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dThisIterSiltFlowDeposit * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dThisIterSandFlowDeposit * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << endl;
 
       // Did a flow deposition time series file write error occur?
       if (m_ofsFlowDepositSS.fail())
@@ -1845,7 +1847,7 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bSedLoadLostTS)
    {
       // Output sediment lost for each size class, convert from mm3 to g (bulk density is in kg/m3, so multiply by 1e6 to get it into g/mm3) then into g/sec
-      m_ofsSedLostTS << m_dSimulatedTimeElapsed << "\t,\t" << m_dSimulatedTimeElapsed - sdLastSimulatedTimeElapsed << "\t,\t" << m_dThisIterClaySedLost * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << "\t,\t" << m_dThisIterSiltSedLost * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << "\t,\t" << m_dThisIterSandSedLost * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << endl;
+      m_ofsSedLostTS << m_dSimulatedTimeElapsed << ",\t" << m_dSimulatedTimeElapsed - sdLastSimulatedTimeElapsed << ",\t" << m_dThisIterClaySedLost * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dThisIterSiltSedLost * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dThisIterSandSedLost * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << endl;
 
       // Did a sediment lost time series file write error occur?
       if (m_ofsSedLostTS.fail())
@@ -1855,7 +1857,7 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bSedLoadTS)
    {
       // Output sediment load for each size class, convert from mm3 to g (bulk density is in kg/m3, so multiply by 1e6 to get it into g/mm3) then into g/sec
-      m_ofsSedLoadTS << m_dSimulatedTimeElapsed << "\t,\t" << m_dThisIterClaySedLoad * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << "\t,\t" << m_dThisIterSiltSedLoad * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << "\t,\t" << m_dThisIterSandSedLoad * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << endl;
+      m_ofsSedLoadTS << m_dSimulatedTimeElapsed << ",\t" << m_dThisIterClaySedLoad * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dThisIterSiltSedLoad * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dThisIterSandSedLoad * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << endl;
 
       // Did a sediment load time series file write error occur?
       if (m_ofsSedLoadTS.fail())
@@ -1868,7 +1870,7 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bInfiltTS && (m_bInfiltThisIter || bIsLastIter))
    {
       // Convert surface water lost to soil water by infilt in mm3 to litres/sec
-      m_ofsInfiltTS << m_dSimulatedTimeElapsed << "\t,\t" << m_dSinceLastTSInfiltration * m_dCellSquare * 1e-6 / m_dTimeStep << endl;
+      m_ofsInfiltTS << m_dSimulatedTimeElapsed << ",\t" << m_dSinceLastTSInfiltration * m_dCellSquare * 1e-6 / m_dTimeStep << endl;
 
       m_dSinceLastTSInfiltration = 0;
 
@@ -1880,7 +1882,7 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bExfiltTS && (m_bInfiltThisIter || bIsLastIter))
    {
       // Convert soil water returned to surface water by exfilt in mm3 to litres/sec
-      m_ofsExfiltTS << m_dSimulatedTimeElapsed << "\t,\t" << m_dSimulatedTimeElapsed - sdLastInfiltSimulatedTimeElapsed << "\t,\t" << m_dSinceLastTSExfiltration * m_dCellSquare * 1e-6 / m_dTimeStep << endl;
+      m_ofsExfiltTS << m_dSimulatedTimeElapsed << ",\t" << m_dSimulatedTimeElapsed - sdLastInfiltSimulatedTimeElapsed << ",\t" << m_dSinceLastTSExfiltration * m_dCellSquare * 1e-6 / m_dTimeStep << endl;
 
       m_dSinceLastTSInfiltration = 0;
 
@@ -1892,7 +1894,7 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bInfiltDepositTS && (m_bInfiltThisIter || bIsLastIter))
    {
       // Output infilt deposition for each size class, convert from mm3 to g (bulk density is in kg/m3, so multiply by 1e6 to get it into g/mm3) then into g/sec
-      m_ofsInfiltDepositTS << m_dSimulatedTimeElapsed << "\t,\t" << m_dSinceLastTSClayInfiltDeposit * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << "\t,\t" << m_dSinceLastTSSiltInfiltDeposit * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << "\t,\t" << m_dSinceLastTSSandInfiltDeposit * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << endl;
+      m_ofsInfiltDepositTS << m_dSimulatedTimeElapsed << ",\t" << m_dSinceLastTSClayInfiltDeposit * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dSinceLastTSSiltInfiltDeposit * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dSinceLastTSSandInfiltDeposit * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << endl;
 
       m_dSinceLastTSClayInfiltDeposit =
       m_dSinceLastTSSiltInfiltDeposit =
@@ -1908,7 +1910,7 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bSplashRedistTS && (m_bSplashThisIter || bIsLastIter))
    {
       // Output splash redistribution for each size class, convert from mm3 to g (bulk density is in kg/m3, so multiply by 1e6 to get it into g/mm3) then into g/sec
-      m_ofsSplashDetachTS << m_dSimulatedTimeElapsed << "\t,\t" << m_dSinceLastTSClaySplashRedist * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << "\t,\t" << m_dSinceLastTSSiltSplashRedist * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << "\t,\t" << m_dSinceLastTSSandSplashRedist * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << endl;
+      m_ofsSplashDetachTS << m_dSimulatedTimeElapsed << ",\t" << m_dSinceLastTSClaySplashRedist * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dSinceLastTSSiltSplashRedist * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dSinceLastTSSandSplashRedist * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << endl;
 
       m_dSinceLastTSClaySplashRedist =
       m_dSinceLastTSSiltSplashRedist =
@@ -1922,7 +1924,7 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bSplashKETS && (m_bSplashThisIter || bIsLastIter))
    {
       // Write out rainfall kinetic energy in Joules/sec
-      m_ofsSplashKETS << m_dSimulatedTimeElapsed << "\t,\t" << m_dSimulatedTimeElapsed - sdLastSplashSimulatedTimeElapsed << "\t,\t" << m_dSinceLastTSKE / m_dTimeStep << endl;
+      m_ofsSplashKETS << m_dSimulatedTimeElapsed << ",\t" << m_dSimulatedTimeElapsed - sdLastSplashSimulatedTimeElapsed << ",\t" << m_dSinceLastTSKE / m_dTimeStep << endl;
 
       m_dSinceLastTSKE = 0;
 
@@ -1936,7 +1938,7 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bSlumpDetachTS && (m_bSlumpThisIter || bIsLastIter))
    {
       // Output slump detachment for each size class, convert from mm3 to g (bulk density is in kg/m3, so multiply by 1e6 to get it into g/mm3) then into g/sec
-      m_ofsSlumpDetachTS << m_dSimulatedTimeElapsed << "\t,\t" << m_dSinceLastTSClaySlumpDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << "\t,\t" << m_dSinceLastTSSiltSlumpDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << "\t,\t" << m_dSinceLastTSSandSlumpDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << endl;
+      m_ofsSlumpDetachTS << m_dSimulatedTimeElapsed << ",\t" << m_dSinceLastTSClaySlumpDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dSinceLastTSSiltSlumpDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dSinceLastTSSandSlumpDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << endl;
 
       m_dSinceLastTSClaySlumpDetach =
       m_dSinceLastTSSiltSlumpDetach =
@@ -1950,7 +1952,7 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bToppleDetachTS && (m_bSlumpThisIter || bIsLastIter))
    {
       // Output toppling detachment for each size class, convert from mm3 to g (bulk density is in kg/m3, so multiply by 1e6 to get it into g/mm3) then into g/sec
-      m_ofsToppleDetachTS << m_dSimulatedTimeElapsed << "\t,\t" << m_dSinceLastTSClayToppleDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << "\t,\t" << m_dSinceLastTSSiltToppleDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << "\t,\t" << m_dSinceLastTSSandToppleDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << endl;
+      m_ofsToppleDetachTS << m_dSimulatedTimeElapsed << ",\t" << m_dSinceLastTSClayToppleDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dSinceLastTSSiltToppleDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dSinceLastTSSandToppleDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << endl;
 
       m_dSinceLastTSClayToppleDetach =
       m_dSinceLastTSSiltToppleDetach =
@@ -1969,7 +1971,7 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
       m_ofsSoilWaterTS << m_dSimulatedTimeElapsed;
       for (int nLayer = 0; nLayer < m_nNumSoilLayers; nLayer++)
       {
-         m_ofsSoilWaterTS << "\t,\t" << m_VdSinceLastTSSoilWater[nLayer] * m_dCellSquare * 1e-6;
+         m_ofsSoilWaterTS << ",\t" << m_VdSinceLastTSSoilWater[nLayer] * m_dCellSquare * 1e-6;
          m_VdSinceLastTSSoilWater[nLayer] = 0;
       }
       m_ofsSoilWaterTS << endl;

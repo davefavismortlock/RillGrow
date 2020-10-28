@@ -326,7 +326,7 @@ CSimulation::CSimulation(void)
    m_ldGTotDrops                    =
    m_ldGTotRunOnDrops               =
    m_ldGTotRain                     =
-   m_ldGTotRunOnWater               =
+   m_ldGTotRunOn               =
    m_ldGTotInfilt                   =
    m_ldGTotExfilt                   =
    m_ldGTotWaterLost                =
@@ -768,17 +768,16 @@ void CSimulation::CheckMassBalance(void)
 
    // Calculate LHS = pre-iteration stored water + rain + run-on + exfiltration, RHS = infilt + outflow + end-of-iteration stored water
    double
-      dTotWaterLHS = m_dThisIterRain + m_dThisIterRunOn + m_dThisIterExfiltration + sdWaterStoredLast - m_dWaterErrorLast,
-      dTotWaterRHS = m_dThisIterInfiltration + m_dThisIterLostSurfaceWater + m_dThisIterStoredSurfaceWater;
+      dTotLHS = m_dThisIterRain + m_dThisIterRunOn + m_dThisIterExfiltration + sdWaterStoredLast - m_dWaterErrorLast,
+      dTotRHS = m_dThisIterInfiltration + m_dThisIterLostSurfaceWater + m_dThisIterStoredSurfaceWater;
 
-   if (! bFPIsEqual(dTotWaterLHS, dTotWaterRHS, WATER_TOLERANCE))
+   if (! bFPIsEqual(dTotLHS, dTotRHS, WATER_TOLERANCE))
    {
-      m_dWaterErrorLast = dTotWaterLHS - dTotWaterRHS;
 #if defined _DEBUG
       m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << setprecision(6);
 
-      m_ofsLog << m_ulIter << " " << WARN << "water balance, LHS = " << dTotWaterLHS << " RHS = " << dTotWaterRHS << endl;
-      m_ofsLog << "\tLHS (input + previous storage -last error) - RHS (losses + storage) = " << dTotWaterLHS - dTotWaterRHS << endl;
+      m_ofsLog << m_ulIter << " " << WARN << "water balance, LHS = " << dTotLHS << " RHS = " << dTotRHS << endl;
+      m_ofsLog << "\tLHS (input + previous storage -last error) - RHS (losses + storage) = " << dTotLHS - dTotRHS << endl;
       m_ofsLog << "\tm_dThisIterRain                 = " << m_dThisIterRain << endl;
       m_ofsLog << "\tm_dThisIterRunOn                = " << m_dThisIterRunOn << endl;
       m_ofsLog << "\tsdWaterStoredLast               = " << sdWaterStoredLast << endl;
@@ -789,6 +788,7 @@ void CSimulation::CheckMassBalance(void)
 
       m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::scientific) << setprecision(6);
 #endif
+      m_dWaterErrorLast = dTotLHS - dTotRHS;
    }
 
    // Store for next iteration
@@ -801,18 +801,18 @@ void CSimulation::CheckMassBalance(void)
    double
       dThisIterSplashDetach = m_dThisIterClaySplashDetach + m_dThisIterSiltSplashDetach + m_dThisIterSandSplashDetach,
       dThisIterSplashDeposit = m_dThisIterClaySplashDeposit + m_dThisIterSiltSplashDeposit + m_dThisIterSandSplashDeposit,
-      dThisIterSplashToSedLoad = m_dThisIterClaySplashToSedLoad + m_dThisIterSiltSplashToSedLoad + m_dThisIterSandSplashToSedLoad,
-      dTotSedLHS = dThisIterSplashDetach - m_dSplashErrorLast,
-      dTotSedRHS = dThisIterSplashDeposit + dThisIterSplashToSedLoad;
+      dThisIterSplashToSedLoad = m_dThisIterClaySplashToSedLoad + m_dThisIterSiltSplashToSedLoad + m_dThisIterSandSplashToSedLoad;
 
-   if (! bFPIsEqual(dTotSedLHS, dTotSedRHS, SEDIMENT_TOLERANCE))
+   dTotLHS = dThisIterSplashDetach - m_dSplashErrorLast,
+   dTotRHS = dThisIterSplashDeposit + dThisIterSplashToSedLoad;
+
+   if (! bFPIsEqual(dTotLHS, dTotRHS, SEDIMENT_TOLERANCE))
    {
-      m_dSplashErrorLast = dTotSedLHS - dTotSedRHS;
 #if defined _DEBUG
       m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << setprecision(6);
 
-      m_ofsLog << m_ulIter << " " << WARN << "splash sediment balance, LHS = " << dTotSedLHS << " RHS = " << dTotSedRHS << endl;
-      m_ofsLog << "\tLHS (detach - last error) - RHS (deposition + to flow) = " << dTotSedLHS - dTotSedRHS << endl;
+      m_ofsLog << m_ulIter << " " << WARN << "splash sediment balance, LHS = " << dTotLHS << " RHS = " << dTotRHS << endl;
+      m_ofsLog << "\tLHS (detach - last error) - RHS (deposition + to flow) = " << dTotLHS - dTotRHS << endl;
       m_ofsLog << "\tdThisIterSplashDetach           = " << dThisIterSplashDetach << endl;
       m_ofsLog << "\tm_dSplashErrorLast             = " << m_dSplashErrorLast << endl;
       m_ofsLog << "\t\tdThisIterSplashDeposit           = " << dThisIterSplashDeposit << endl;
@@ -820,6 +820,7 @@ void CSimulation::CheckMassBalance(void)
 
       m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::scientific) << setprecision(6);
 #endif
+      m_dSplashErrorLast = dTotLHS - dTotRHS;
    }
 
    // Now check the slumping mass balance
@@ -828,17 +829,16 @@ void CSimulation::CheckMassBalance(void)
       dThisIterSlumpDeposit = m_dThisIterClaySlumpDeposit + m_dThisIterSiltSlumpDeposit  + m_dThisIterSandSlumpDeposit,
       dThisIterSlumpToSedLoad = m_dThisIterClaySlumpToSedLoad + m_dThisIterSiltSlumpToSedLoad  + m_dThisIterSandSlumpToSedLoad;
 
-   dTotSedLHS = dThisIterSlumpDetach - m_dSlumpErrorLast,
-   dTotSedRHS = dThisIterSlumpDeposit + dThisIterSlumpToSedLoad;
+   dTotLHS = dThisIterSlumpDetach - m_dSlumpErrorLast,
+   dTotRHS = dThisIterSlumpDeposit + dThisIterSlumpToSedLoad;
 
-   if (! bFPIsEqual(dTotSedLHS, dTotSedRHS, SEDIMENT_TOLERANCE))
+   if (! bFPIsEqual(dTotLHS, dTotRHS, SEDIMENT_TOLERANCE))
    {
-      m_dSlumpErrorLast = dTotSedLHS - dTotSedRHS;
 #if defined _DEBUG
       m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << setprecision(6);
 
-      m_ofsLog << m_ulIter << " " << WARN << "slump sediment balance, LHS = " << dTotSedLHS << " RHS = " << dTotSedRHS << endl;
-      m_ofsLog << "\tLHS (detach - last error) - RHS (deposition + to flow) = " << dTotSedLHS - dTotSedRHS << endl;
+      m_ofsLog << m_ulIter << " " << WARN << "slump sediment balance, LHS = " << dTotLHS << " RHS = " << dTotRHS << endl;
+      m_ofsLog << "\tLHS (detach - last error) - RHS (deposition + to flow) = " << dTotLHS - dTotRHS << endl;
       m_ofsLog << "\tdThisIterSlumpDetach            = " << dThisIterSlumpDetach << endl;
       m_ofsLog << "\tm_dSlumpErrorLast              = " << m_dSlumpErrorLast << endl;
       m_ofsLog << "\t\tdThisIterSlumpDeposit            = " << dThisIterSlumpDeposit << endl;
@@ -846,6 +846,7 @@ void CSimulation::CheckMassBalance(void)
 
       m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::scientific) << setprecision(6);
 #endif
+      m_dSlumpErrorLast = dTotLHS - dTotRHS;
    }
 
    // Now check the toppling mass balance
@@ -854,17 +855,16 @@ void CSimulation::CheckMassBalance(void)
       dThisIterToppleDeposit = m_dThisIterClayToppleDeposit + m_dThisIterSiltToppleDeposit  + m_dThisIterSandToppleDeposit,
       dThisIterToppleToSedLoad = m_dThisIterClayToppleToSedLoad + m_dThisIterSiltToppleToSedLoad  + m_dThisIterSandToppleToSedLoad;
 
-   dTotSedLHS = dThisIterToppleDetach - m_dToppleErrorLast,
-   dTotSedRHS = dThisIterToppleDeposit + dThisIterToppleToSedLoad;
+   dTotLHS = dThisIterToppleDetach - m_dToppleErrorLast,
+   dTotRHS = dThisIterToppleDeposit + dThisIterToppleToSedLoad;
 
-   if (! bFPIsEqual(dTotSedLHS, dTotSedRHS, SEDIMENT_TOLERANCE))
+   if (! bFPIsEqual(dTotLHS, dTotRHS, SEDIMENT_TOLERANCE))
    {
-      m_dToppleErrorLast = dTotSedLHS - dTotSedRHS;
 #if defined _DEBUG
       m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << setprecision(6);
 
-      m_ofsLog << m_ulIter << " " << WARN << "topple sediment balance, LHS = " << dTotSedLHS << " RHS = " << dTotSedRHS << endl;
-      m_ofsLog << "\tLHS (detach - last error) - RHS (deposition + to flow) = " << dTotSedLHS - dTotSedRHS << endl;
+      m_ofsLog << m_ulIter << " " << WARN << "topple sediment balance, LHS = " << dTotLHS << " RHS = " << dTotRHS << endl;
+      m_ofsLog << "\tLHS (detach - last error) - RHS (deposition + to flow) = " << dTotLHS - dTotRHS << endl;
       m_ofsLog << "\tdThisIterToppleDetach           = " << dThisIterToppleDetach << endl;
       m_ofsLog << "\tm_dToppleErrorLast             = " << m_dToppleErrorLast << endl;
       m_ofsLog << "\t\tdThisIterToppleDeposit           = " << dThisIterToppleDeposit << endl;
@@ -872,6 +872,7 @@ void CSimulation::CheckMassBalance(void)
 
       m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::scientific) << setprecision(6);
 #endif
+      m_dToppleErrorLast = dTotLHS - dTotRHS;
    }
 
    // Check the headcut retreat mass balance
@@ -880,17 +881,16 @@ void CSimulation::CheckMassBalance(void)
       dThisIterHeadcutRetreatDeposit = m_dThisIterClayHeadcutRetreatDeposit + m_dThisIterSiltHeadcutRetreatDeposit  + m_dThisIterSandHeadcutRetreatDeposit,
       dThisIterHeadcutRetreatToSedLoad = m_dThisIterClayHeadcutRetreatToSedLoad + m_dThisIterSiltHeadcutRetreatToSedLoad  + m_dThisIterSandHeadcutRetreatToSedLoad;
 
-   dTotSedLHS = dThisIterHeadcutRetreatDetach - m_dHeadcutErrorLast,
-   dTotSedRHS = dThisIterHeadcutRetreatDeposit + dThisIterHeadcutRetreatToSedLoad;
+   dTotLHS = dThisIterHeadcutRetreatDetach - m_dHeadcutErrorLast,
+   dTotRHS = dThisIterHeadcutRetreatDeposit + dThisIterHeadcutRetreatToSedLoad;
 
-   if (! bFPIsEqual(dTotSedLHS, dTotSedRHS, SEDIMENT_TOLERANCE))
+   if (! bFPIsEqual(dTotLHS, dTotRHS, SEDIMENT_TOLERANCE))
    {
-      m_dHeadcutErrorLast = dTotSedLHS - dTotSedRHS;
 #if defined _DEBUG
       m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << setprecision(6);
 
-      m_ofsLog << m_ulIter << " " << WARN << "headcut retreat sediment balance, LHS = " << dTotSedLHS << " RHS = " << dTotSedRHS << endl;
-      m_ofsLog << "\tLHS (detach - last error) - RHS (deposition + to flow) = " << dTotSedLHS - dTotSedRHS << endl;
+      m_ofsLog << m_ulIter << " " << WARN << "headcut retreat sediment balance, LHS = " << dTotLHS << " RHS = " << dTotRHS << endl;
+      m_ofsLog << "\tLHS (detach - last error) - RHS (deposition + to flow) = " << dTotLHS - dTotRHS << endl;
       m_ofsLog << "\tdThisIterHeadcutRetreatDetach   = " << dThisIterHeadcutRetreatDetach << endl;
       m_ofsLog << "\tm_dHeadcutErrorLast            = " << m_dHeadcutErrorLast << endl;
       m_ofsLog << "\t\tdThisIterHeadcutRetreatDeposit   = " << dThisIterHeadcutRetreatDeposit << endl;
@@ -898,6 +898,7 @@ void CSimulation::CheckMassBalance(void)
 
       m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::scientific) << setprecision(6);
 #endif
+      m_dHeadcutErrorLast = dTotLHS - dTotRHS;
    }
 
    // Check the flow mass balance. LHS = pre-iteration sediment load + flow detachment + splash detachment + slump detachment + topple detachment, RHS = flow deposition + splash deposition + slump deposition + topple deposition + infiltration deposition + sediment lost + end-of-iteration sediment load
@@ -908,17 +909,16 @@ void CSimulation::CheckMassBalance(void)
       dThisIterInfiltDeposit = m_dThisIterClayInfiltDeposit + m_dThisIterSiltInfiltDeposit + m_dThisIterSandInfiltDeposit,
       dThisIterSedLost = m_dThisIterClaySedLost + m_dThisIterSiltSedLost + m_dThisIterSandSedLost;
 
-      dTotSedLHS = sdSedimentLoadDepthLast + dThisIterFlowDetach + dThisIterSplashDetach + dThisIterSlumpDetach + dThisIterToppleDetach + dThisIterHeadcutRetreatDetach -m_dFlowErrorLast,
-      dTotSedRHS = dThisIterFlowDeposit + dThisIterSplashDeposit + dThisIterSlumpDeposit + dThisIterToppleDeposit + dThisIterInfiltDeposit + dThisIterHeadcutRetreatDeposit + dThisIterSedLost + dTotSedLoad;
+      dTotLHS = sdSedimentLoadDepthLast + dThisIterFlowDetach + dThisIterSplashDetach + dThisIterSlumpDetach + dThisIterToppleDetach + dThisIterHeadcutRetreatDetach -m_dFlowErrorLast,
+      dTotRHS = dThisIterFlowDeposit + dThisIterSplashDeposit + dThisIterSlumpDeposit + dThisIterToppleDeposit + dThisIterInfiltDeposit + dThisIterHeadcutRetreatDeposit + dThisIterSedLost + dTotSedLoad;
 
-   if (! bFPIsEqual(dTotSedLHS, dTotSedRHS, SEDIMENT_TOLERANCE))
+   if (! bFPIsEqual(dTotLHS, dTotRHS, SEDIMENT_TOLERANCE))
    {
-      m_dFlowErrorLast = dTotSedLHS - dTotSedRHS;
 #if defined _DEBUG
       m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << setprecision(6);
 
-      m_ofsLog << m_ulIter << " " << WARN << "sediment balance, LHS = " << dTotSedLHS << " RHS = " << dTotSedRHS << endl;
-      m_ofsLog << "\tLHS (last sedload + detach - last error) - RHS (deposition + lost + this sedload) = " << dTotSedLHS - dTotSedRHS << endl;
+      m_ofsLog << m_ulIter << " " << WARN << "sediment balance, LHS = " << dTotLHS << " RHS = " << dTotRHS << endl;
+      m_ofsLog << "\tLHS (last sedload + detach - last error) - RHS (deposition + lost + this sedload) = " << dTotLHS - dTotRHS << endl;
 
       m_ofsLog << "\tdThisIterFlowDetach             = " << dThisIterFlowDetach << endl;
       m_ofsLog << "\tdThisIterSplashDetach           = " << dThisIterSplashDetach << endl;
@@ -926,7 +926,7 @@ void CSimulation::CheckMassBalance(void)
       m_ofsLog << "\tdThisIterToppleDetach           = " << dThisIterToppleDetach << endl;
       m_ofsLog << "\tdThisIterHeadcutRetreatDetach   = " << dThisIterHeadcutRetreatDetach << endl;
       m_ofsLog << "\tsdSedimentLoadDepthLast         = " << sdSedimentLoadDepthLast << endl;
-      m_ofsLog << "\tm_dFlowErrorLast               = " << m_dFlowErrorLast << endl;
+      m_ofsLog << "\tm_dFlowErrorLast                = " << m_dFlowErrorLast << endl;
       m_ofsLog << "\t\tdThisIterFlowDeposit             = " << dThisIterFlowDeposit << endl;
       m_ofsLog << "\t\tdThisIterSplashDeposit           = " << dThisIterSplashDeposit << endl;
       m_ofsLog << "\t\tdThisIterSlumpDeposit            = " << dThisIterSlumpDeposit << endl;
@@ -938,6 +938,7 @@ void CSimulation::CheckMassBalance(void)
 
       m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::scientific) << setprecision(6);
 #endif
+      m_dFlowErrorLast = dTotLHS - dTotRHS;
    }
 
    // Store for next iteration
@@ -985,12 +986,11 @@ bool CSimulation::bIsTimeToQuit(void)
 void CSimulation::UpdateGrandTotals(void)
 {
    m_ldGTotRain        += (m_dThisIterRain * m_dCellSquare);
-   m_ldGTotRunOnWater  += (m_dThisIterRunOn * m_dCellSquare);
+   m_ldGTotRunOn  += (m_dThisIterRunOn * m_dCellSquare);
    m_ldGTotWaterLost   += (m_dThisIterLostSurfaceWater * m_dCellSquare);
    m_ldGTotFlowDetach  += (m_dThisIterClayFlowDetach + m_dThisIterSiltFlowDetach + m_dThisIterSandFlowDetach) * m_dCellSquare;
 
-   // Note that ldGTotFlowDeposit will be an over-estimate of total deposition since there is no allowance made for deposited sediment
-   // that is subsequently re-entrained. This is taken care of in the final mass balance calculation
+   // Note that ldGTotFlowDeposit will be an over-estimate of total deposition since there is no allowance made for deposited sediment that is subsequently re-entrained. This is taken care of in the final mass balance calculation
    m_ldGTotFlowDeposit += (m_dThisIterClayFlowDeposit + m_dThisIterSiltFlowDeposit + m_dThisIterSandFlowDeposit) * m_dCellSquare;
    m_ldGTotSedLost     += (m_dThisIterClaySedLost + m_dThisIterSiltSedLost + m_dThisIterSandSedLost) * m_dCellSquare;
 
@@ -1088,6 +1088,9 @@ int CSimulation::nDoSimulation(void)
 
       // Initialise ready for flow routing
       m_ulNumHead = 0;
+      m_dThisIterClaySedLost =
+      m_dThisIterSiltSedLost =
+      m_dThisIterSandSedLost =
       m_dThisIterTotHead = 0;
 
       // Route all flow from wet cells
@@ -1268,19 +1271,7 @@ int CSimulation::nDoSimulation(void)
                dSiltHeadcutRetreatToSedLoad = 0,
                dSandHeadcutRetreatToSedLoad = 0;
 
-               Cell[nX][nY].CalcIterTotalsAndInit(bIsWet, dRain, dRunOn, dSurfaceWaterDepth, dSurfaceWaterLost, dClaySedLoad, dSiltSedLoad, dSandSedLoad, dClayFlowDetach, dSiltFlowDetach, dSandFlowDetach, dClayFlowDeposit, dSiltFlowDeposit, dSandFlowDeposit, dClaySplashDetach, dSiltSplashDetach, dSandSplashDetach, dClaySplashDeposit, dSiltSplashDeposit, dSandSplashDeposit, dClaySplashToSedLoad, dSiltSplashToSedLoad, dSandSplashToSedLoad, dClaySlumpDetach, dSiltSlumpDetach, dSandSlumpDetach, dClaySlumpDeposit, dSiltSlumpDeposit, dSandSlumpDeposit, dClaySlumpToSedLoad, dSiltSlumpToSedLoad, dSandSlumpToSedLoad, dClayToppleDetach, dSiltToppleDetach, dSandToppleDetach, dClayToppleDeposit, dSiltToppleDeposit, dSandToppleDeposit, dClayToppleToSedLoad, dSiltToppleToSedLoad, dSandToppleToSedLoad, dInfiltration, dExfiltration, dClayInfiltDeposit, dSiltInfiltDeposit, dSandInfiltDeposit, dClayHeadcutRetreatDetach, dSiltHeadcutRetreatDetach, dSandHeadcutRetreatDetach, dClayHeadcutRetreatDeposit, dSiltHeadcutRetreatDeposit, dSandHeadcutRetreatDeposit, dClayHeadcutRetreatToSedLoad, dSiltHeadcutRetreatToSedLoad, dSandHeadcutRetreatToSedLoad, m_bSlumpThisIter);
-
-            if (bIsWet)
-            {
-               m_ulNWet++;
-
-               m_dThisIterStoredSurfaceWater += dSurfaceWaterDepth;
-               m_dThisIterLostSurfaceWater += dSurfaceWaterLost;
-
-               m_dThisIterClaySedLoad += dClaySedLoad;
-               m_dThisIterSiltSedLoad += dSiltSedLoad;
-               m_dThisIterSandSedLoad += dSandSedLoad;
-            }
+            Cell[nX][nY].CalcIterTotalsAndInit(bIsWet, dRain, dRunOn, dSurfaceWaterDepth, dSurfaceWaterLost, dClaySedLoad, dSiltSedLoad, dSandSedLoad, dClayFlowDetach, dSiltFlowDetach, dSandFlowDetach, dClayFlowDeposit, dSiltFlowDeposit, dSandFlowDeposit, dClaySplashDetach, dSiltSplashDetach, dSandSplashDetach, dClaySplashDeposit, dSiltSplashDeposit, dSandSplashDeposit, dClaySplashToSedLoad, dSiltSplashToSedLoad, dSandSplashToSedLoad, dClaySlumpDetach, dSiltSlumpDetach, dSandSlumpDetach, dClaySlumpDeposit, dSiltSlumpDeposit, dSandSlumpDeposit, dClaySlumpToSedLoad, dSiltSlumpToSedLoad, dSandSlumpToSedLoad, dClayToppleDetach, dSiltToppleDetach, dSandToppleDetach, dClayToppleDeposit, dSiltToppleDeposit, dSandToppleDeposit, dClayToppleToSedLoad, dSiltToppleToSedLoad, dSandToppleToSedLoad, dInfiltration, dExfiltration, dClayInfiltDeposit, dSiltInfiltDeposit, dSandInfiltDeposit, dClayHeadcutRetreatDetach, dSiltHeadcutRetreatDetach, dSandHeadcutRetreatDetach, dClayHeadcutRetreatDeposit, dSiltHeadcutRetreatDeposit, dSandHeadcutRetreatDeposit, dClayHeadcutRetreatToSedLoad, dSiltHeadcutRetreatToSedLoad, dSandHeadcutRetreatToSedLoad, m_bSlumpThisIter);
 
             if (m_dRainIntensity > 0)
             {
@@ -1289,6 +1280,19 @@ int CSimulation::nDoSimulation(void)
                if (m_bRunOn)
                   m_dThisIterRunOn += dRunOn;
             }
+
+            if (bIsWet)
+            {
+               m_ulNWet++;
+
+               m_dThisIterStoredSurfaceWater += dSurfaceWaterDepth;
+
+               m_dThisIterClaySedLoad += dClaySedLoad;
+               m_dThisIterSiltSedLoad += dSiltSedLoad;
+               m_dThisIterSandSedLoad += dSandSedLoad;
+            }
+
+            m_dThisIterLostSurfaceWater += dSurfaceWaterLost;
 
             m_dThisIterClayFlowDetach += dClayFlowDetach;
             m_dThisIterSiltFlowDetach += dSiltFlowDetach;

@@ -352,7 +352,7 @@ void CSimulation::CheckSplashEff(void)
 //   SplshStream << "depth\t,\tefficiency" << endl;
    double const dDelta = 0.1;
    for (double d = 0; d <= (m_VdSplashDepth.size() + 10); d += dDelta)
-      SplshStream << d << "\t,\t" << dCalcSplashCubicSpline(d) << endl;
+      SplshStream << d << ",\t" << dCalcSplashCubicSpline(d) << endl;
 
    // Close file
    SplshStream.close();

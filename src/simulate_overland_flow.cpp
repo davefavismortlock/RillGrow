@@ -226,7 +226,7 @@ void CSimulation::TryEdgeCellOutFlow(int const nX, int const nY, int const nDir)
    // Move water from this cell, off the edge. Note that if there is insufficient surface water, dDepthToMove gets reduced
    Cell[nX][nY].pGetSurfaceWater()->RemoveSurfaceWater(dDepthToMove);
 
-   // Add this amount to the display-only total of surface water lost from the edge for this cell
+   // Add this amount to the total of surface water lost from the edge for this cell
    Cell[nX][nY].pGetSurfaceWater()->AddSurfaceWaterLost(dDepthToMove);
 
    // Now deal with the sediment: move the sediment that was being transported in this depth of water off the edge of the grid. We assume here that all transported sedimentsis well mixed in the water column. First, are we assuming that all transported sediment falls off the edge) as in a flume), or only a fraction of the transported sediment leaves the edge?
@@ -238,12 +238,10 @@ void CSimulation::TryEdgeCellOutFlow(int const nX, int const nY, int const nDir)
       dSiltSedimentToRemove = Cell[nX][nY].pGetSedLoad()->dGetSiltSedLoad() * dFractionToMove,
       dSandSedimentToRemove = Cell[nX][nY].pGetSedLoad()->dGetSandSedLoad() * dFractionToMove;
 
-   // Remove some clay-sized sediment from the cell (and from the total of clay-sized sediment moving as sediment load). Note that dClaySedimentToRemove gets changed if there is insufficient clay-sized sediment on the cell
+   // Remove some clay-sized sediment from the edge cell (and from the total of clay-sized sediment moving as sediment load). Note that dClaySedimentToRemove gets changed if there is insufficient clay-sized sediment on the cell
    if (dClaySedimentToRemove > 0)
    {
       Cell[nX][nY].pGetSedLoad()->RemoveFromClaySedLoad(dClaySedimentToRemove);
-
-      // Add to this iteration's total clay lost
       m_dThisIterClaySedLost += dClaySedimentToRemove;
    }
 
@@ -251,8 +249,6 @@ void CSimulation::TryEdgeCellOutFlow(int const nX, int const nY, int const nDir)
    if (dSiltSedimentToRemove > 0)
    {
       Cell[nX][nY].pGetSedLoad()->RemoveFromSiltSedLoad(dSiltSedimentToRemove);
-
-      // Add to this iteration's total silt lost
       m_dThisIterSiltSedLost += dSiltSedimentToRemove;
    }
 
@@ -260,8 +256,6 @@ void CSimulation::TryEdgeCellOutFlow(int const nX, int const nY, int const nDir)
    if (dSandSedimentToRemove > 0)
    {
       Cell[nX][nY].pGetSedLoad()->RemoveFromSandSedLoad(dSandSedimentToRemove);
-
-      // Add to this iteration's total sand lost
       m_dThisIterSandSedLost += dSandSedimentToRemove;
    }
 

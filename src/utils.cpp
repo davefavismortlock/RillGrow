@@ -664,7 +664,7 @@ void CSimulation::CheckLawrenceFF(void)
    while (dLambda <= 1000)                                            // Arbitrarily large
    {
       double dFF = dCalcLawrenceFrictionFactor(0, 0, dLambda, true);
-      ofsFF << dLambda << "\t,\t" << dFF << endl;
+      ofsFF << dLambda << ",\t" << dFF << endl;
       dLambda *= 1.1;
    }
 

@@ -52,10 +52,10 @@ void CSimulation::DoRunOnFromOneEdge(int const nEdge)
       m_ldGTotRunOnDrops += dDrops;
 
       // Set the depth for a 'representative' single drop, correct for spatial variation in rainfall (assume rainfall is the same all over run-on area), and assume we have dDrops of these (assume identical: an unrealistic assumption but convenient. Note that this has the effect of making rainfall onto run-on area more variable, because otherwise would get some cancelling of variability per iteration)
-      double dTmpDpth = m_dMeanCellWaterVol * m_dInvCellSquare * m_dRunOnRainVarM * dDrops;
+      double dRunOnDepth = m_dMeanCellWaterVol * m_dInvCellSquare * m_dRunOnRainVarM * dDrops;
 
       // Now add the same fraction of this depth of water to every cell at this edge of the plot. Note that this implies that there is no infilt on the run-on area
-      dTmpDpth /= dEdgeLen;
+      dRunOnDepth /= dEdgeLen;
 
       if (nEdge == EDGE_TOP)
       {
@@ -67,7 +67,7 @@ void CSimulation::DoRunOnFromOneEdge(int const nEdge)
                if (Cell[nX][nY].bIsEdgeCell())
                {
                   // Add the run-on to this edge cell of the Cell array
-                  Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dTmpDpth);
+                  Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dRunOnDepth);
                   break;
                }
             }
@@ -84,7 +84,7 @@ void CSimulation::DoRunOnFromOneEdge(int const nEdge)
                if (Cell[nX][nY].bIsEdgeCell())
                {
                   // Add the run-on to this edge cell of the Cell array
-                  Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dTmpDpth);
+                  Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dRunOnDepth);
                   break;
                }
             }
@@ -101,7 +101,7 @@ void CSimulation::DoRunOnFromOneEdge(int const nEdge)
                if (Cell[nX][nY].bIsEdgeCell())
                {
                   // Add the run-on to this edge cell of the Cell array
-                  Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dTmpDpth);
+                  Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dRunOnDepth);
                   break;
                }
             }
@@ -118,7 +118,7 @@ void CSimulation::DoRunOnFromOneEdge(int const nEdge)
                if (Cell[nX][nY].bIsEdgeCell())
                {
                   // Add the run-on to this edge cell of the Cell array
-                  Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dTmpDpth);
+                  Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dRunOnDepth);
                   break;
                }
             }
@@ -185,10 +185,10 @@ void CSimulation::DoAllRain(void)
       while (Cell[nX][nY].bIsMissingValue());
 
       // And then use ulGetRand0() to calculate its depth, correcting for spatial variation in rainfall
-      double dTmpDpth = dGetRand0GaussPos(m_dMeanCellWaterVol, m_dStdCellWaterVol) * m_dInvCellSquare * Cell[nX][nY].pGetRainAndRunon()->dGetRainVarM();
+      double dRainDepth = dGetRand0GaussPos(m_dMeanCellWaterVol, m_dStdCellWaterVol) * m_dInvCellSquare * Cell[nX][nY].pGetRainAndRunon()->dGetRainVarM();
 
       // Add to rainfall amount and water depth for this cell on the Cell array
-      Cell[nX][nY].pGetRainAndRunon()->AddRain(dTmpDpth);
+      Cell[nX][nY].pGetRainAndRunon()->AddRain(dRainDepth);
    }
 }
 
@@ -215,8 +215,9 @@ bool CSimulation::bSetUpRainfallIntensity(void)
    else
    {
       // We don't have time-varying rainfall intensity, so check if rain has stopped
-      if ((m_dSimulatedTimeElapsed > m_dSimulatedRainDuration) && (m_dRainIntensity > 0))
+      if (m_dSimulatedTimeElapsed > m_dSimulatedRainDuration)
       {
+         // Rain has stopped
          m_dRainIntensity = 0;
          return true;
       }

@@ -321,7 +321,7 @@ private:
       m_ldGTotDrops,
       m_ldGTotRunOnDrops,
       m_ldGTotRain,                    // This and all below are as a volume
-      m_ldGTotRunOnWater,
+      m_ldGTotRunOn,
       m_ldGTotInfilt,
       m_ldGTotExfilt,
       m_ldGTotWaterLost,

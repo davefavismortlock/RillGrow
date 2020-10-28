@@ -198,18 +198,20 @@ CCellSubsurfaceWater* CCell::pGetSoilWater(void)
 // Gets values for end-of-iteration totals, and then initializes per-operation values ready for the next iteration's flow routing, splash redistribution, and slumping/toppling
 void CCell::CalcIterTotalsAndInit(bool& bIsWet, double& dRain, double& dRunOn, double& dSurfaceWaterDepth, double& dSurfaceWaterLost, double& dClaySedLoad, double& dSiltSedLoad, double& dSandSedLoad, double& dClayFlowDetach, double& dSiltFlowDetach, double& dSandFlowDetach, double& dClayFlowDeposit, double& dSiltFlowDeposit, double& dSandFlowDeposit, double& dClaySplashDetach, double& dSiltSplashDetach, double& dSandSplashDetach, double& dClaySplashDeposit, double& dSiltSplashDeposit, double& dSandSplashDeposit, double& dClaySplashToSedLoad, double& dSiltSplashToSedLoad, double& dSandSplashToSedLoad, double& dClaySlumpDetach, double& dSiltSlumpDetach, double& dSandSlumpDetach, double& dClaySlumpDeposit, double& dSiltSlumpDeposit, double& dSandSlumpDeposit, double& dClaySlumpToSedLoad, double& dSiltSlumpToSedLoad, double& dSandSlumpToSedLoad, double& dClayToppleDetach, double& dSiltToppleDetach, double& dSandToppleDetach, double& dClayToppleDeposit, double& dSiltToppleDeposit, double& dSandToppleDeposit, double& dClayToppleToSedLoad, double& dSiltToppleToSedLoad, double& dSandToppleToSedLoad, double& dInfiltration, double& dExfiltration, double& dClayInfiltDeposit, double& dSiltInfiltDeposit, double& dSandInfiltDeposit, double& dClayHeadcutRetreatDetach, double& dSiltHeadcutRetreatDetach, double& dSandHeadcutRetreatDetach, double& dClayHeadcutRetreatDeposit, double& dSiltHeadcutRetreatDeposit, double& dSandHeadcutRetreatDeposit, double& dClayHeadcutRetreatToSedLoad, double& dSiltHeadcutRetreatToSedLoad, double& dSandHeadcutRetreatToSedLoad, bool const bSlump)
 {
+   dRain = m_RainAndRunOn.dGetRain();
+   dRunOn = m_RainAndRunOn.dGetRunOn();
+
    if (m_SurfaceWater.bIsWet())
    {
       bIsWet = true;
-      dRain = m_RainAndRunOn.dGetRain();
-      dRunOn = m_RainAndRunOn.dGetRunOn();
       dSurfaceWaterDepth = m_SurfaceWater.dGetSurfaceWaterDepth();
-      dSurfaceWaterLost = m_SurfaceWater.dGetSurfaceWaterLost();
 
       dClaySedLoad = m_SedLoad.dGetClaySedLoad();
       dSiltSedLoad = m_SedLoad.dGetSiltSedLoad();
       dSandSedLoad = m_SedLoad.dGetSandSedLoad();
    }
+
+   dSurfaceWaterLost = m_SurfaceWater.dGetSurfaceWaterLost();
 
    dClayFlowDetach = m_Soil.dGetClayFlowDetach();
    dSiltFlowDetach = m_Soil.dGetSiltFlowDetach();
