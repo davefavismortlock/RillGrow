@@ -600,13 +600,17 @@ void CCellSoil::DoSlumpDetach(double const dThickness, double& dTotClayDetached,
 
 
 // Adds sediment to this cell as a result of slump: to the top layer of the soil if tdry, or to the sediment load if wet
-void CCellSoil::DoSlumpDepositOrToSedLoad(double const dClayChngElev, double const dSiltChngElev, double const dSandChngElev)
+void CCellSoil::DoSlumpDepositOrToSedLoad(double const dClayChngElev, double const dSiltChngElev, double const dSandChngElev, double& dClayDeposit, double& dSiltDeposit, double& dSandDeposit, double& dClayToSedLoad, double& dSiltToSedLoad, double& dSandToSedLoad)
 {
    if (m_pCell->pGetSurfaceWater()->bIsWet())
    {
       // Cell is wet, so add to its sediment load
       m_pCell->pGetSedLoad()->AddToSedLoad(dClayChngElev, dSiltChngElev, dSandChngElev);
       m_pCell->pGetSedLoad()->AddToSlumpSedLoad(dClayChngElev, dSiltChngElev, dSandChngElev);
+
+      dClayToSedLoad = dClayChngElev;
+      dSiltToSedLoad = dSiltChngElev;
+      dSandToSedLoad = dSandChngElev;
    }
    else
    {
@@ -621,6 +625,10 @@ void CCellSoil::DoSlumpDepositOrToSedLoad(double const dClayChngElev, double con
       m_dCumulClaySlumpDeposit += dClayChngElev;
       m_dCumulSiltSlumpDeposit += dSiltChngElev;
       m_dCumulSandSlumpDeposit += dSandChngElev;
+
+      dClayDeposit = dClayChngElev;
+      dSiltDeposit = dSiltChngElev;
+      dSandDeposit = dSandChngElev;
    }
 }
 
@@ -751,13 +759,17 @@ void CCellSoil::DoToppleDetach(double const dThickness, double& dTotClayDetached
 }
 
 // Adds sediment to this cell as a result of toppling. If the cell is wet, the sediment goes to the cell's sediment load
-void CCellSoil::DoToppleDepositOrToSedLoad(double const dClayChngElev, double const dSiltChngElev,double const dSandChngElev)
+void CCellSoil::DoToppleDepositOrToSedLoad(double const dClayChngElev, double const dSiltChngElev,double const dSandChngElev, double& dClayDeposited, double& dSiltDeposited, double& dSandDeposited, double& dClayToSedLoad, double& dSiltToSedLoad, double& dSandToSedLoad)
 {
    if (m_pCell->pGetSurfaceWater()->bIsWet())
    {
       // Cell is wet, so add to its sediment load
       m_pCell->pGetSedLoad()->AddToSedLoad(dClayChngElev, dSiltChngElev, dSandChngElev);
       m_pCell->pGetSedLoad()->AddToToppleSedLoad(dClayChngElev, dSiltChngElev, dSandChngElev);
+
+      dClayToSedLoad = dClayChngElev;
+      dSiltToSedLoad = dSiltChngElev;
+      dSandToSedLoad = dSandChngElev;
    }
    else
    {
@@ -772,6 +784,10 @@ void CCellSoil::DoToppleDepositOrToSedLoad(double const dClayChngElev, double co
       m_dCumulSiltToppleDeposit += dSiltChngElev;
       m_dSandToppleDeposit    += dSandChngElev;
       m_dCumulSandToppleDeposit += dSandChngElev;
+
+      dClayDeposited = dClayChngElev;
+      dSiltDeposited = dSiltChngElev;
+      dSandDeposited = dSandChngElev;
    }
 }
 
@@ -1024,13 +1040,17 @@ void CCellSoil::DoHeadcutRetreatDetach(double const dThickness, double& dTotClay
 
 
 // Adds sediment to this cell as a result of headcut retreat. If the cell is wet, the sediment is added to sediment load
-void CCellSoil::DoHeadcutRetreatDepositOrToSedLoad(double const dClayChngElev, double const dSiltChngElev, double const dSandChngElev)
+void CCellSoil::DoHeadcutRetreatDepositOrToSedLoad(double const dClayChngElev, double const dSiltChngElev, double const dSandChngElev, double& dClayDeposited, double& dSiltDeposited, double& dSandDeposited, double& dClayToSedLoad, double& dSiltToSedLoad, double& dSandToSedLoad)
 {
    if (m_pCell->pGetSurfaceWater()->bIsWet())
    {
       // Cell is wet, so add to its sediment load
       m_pCell->pGetSedLoad()->AddToSedLoad(dClayChngElev, dSiltChngElev, dSandChngElev);
       m_pCell->pGetSedLoad()->AddToHeadcutRetreatSedLoad(dClayChngElev, dSiltChngElev, dSandChngElev);
+
+      dClayToSedLoad = dClayChngElev;
+      dSiltToSedLoad = dSiltChngElev;
+      dSandToSedLoad = dSandChngElev;
    }
    else
    {
@@ -1045,6 +1065,10 @@ void CCellSoil::DoHeadcutRetreatDepositOrToSedLoad(double const dClayChngElev, d
       m_dCumulClayHeadcutRetreatDeposit += dClayChngElev;
       m_dCumulSiltHeadcutRetreatDeposit += dSiltChngElev;
       m_dCumulSandHeadcutRetreatDeposit += dSandChngElev;
+
+      dClayDeposited = dClayChngElev;
+      dSiltDeposited = dSiltChngElev;
+      dSandDeposited = dSandChngElev;
    }
 }
 

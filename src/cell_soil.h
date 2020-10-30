@@ -169,7 +169,7 @@ public:
    double dGetCumulAllSizeSplashDeposit(void) const;
 
    void DoSlumpDetach(double const, double&, double&, double&);
-   void DoSlumpDepositOrToSedLoad(double const, double const, double const);
+   void DoSlumpDepositOrToSedLoad(double const, double const, double const, double&, double&, double&, double&, double&, double&);
    void ZeroThisOperationSlump(void);
 
    double dGetClaySlumpDetach(void) const;
@@ -190,7 +190,7 @@ public:
    double dGetCumulAllSizeSlumpDeposit(void) const;
 
    void DoToppleDetach(double const, double&, double&, double&);
-   void DoToppleDepositOrToSedLoad(double const, double const, double const);
+   void DoToppleDepositOrToSedLoad(double const, double const, double const, double&, double&, double&, double&, double&, double&);
 
    double dGetClayToppleDetach(void) const;
    double dGetSiltToppleDetach(void) const;
@@ -231,7 +231,7 @@ public:
    double dGetLaplacian(void) const;
 
    void DoHeadcutRetreatDetach(double const, double&, double&, double&);
-   void DoHeadcutRetreatDepositOrToSedLoad(double const, double const, double const);
+   void DoHeadcutRetreatDepositOrToSedLoad(double const, double const, double const, double&, double&, double&, double&, double&, double&);
    double dGetClayHeadcutRetreatDetach(void);
    double dGetSiltHeadcutRetreatDetach(void);
    double dGetSandHeadcutRetreatDetach(void);

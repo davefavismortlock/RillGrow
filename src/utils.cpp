@@ -588,11 +588,11 @@ int CSimulation::nCheckForInstability(void)
    if (m_bSlumpThisIter)
    {
       // We are calculating slump, and we are doing so this iteration. If an absurd per-cell average slump detachment has occurred this iteration, then abort the run
-      if (tAbs(m_dThisIterClaySlumpDetach + m_dThisIterSiltSlumpDetach + m_dThisIterSandSlumpDetach) / m_ulNActiveCells > ERROR_SLUMP_DETACH_MAX)
+      if (tAbs(m_dSinceLastClaySlumpDetach + m_dSinceLastSiltSlumpDetach + m_dSinceLastSandSlumpDetach) / m_ulNActiveCells > ERROR_SLUMP_DETACH_MAX)
          return (RTN_ERR_SLUMPDETMAX);
 
       // If an absurd per-cell average topple detachment has occurred this iteration, then abort the run
-      if (tAbs(m_dThisIterClayToppleDetach + m_dThisIterSiltToppleDetach + m_dThisIterSandToppleDetach) / m_ulNActiveCells > ERROR_TOPPLE_DETACH_MAX)
+      if (tAbs(m_dSinceLastClayToppleDetach + m_dSinceLastSiltToppleDetach + m_dSinceLastSandToppleDetach) / m_ulNActiveCells > ERROR_TOPPLE_DETACH_MAX)
          return (RTN_ERR_TOPPLEDETMAX);
    }
 

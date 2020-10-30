@@ -1710,8 +1710,8 @@ bool CSimulation::bWritePerIterationResults(void)
    {
       // OK, we are calculating slump, and we are doing so this iteration, so output per-iteration slumping and toppling, all as volumes (mm3)
 //       m_ofsOut << setprecision(0);
-      m_ofsOut << setw(10) << (m_dThisIterClaySlumpDetach + m_dThisIterSiltSlumpDetach + m_dThisIterSandSlumpDetach) * m_dCellSquare;
-      m_ofsOut << setw(10) << (m_dThisIterClayToppleDetach + m_dThisIterSiltToppleDetach + m_dThisIterSandToppleDetach) * m_dCellSquare;
+      m_ofsOut << setw(10) << (m_dSinceLastClaySlumpDetach + m_dSinceLastSiltSlumpDetach + m_dSinceLastSandSlumpDetach) * m_dCellSquare;
+      m_ofsOut << setw(10) << (m_dSinceLastClayToppleDetach + m_dSinceLastSiltToppleDetach + m_dSinceLastSandToppleDetach) * m_dCellSquare;
    }
    else
       m_ofsOut << "         -         -";
@@ -1726,7 +1726,7 @@ bool CSimulation::bWritePerIterationResults(void)
 
    if (m_bHeadcutRetreatThisIter)
    {
-      m_ofsOut << setw(10) << (m_dThisIterClayHeadcutRetreatDetach + m_dThisIterSiltHeadcutRetreatDetach + m_dThisIterSandHeadcutRetreatDetach) * m_dCellSquare;
+      m_ofsOut << setw(10) << (m_dSinceLastClayHeadcutDetach + m_dSinceLastSiltHeadcutDetach + m_dSinceLastSandHeadcutDetach) * m_dCellSquare;
    }
    else
       m_ofsOut << "         -";
@@ -1870,9 +1870,9 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bInfiltTS && (m_bInfiltThisIter || bIsLastIter))
    {
       // Convert surface water lost to soil water by infilt in mm3 to litres/sec
-      m_ofsInfiltTS << m_dSimulatedTimeElapsed << ",\t" << m_dSinceLastTSInfiltration * m_dCellSquare * 1e-6 / m_dTimeStep << endl;
+      m_ofsInfiltTS << m_dSimulatedTimeElapsed << ",\t" << m_dSinceLastTSWriteInfiltration * m_dCellSquare * 1e-6 / m_dTimeStep << endl;
 
-      m_dSinceLastTSInfiltration = 0;
+      m_dSinceLastTSWriteInfiltration = 0;
 
       // Did an infilt time series file write error occur?
       if (m_ofsInfiltTS.fail())
@@ -1882,9 +1882,9 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bExfiltTS && (m_bInfiltThisIter || bIsLastIter))
    {
       // Convert soil water returned to surface water by exfilt in mm3 to litres/sec
-      m_ofsExfiltTS << m_dSimulatedTimeElapsed << ",\t" << m_dSimulatedTimeElapsed - sdLastInfiltSimulatedTimeElapsed << ",\t" << m_dSinceLastTSExfiltration * m_dCellSquare * 1e-6 / m_dTimeStep << endl;
+      m_ofsExfiltTS << m_dSimulatedTimeElapsed << ",\t" << m_dSimulatedTimeElapsed - sdLastInfiltSimulatedTimeElapsed << ",\t" << m_dSinceLastTSWriteExfiltration * m_dCellSquare * 1e-6 / m_dTimeStep << endl;
 
-      m_dSinceLastTSInfiltration = 0;
+      m_dSinceLastTSWriteInfiltration = 0;
 
       // Did an exfilt time series file write error occur?
       if (m_ofsExfiltTS.fail())
@@ -1894,11 +1894,11 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bInfiltDepositTS && (m_bInfiltThisIter || bIsLastIter))
    {
       // Output infilt deposition for each size class, convert from mm3 to g (bulk density is in kg/m3, so multiply by 1e6 to get it into g/mm3) then into g/sec
-      m_ofsInfiltDepositTS << m_dSimulatedTimeElapsed << ",\t" << m_dSinceLastTSClayInfiltDeposit * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dSinceLastTSSiltInfiltDeposit * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dSinceLastTSSandInfiltDeposit * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << endl;
+      m_ofsInfiltDepositTS << m_dSimulatedTimeElapsed << ",\t" << m_dSinceLastTSWriteClayInfiltDeposit * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dSinceLastTSWriteSiltInfiltDeposit * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dSinceLastTSWriteSandInfiltDeposit * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << endl;
 
-      m_dSinceLastTSClayInfiltDeposit =
-      m_dSinceLastTSSiltInfiltDeposit =
-      m_dSinceLastTSSandInfiltDeposit = 0;
+      m_dSinceLastTSWriteClayInfiltDeposit =
+      m_dSinceLastTSWriteSiltInfiltDeposit =
+      m_dSinceLastTSWriteSandInfiltDeposit = 0;
 
       // Did an infilt deposition time series file write error occur?
       if (m_ofsInfiltDepositTS.fail())
@@ -1910,11 +1910,11 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bSplashRedistTS && (m_bSplashThisIter || bIsLastIter))
    {
       // Output splash redistribution for each size class, convert from mm3 to g (bulk density is in kg/m3, so multiply by 1e6 to get it into g/mm3) then into g/sec
-      m_ofsSplashDetachTS << m_dSimulatedTimeElapsed << ",\t" << m_dSinceLastTSClaySplashRedist * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dSinceLastTSSiltSplashRedist * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dSinceLastTSSandSplashRedist * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << endl;
+      m_ofsSplashDetachTS << m_dSimulatedTimeElapsed << ",\t" << m_dSinceLastTSWriteClaySplashRedist * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dSinceLastTSWriteSiltSplashRedist * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dSinceLastTSWriteSandSplashRedist * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << endl;
 
-      m_dSinceLastTSClaySplashRedist =
-      m_dSinceLastTSSiltSplashRedist =
-      m_dSinceLastTSSandSplashRedist = 0;
+      m_dSinceLastTSWriteClaySplashRedist =
+      m_dSinceLastTSWriteSiltSplashRedist =
+      m_dSinceLastTSWriteSandSplashRedist = 0;
 
       // Did a splash redistribution time series file write error occur?
       if (m_ofsSplashDetachTS.fail())
@@ -1924,9 +1924,9 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bSplashKETS && (m_bSplashThisIter || bIsLastIter))
    {
       // Write out rainfall kinetic energy in Joules/sec
-      m_ofsSplashKETS << m_dSimulatedTimeElapsed << ",\t" << m_dSimulatedTimeElapsed - sdLastSplashSimulatedTimeElapsed << ",\t" << m_dSinceLastTSKE / m_dTimeStep << endl;
+      m_ofsSplashKETS << m_dSimulatedTimeElapsed << ",\t" << m_dSimulatedTimeElapsed - sdLastSplashSimulatedTimeElapsed << ",\t" << m_dSinceLastTSWriteKE / m_dTimeStep << endl;
 
-      m_dSinceLastTSKE = 0;
+      m_dSinceLastTSWriteKE = 0;
 
       // Did a splash deposition time series file write error occur?
       if (m_ofsSplashKETS.fail())
@@ -1938,11 +1938,11 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bSlumpDetachTS && (m_bSlumpThisIter || bIsLastIter))
    {
       // Output slump detachment for each size class, convert from mm3 to g (bulk density is in kg/m3, so multiply by 1e6 to get it into g/mm3) then into g/sec
-      m_ofsSlumpDetachTS << m_dSimulatedTimeElapsed << ",\t" << m_dSinceLastTSClaySlumpDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dSinceLastTSSiltSlumpDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dSinceLastTSSandSlumpDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << endl;
+      m_ofsSlumpDetachTS << m_dSimulatedTimeElapsed << ",\t" << m_dSinceLastTSWriteClaySlumpDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dSinceLastTSWriteSiltSlumpDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dSinceLastTSWriteSandSlumpDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << endl;
 
-      m_dSinceLastTSClaySlumpDetach =
-      m_dSinceLastTSSiltSlumpDetach =
-      m_dSinceLastTSSandSlumpDetach = 0;
+      m_dSinceLastTSWriteClaySlumpDetach =
+      m_dSinceLastTSWriteSiltSlumpDetach =
+      m_dSinceLastTSWriteSandSlumpDetach = 0;
 
       // Did a slumping time series file write error occur?
       if (m_ofsSlumpDetachTS.fail())
@@ -1952,11 +1952,11 @@ bool CSimulation::bWriteTSFiles(bool const bIsLastIter)
    if (m_bToppleDetachTS && (m_bSlumpThisIter || bIsLastIter))
    {
       // Output toppling detachment for each size class, convert from mm3 to g (bulk density is in kg/m3, so multiply by 1e6 to get it into g/mm3) then into g/sec
-      m_ofsToppleDetachTS << m_dSimulatedTimeElapsed << ",\t" << m_dSinceLastTSClayToppleDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dSinceLastTSSiltToppleDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dSinceLastTSSandToppleDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << endl;
+      m_ofsToppleDetachTS << m_dSimulatedTimeElapsed << ",\t" << m_dSinceLastTSWriteClayToppleDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dSinceLastTSWriteSiltToppleDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << ",\t" << m_dSinceLastTSWriteSandToppleDetach * m_dCellSquare * m_dBulkDensityForOutputCalcs * 1e-6 / m_dTimeStep << endl;
 
-      m_dSinceLastTSClayToppleDetach =
-      m_dSinceLastTSSiltToppleDetach =
-      m_dSinceLastTSSandToppleDetach = 0;
+      m_dSinceLastTSWriteClayToppleDetach =
+      m_dSinceLastTSWriteSiltToppleDetach =
+      m_dSinceLastTSWriteSandToppleDetach = 0;
 
       // Did a toppling time series file write error occur?
       if (m_ofsToppleDetachTS.fail())

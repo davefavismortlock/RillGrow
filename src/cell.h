@@ -80,6 +80,6 @@ public:
    CCellSedimentLoad* pGetSedLoad(void);
    CCellSubsurfaceWater* pGetSoilWater(void);
 
-   void CalcIterTotalsAndInit(bool&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, bool const);
+   void CalcIterTotalsAndInit(bool&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, bool const);
 };
 #endif         // __CELL_H__

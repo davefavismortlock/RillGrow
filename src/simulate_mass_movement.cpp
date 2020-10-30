@@ -187,7 +187,6 @@ void CSimulation::DoDistributeShearStress(int const nX, int const nY, double con
 }
 
 
-
 /*=========================================================================================================================================
 
  This member function of CSimulation simulates slumping of e.g. rill sidewalls, for all cells
@@ -320,10 +319,29 @@ void CSimulation::DoAllSlump(void)
 
                   Cell[nX][nY].pGetSoil()->DoSlumpDetach(dDiff, dClayDetached, dSiltDetached, dSandDetached);
 
-                  // Now add the detached soil to the 'To' cell (as part of the top soil layer if dry, or to the sediment load if wet)
-                  Cell[nXTmp][nYTmp].pGetSoil()->DoSlumpDepositOrToSedLoad(dClayDetached, dSiltDetached, dSandDetached);
+                  // Add to 'since last' values
+                  m_dSinceLastClaySlumpDetach += dClayDetached;
+                  m_dSinceLastSiltSlumpDetach += dSiltDetached;
+                  m_dSinceLastSandSlumpDetach += dSandDetached;
 
-//                   m_ofsLog << m_ulIter << " [" << nX << "][" << nY << "] slump detach="  << -dDiff << ", [" << nXTmp << "][" << nYTmp << "] deposit=" << dDiff << endl;
+                  // Now add the detached soil to the 'To' cell (as part of the top soil layer if dry, or to the sediment load if wet)
+                  double
+                     dClayDeposited = 0,
+                     dSiltDeposited = 0,
+                     dSandDeposited = 0,
+                     dClayToSedLoad = 0,
+                     dSiltToSedLoad = 0,
+                     dSandToSedLoad = 0;
+
+                  Cell[nXTmp][nYTmp].pGetSoil()->DoSlumpDepositOrToSedLoad(dClayDetached, dSiltDetached, dSandDetached, dClayDeposited, dSiltDeposited, dSandDeposited, dClayToSedLoad, dSiltToSedLoad, dSandToSedLoad);
+
+                  // Add to 'since last' values
+                  m_dSinceLastClaySlumpDeposit += dClayDeposited;
+                  m_dSinceLastSiltSlumpDeposit += dSiltDeposited;
+                  m_dSinceLastSandSlumpDeposit += dSandDeposited;
+                  m_dSinceLastClaySlumpToSedLoad += dClayToSedLoad;
+                  m_dSinceLastSiltSlumpToSedLoad += dSiltToSedLoad;
+                  m_dSinceLastSandSlumpToSedLoad += dSandToSedLoad;
 
                   // Has this slumping also triggered toppling of any now-unstable upslope cells?
                   int nRecursionDepth = MAX_RECURSION_DEPTH;
@@ -609,12 +627,29 @@ void CSimulation::DoToppleCells(int const nX, int const nY, int const nXTmp, int
    // Do the detachment
    Cell[nXTmp][nYTmp].pGetSoil()->DoToppleDetach(dDiff, dClayDetached, dSiltDetached, dSandDetached);
 
-   // And now do the deposition
-   Cell[nX][nY].pGetSoil()->DoToppleDepositOrToSedLoad(dClayDetached, dSiltDetached, dSandDetached);
+   // Add to the 'since'last' values
+   m_dSinceLastClayToppleDetach += dClayDetached;
+   m_dSinceLastSiltToppleDetach += dSiltDetached;
+   m_dSinceLastSandToppleDetach += dSandDetached;
 
-//#if defined _DEBUG
-//   m_ofsLog << m_ulIter << " [" << nX << "][" << nY << "] topple deposit="  << dDiff << ", [" << nXTmp << "][" << nYTmp << "] detach=" << -dDiff << endl;
-//#endif
+   // And now do the deposition
+   double
+      dClayDeposited = 0,
+      dSiltDeposited = 0,
+      dSandDeposited = 0,
+      dClayToSedLoad = 0,
+      dSiltToSedLoad = 0,
+      dSandToSedLoad = 0;
+
+   Cell[nX][nY].pGetSoil()->DoToppleDepositOrToSedLoad(dClayDetached, dSiltDetached, dSandDetached, dClayDeposited, dSiltDeposited, dSandDeposited, dClayToSedLoad, dSiltToSedLoad, dSandToSedLoad);
+
+   // Add to the 'since'last' values
+   m_dSinceLastClayToppleDeposit += dClayDeposited;
+   m_dSinceLastSiltToppleDeposit += dSiltDeposited;
+   m_dSinceLastSandToppleDeposit += dSandDeposited;
+   m_dSinceLastClayToppleToSedLoad += dClayToSedLoad;
+   m_dSinceLastSiltToppleToSedLoad += dSiltToSedLoad;
+   m_dSinceLastSandToppleToSedLoad += dSandToSedLoad;
 }
 
 
@@ -740,18 +775,37 @@ void CSimulation::DoAllHeadcutRetreat(void)
 =========================================================================================================================================*/
 void CSimulation::DoHeadcutRetreatMoveSoil(int const nDir, int const nFromX, int const nFromY, int const nToX, int const nToY, double const dDiff)
 {
-   double dHalfDiff = dDiff * 0.5;
-
    double
-   dClayDetached = 0,
-   dSiltDetached = 0,
-   dSandDetached = 0;
+      dHalfDiff = dDiff * 0.5,
+      dClayDetached = 0,
+      dSiltDetached = 0,
+      dSandDetached = 0;
 
    // Remove soil from the 'From' cell
    Cell[nFromX][nFromY].pGetSoil()->DoHeadcutRetreatDetach(dHalfDiff, dClayDetached, dSiltDetached, dSandDetached);
 
-   // Now add the detached soil to the 'To' cell (as part of the top soil layer, not as sediment load)
-   Cell[nToX][nToY].pGetSoil()->DoHeadcutRetreatDepositOrToSedLoad(dClayDetached, dSiltDetached, dSandDetached);
+   // Add to the 'since last' values
+   m_dSinceLastClayHeadcutDetach += dClayDetached;
+   m_dSinceLastSiltHeadcutDetach += dSiltDetached;
+   m_dSinceLastSandHeadcutDetach += dSandDetached;
+
+   // Now add the detached soil to the 'To' cell: as part of the top soil layer if dry, or as sediment load if wet
+   double
+      dClayDeposited = 0,
+      dSiltDeposited = 0,
+      dSandDeposited = 0,
+      dClayToSedLoad = 0,
+      dSiltToSedLoad = 0,
+      dSandToSedLoad = 0;
+
+   Cell[nToX][nToY].pGetSoil()->DoHeadcutRetreatDepositOrToSedLoad(dClayDetached, dSiltDetached, dSandDetached, dClayDeposited, dSiltDeposited, dSandDeposited, dClayToSedLoad, dSiltToSedLoad, dSandToSedLoad);
+
+   m_dSinceLastClayHeadcutDeposit += dClayDeposited;
+   m_dSinceLastSiltHeadcutDeposit += dSiltDeposited;
+   m_dSinceLastSandHeadcutDeposit += dSandDeposited;
+   m_dSinceLastClayHeadcutToSedLoad += dClayToSedLoad;
+   m_dSinceLastSiltHeadcutToSedLoad += dSiltToSedLoad;
+   m_dSinceLastSandHeadcutToSedLoad += dSandToSedLoad;
 
    Cell[nFromX][nFromY].SetStoredRetreat(nDir, 0);
    Cell[nToX][nToY].SetStoredRetreat(nDir, 0);

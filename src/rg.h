@@ -139,7 +139,7 @@ using std::to_string;
 #endif
 
 //========================================================== Hard-Wired Constants =========================================================
-string const   PROGNAME                                     = "RillGrow serial (28 October 2020 version)";
+string const   PROGNAME                                     = "RillGrow serial (30 October 2020 version)";
 string const   SHORTNAME                                    = "RG";
 string const   RG_INI                                       = "rg.ini";
 
@@ -234,7 +234,7 @@ string const      ENDSEDDELHEAD =
 string const      DETDEPHEAD    =
    "DETACHMENT AND DEPOSITION BY PROCESS =======================================================================================================================";
 string const      RELCONTRIBLOSTHEAD    =
-   "CONTRIBUTION OF EACH PROCESS TO TOTAL SEDIMENT LOST ========================================================================================================";
+   "CONTRIBUTION OF EACH PROCESS TO TOTAL SEDIMENT ERODED ======================================================================================================";
 string const      RELCONTRIBDETACHHEAD  =
    "CONTRIBUTION OF EACH PROCESS TO TOTAL SEDIMENT DETACHED ====================================================================================================";
 string const      PERFORMHEAD   =
