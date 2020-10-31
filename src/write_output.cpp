@@ -1681,7 +1681,7 @@ bool CSimulation::bWritePerIterationResults(void)
    else
       m_ofsOut << "      -";
    if (m_bInfiltThisIter)
-      m_ofsOut << setw(7) << m_dThisIterInfiltration * m_dCellSquare;
+      m_ofsOut << setw(7) << m_dSinceLastInfiltration * m_dCellSquare;
    else
       m_ofsOut << "      -";
    m_ofsOut << setw(8)  << m_dThisIterLostSurfaceWater * m_dCellSquare;
@@ -1719,7 +1719,7 @@ bool CSimulation::bWritePerIterationResults(void)
    if (m_bInfiltThisIter)
    {
 //       m_ofsOut << setprecision(1);
-      m_ofsOut << setw(10) << (m_dThisIterClayInfiltDeposit + m_dThisIterSiltInfiltDeposit + m_dThisIterSandInfiltDeposit) * m_dCellSquare;
+      m_ofsOut << setw(10) << (m_dSinceLastClayInfiltDeposit + m_dSinceLastSiltInfiltDeposit + m_dSinceLastSandInfiltDeposit) * m_dCellSquare;
    }
    else
       m_ofsOut << "         -";
@@ -1731,9 +1731,9 @@ bool CSimulation::bWritePerIterationResults(void)
    else
       m_ofsOut << "         -";
 
-   // Finally, set "markers" for events (rainfall change, files saves) that have occurred this iteration
+   // Finally, set "markers" for events (rainfall change, file saves) that have occurred this iteration
    if (m_bThisIterRainChange)
-      m_ofsOut << " dRain";
+      m_ofsOut << " ΔRain";
 
    if (m_bSaveGISThisIter)
       m_ofsOut << " GIS" << m_nGISSave;

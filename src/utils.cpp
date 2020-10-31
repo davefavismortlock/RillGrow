@@ -536,24 +536,21 @@ string CSimulation::strGetBuild(void)
 ========================================================================================================================================*/
 void CSimulation::AnnounceProgress(void)
 {
+   // Is stdout is connected to a tty?
    if (isatty(1))
    {
-      // Stdout is connected to a tty, so not running as a background job
-      static double sdElapsed = 0;
-      static double sdToGo = 0;
-
-      // Get current time
+      // It isn't, so we are not running as a background job. First get current time
       time_t tNow = time(nullptr);
 
       // Calculate time elapsed and remaining
-      sdElapsed = difftime(tNow, m_tSysStartTime);
-      sdToGo = (sdElapsed * m_dSimulationDuration / m_dSimulatedTimeElapsed) - sdElapsed;
+      m_dElapsed = difftime(tNow, m_tSysStartTime);
+      m_dStillToGo = (m_dElapsed * m_dSimulationDuration / m_dSimulatedTimeElapsed) - m_dElapsed;
 
       // Tell the user about progress (note need to make several separate calls to cout here, or MS VC++ compiler appears to get confused)
       cout << SIMULATING << strDispTime(m_dSimulatedTimeElapsed, false, true);
       cout << setiosflags(ios::fixed) << setprecision(3) << setw(9) << 100 * m_dSimulatedTimeElapsed / m_dSimulationDuration;
-      cout << "%   (elapsed " << strDispTime(sdElapsed, true, false) << " remaining ";
-      cout << strDispTime(sdToGo, true, false) << ")  ";
+      cout << "%   (elapsed " << strDispTime(m_dElapsed, true, false) << " remaining ";
+      cout << strDispTime(m_dStillToGo, true, false) << ")  ";
       cout.flush();
    }
 }
@@ -1068,19 +1065,6 @@ double CSimulation::dGetCellSide(void) const
 double CSimulation::dGetCellSideDiag(void) const
 {
    return m_dCellDiag;
-}
-
-
-/*========================================================================================================================================
-
-Publicly visible, returns the reverse (opposite) direction of flow
-
-========================================================================================================================================*/
-int CSimulation::nCalcOppositeDirection(int const nDir) const
-{
-   int nReverseDir = (nDir + 4) % 8;
-
-   return nReverseDir;
 }
 
 

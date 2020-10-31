@@ -41,7 +41,7 @@ public:
    void SetParent(CCell* const);
 
    void DoInfiltration(double&);
-   void InfiltrateAndMakeDry(void);
+   void InfiltrateAndMakeDry(double&, double&, double&);
    void InitializeInfiltration(void);
    double dGetInfiltration(void) const;
    double dGetCumulInfiltration(void) const;

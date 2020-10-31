@@ -1,6 +1,6 @@
 /*=========================================================================================================================================
 
- This is simulate_infilt.cpp: it simulates infilt
+ This is simulate_infilt.cpp: it simulates infiltration
 
  Copyright (C) 2020 David Favis-Mortlock
 
@@ -83,27 +83,35 @@ void CSimulation::DoAllInfiltration()
                dLayerMaxSoilWaterDepth = m_VdInputSoilLayerInfiltSatWater[nLayer] * dLayerThickness,  // In mm
                dDiff = dLayerMaxSoilWaterDepth - dLayerSoilWaterDepth;
 
-//             // Is this soil layer over-saturated?
-//             if ((dDiff + TOLERANCE) < 0)
-//             {
-//                // Yes, so do exfilt
-//                DoCellExfiltration(nX, nY, nLayer, pLayer, -dDiff);
-//
-// //                m_ofsLog << m_ulIter << ": should have exfilt " << -dDiff << " from layer " << nLayer << " at [" << nX << "][" << nY << "] since dLayerMaxSoilWaterDepth = " << dLayerMaxSoilWaterDepth << ", dLayerSoilWaterDepth = " << dLayerSoilWaterDepth << endl;
-//
-//                continue;
-//             }
+            // Is this soil layer over-saturated?
+            if ((dDiff + TOLERANCE) < 0)
+            {
+               // Yes, so do exfilt
+               DoCellExfiltration(nX, nY, nLayer, pLayer, -dDiff);
+
+               if (nLayer == 0)
+                  // This is the top layer
+                  m_dSinceLastExfiltration += dDiff;
+
+//                m_ofsLog << m_ulIter << ": exfiltration " << -dDiff << " from layer " << nLayer << " at [" << nX << "][" << nY << "] since dLayerMaxSoilWaterDepth = " << dLayerMaxSoilWaterDepth << ", dLayerSoilWaterDepth = " << dLayerSoilWaterDepth << endl;
+
+               continue;
+            }
 
             // Is this soil layer under-saturated?
             if ((dDiff - TOLERANCE) > 0)
             {
                // Yes, so do infilt
-//                m_ofsLog << m_ulIter << ": infilt " << dDiff << " from layer " << nLayer << " at [" << nX << "][" << nY << "] since dLayerMaxSoilWaterDepth = " << dLayerMaxSoilWaterDepth << ", dLayerSoilWaterDepth = " << dLayerSoilWaterDepth << endl;
+//                m_ofsLog << m_ulIter << ": infiltration " << dDiff << " into layer " << nLayer << " at [" << nX << "][" << nY << "] since dLayerMaxSoilWaterDepth = " << dLayerMaxSoilWaterDepth << ", dLayerSoilWaterDepth = " << dLayerSoilWaterDepth << endl;
 
                DoCellInfiltration(nX, nY, nLayer, pLayer, dDiff);
+
+               if (nLayer == 0)
+                  // This is the top layer
+                  m_dSinceLastInfiltration += dDiff;
             }
 
-            // Update the this-operation (value is kept for several iterations) total
+            // Update the this-operation total
             m_VdThisIterSoilWater[nLayer] += Cell[nX][nY].pGetSoil()->pLayerGetLayer(nLayer)->dGetSoilWater();
          }
       }
@@ -183,7 +191,16 @@ void CSimulation::DoCellInfiltration(int const nX, int const nY, int const nLaye
       if (nLayer == 0)
       {
          // This is the top layer, so remove the water, update total infilt for this cell, assume that any in-transport sediment is deposited and add this to the per-iteration total of infitration-deposited sediment
-         Cell[nX][nY].pGetSoilWater()->InfiltrateAndMakeDry();
+         double
+            dClayDeposited = 0,
+            dSiltDeposited = 0,
+            dSandDeposited = 0;
+
+         Cell[nX][nY].pGetSoilWater()->InfiltrateAndMakeDry(dClayDeposited, dSiltDeposited, dSandDeposited);
+
+         m_dSinceLastClayInfiltDeposit += dClayDeposited;
+         m_dSinceLastSiltInfiltDeposit += dSiltDeposited;
+         m_dSinceLastSandInfiltDeposit += dSandDeposited;
       }
       else
       {

@@ -31,7 +31,7 @@ CCellSurfaceWater::CCellSurfaceWater(void)
    m_dSurfaceWaterDepthLost(0),
    m_dCumulSurfaceWaterDepthLost(0),
    m_dStreamPower(0),
-   m_dTransCap(0),
+   m_dTransportCapacity(0),
    m_dFrictionFactor(0)
 {
    m_pCell = NULL;
@@ -52,7 +52,7 @@ void CCellSurfaceWater::SetFlowThisIter(void)
    m_bFlowThisIter = true;
 }
 
-bool CCellSurfaceWater::bFlowThisIter(void)
+bool CCellSurfaceWater::bFlowThisIter(void) const
 {
    return m_bFlowThisIter;
 }
@@ -66,7 +66,7 @@ void CCellSurfaceWater::InitializeFlow(void)
 
    m_dSurfaceWaterDepthLost =
    m_dStreamPower =
-   m_dTransCap = 0;
+   m_dTransportCapacity = 0;
 }
 
 // Sets the inundation class
@@ -97,12 +97,8 @@ int CCellSurfaceWater::nGetFlowDirection(void) const
 // Adds to this cell's surface water depth. Also handles the this-iteration total of surface water
 void CCellSurfaceWater::AddSurfaceWater(double const dAddDepth)
 {
-   assert(dAddDepth > 0);
-
    m_dSurfaceWaterDepth += dAddDepth;
    m_dCumulSurfaceWaterDepth += dAddDepth;
-
-   assert(m_dSurfaceWaterDepth >= 0);
 
    // And make sure that this cell is not processed a second time this iteration
    m_bFlowThisIter = true;
@@ -120,7 +116,6 @@ void CCellSurfaceWater::RemoveSurfaceWater(double& dRemoveDepth)
    {
       m_dSurfaceWaterDepth -= dRemoveDepth;
       m_dCumulSurfaceWaterDepth -= dRemoveDepth;
-      assert(m_dSurfaceWaterDepth >= 0);
    }
 }
 
@@ -326,13 +321,13 @@ double CCellSurfaceWater::dGetStreamPower(void) const
 // Sets this cell's transport capacity: as with all others, it's a depth equivalent i.e. what depth of sediment could be transported
 void CCellSurfaceWater::SetTransportCapacity(double const dNewTC)
 {
-   m_dTransCap = dNewTC;
+   m_dTransportCapacity = dNewTC;
 }
 
 // Returns the transport capacity for this cell
 double CCellSurfaceWater::dGetTransportCapacity(void) const
 {
-   return m_dTransCap;
+   return m_dTransportCapacity;
 }
 
 

@@ -139,7 +139,7 @@ using std::to_string;
 #endif
 
 //========================================================== Hard-Wired Constants =========================================================
-string const   PROGNAME                                     = "RillGrow serial (30 October 2020 version)";
+string const   PROGNAME                                     = "RillGrow serial (31 October 2020 version)";
 string const   SHORTNAME                                    = "RG";
 string const   RG_INI                                       = "rg.ini";
 
@@ -250,7 +250,7 @@ int const      EDGE_RIGHT                                   = 1;
 int const      EDGE_BOTTOM                                  = 2;
 int const      EDGE_LEFT                                    = 3;
 
-// NOTE cannot change these or nCalcOppositeDirection() etc. will no longer work
+// NOTE cannot change these: need to be like this to calc opposite direction to flow for headcut retreat
 int const      DIRECTION_NONE                               = -1;                 // Planview
 int const      DIRECTION_TOP                                = 0;
 int const      DIRECTION_TOP_RIGHT                          = 1;
@@ -611,7 +611,6 @@ struct FillToWidth
    int nWidth;
 };
 ostream& operator<< (ostream&, const FillToWidth&);
-
 
 //====================================================== debugging stuff ==================================================================
 //#define CLOCKCHECK          // uncomment to check CPU clock rollover settings

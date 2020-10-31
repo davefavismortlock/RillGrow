@@ -33,7 +33,7 @@ private:
       m_bFlowThisIter;                             // Switch to prevent processing twice in the same iteration
    int
       m_nFlowDirection,
-      m_nInundationClass;                          // 0 = dry, 1 = shallow flow, 2 = marginally inundated, 3 = well inundated
+      m_nInundationClass;                          // For Lawrence fricton factor calcs: 0 = dry, 1 = shallow flow, 2 = marginally inundated, 3 = well inundated
 
    double
       m_dSurfaceWaterDepth,                        // Water on soil surface, as a depth (mm)
@@ -41,7 +41,7 @@ private:
       m_dSurfaceWaterDepthLost,                    // This-iteration depth lost via edge cell (mm)
       m_dCumulSurfaceWaterDepthLost,               // Cumulative depth lost via edge cell (mm)
       m_dStreamPower,
-      m_dTransCap,
+      m_dTransportCapacity,
       m_dFrictionFactor;
 
    C2DVec
@@ -60,7 +60,7 @@ public:
 
    void InitializeFlow(void);
    void SetFlowThisIter(void);
-   bool bFlowThisIter(void);
+   bool bFlowThisIter(void) const;
 
    void SetInundation(int const);
    int nGetInundation(void) const;

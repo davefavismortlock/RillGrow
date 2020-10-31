@@ -200,16 +200,17 @@ void CSimulation::DoAllRain(void)
 ========================================================================================================================================*/
 bool CSimulation::bSetUpRainfallIntensity(void)
 {
+   bool bHasChanged = false;
+
    if (m_bTimeVaryingRain)
    {
       // We have time-varying rainfall intensity, so check if rain intensity has changed
-      static int snChange = 0;
-      if ((snChange <= m_nRainChangeTimeMax) && (m_dSimulatedTimeElapsed >= m_VdRainChangeTime[snChange]))
+      if ((m_nTimeVaryingRainCount <= m_nRainChangeTimeMax) && (m_dSimulatedTimeElapsed >= m_VdRainChangeTime[m_nTimeVaryingRainCount]))
       {
          // Change rainfall intensity
-         m_dRainIntensity = m_VdRainChangeIntensity[snChange];
-         snChange++;
-         return true;
+         m_dRainIntensity = m_VdRainChangeIntensity[m_nTimeVaryingRainCount];
+         m_nTimeVaryingRainCount++;
+         bHasChanged = true;
       }
    }
    else
@@ -217,13 +218,15 @@ bool CSimulation::bSetUpRainfallIntensity(void)
       // We don't have time-varying rainfall intensity, so check if rain has stopped
       if (m_dSimulatedTimeElapsed > m_dSimulatedRainDuration)
       {
+         if (m_dRainIntensity > 0)
+            bHasChanged = true;
+
          // Rain has stopped
          m_dRainIntensity = 0;
-         return true;
       }
    }
 
-   return false;
+   return bHasChanged;
 }
 
 

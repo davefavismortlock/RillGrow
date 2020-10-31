@@ -107,7 +107,8 @@ CSimulation::CSimulation(void)
    m_bFrictionFactorReynolds  =
    m_bFrictionFactorLawrence  =
    m_bLostSave                =
-   m_bFlumeTypeSim            = false;
+   m_bFlumeTypeSim            =
+   m_bSplashForward           = false;
 
    for (int n = 0; n < 4; n++)
    {
@@ -115,25 +116,29 @@ CSimulation::CSimulation(void)
       m_bRunOnThisEdge[n] = false;
    }
 
-   m_nGISSave           =
-   m_nUSave             =
-   m_nThisSave          =
-   m_nXGridMax          =
-   m_nYGridMax          =
-   m_nHeaderSize        =
-   m_nRainChangeTimeMax =
-   m_nNumSoilLayers     =
-   m_nSSSQuadrantSize   = 0;
-   m_nZUnits            = Z_UNIT_NONE;
+   m_nGISSave                 =
+   m_nUSave                   =
+   m_nThisSave                =
+   m_nXGridMax                =
+   m_nYGridMax                =
+   m_nHeaderSize              =
+   m_nRainChangeTimeMax       =
+   m_nNumSoilLayers           =
+   m_nSSSQuadrantSize         =
+   m_nTimeVaryingRainCount    =
+   m_nInfiltCount             =
+   m_nSlumpCount              =
+   m_nHeadcutRetreatCount     = 0;
+   m_nZUnits                  = Z_UNIT_NONE;
 
-   m_ulIter              =
-   m_ulTotIter           =
-   m_ulVarChkStart       =
-   m_ulVarChkEnd         =
-   m_ulNActiveCells      =
-   m_ulNWet              =
-   m_ulMissingValueCells =
-   m_ulNumHead           = 0;
+   m_ulIter                   =
+   m_ulTotIter                =
+   m_ulVarChkStart            =
+   m_ulVarChkEnd              =
+   m_ulNActiveCells           =
+   m_ulNWet                   =
+   m_ulMissingValueCells      =
+   m_ulNumHead                = 0;
 
    for (int n = 0; n < NUMBER_OF_RNGS; n++)
       m_ulRandSeed[n] = rand();
@@ -241,10 +246,11 @@ CSimulation::CSimulation(void)
    m_dSinceLastClayToppleToSedLoad  =
    m_dSinceLastSiltToppleToSedLoad  =
    m_dSinceLastSandToppleToSedLoad  =
-   m_dThisIterInfiltration          =
-   m_dThisIterClayInfiltDeposit     =
-   m_dThisIterSiltInfiltDeposit     =
-   m_dThisIterSandInfiltDeposit     =
+   m_dSinceLastInfiltration         =
+   m_dSinceLastExfiltration         =
+   m_dSinceLastClayInfiltDeposit    =
+   m_dSinceLastSiltInfiltDeposit    =
+   m_dSinceLastSandInfiltDeposit    =
    m_dSinceLastClayHeadcutDetach    =
    m_dSinceLastSiltHeadcutDetach    =
    m_dSinceLastSandHeadcutDetach    =
@@ -254,7 +260,6 @@ CSimulation::CSimulation(void)
    m_dSinceLastClayHeadcutToSedLoad =
    m_dSinceLastSiltHeadcutToSedLoad =
    m_dSinceLastSandHeadcutToSedLoad =
-   m_dThisIterExfiltration          =
    m_dLastIterAvgHead               =
    m_dThisIterTotHead               =
    m_dWaterCorrection               =
@@ -313,7 +318,11 @@ CSimulation::CSimulation(void)
    m_dSlumpErrorLast                =
    m_dToppleErrorLast               =
    m_dHeadcutErrorLast              =
-   m_dFlowErrorLast                 = 0;
+   m_dFlowErrorLast                 =
+   m_dElapsed                       =
+   m_dStillToGo                     =
+   m_dWaterStoredLast               =
+   m_dSedimentLoadDepthLast         = 0;
 
    for (int i = 0; i < 6; i++)
       m_dGeoTransform[i] = 0;
@@ -763,13 +772,10 @@ void CSimulation::CalcTimestep(void)
 ========================================================================================================================================*/
 void CSimulation::CheckMassBalance(void)
 {
-   // Check the this-iteration water balance: start by calculating the change in surface water since the last iteration
-   static double sdWaterStoredLast = 0;
-
-   // Calculate LHS = pre-iteration stored water + rain + run-on + exfiltration, RHS = infilt + outflow + end-of-iteration stored water
+   // Check the this-iteration water balance: start by calculating the change in surface water since the last iteration. Calculate LHS = pre-iteration stored water + rain + run-on + exfiltration, RHS = infilt + outflow + end-of-iteration stored water
    double
-      dTotLHS = m_dThisIterRain + m_dThisIterRunOn + m_dThisIterExfiltration + sdWaterStoredLast - m_dWaterErrorLast,
-      dTotRHS = m_dThisIterInfiltration + m_dThisIterLostSurfaceWater + m_dThisIterStoredSurfaceWater;
+      dTotLHS = m_dThisIterRain + m_dThisIterRunOn + m_dSinceLastExfiltration + m_dWaterStoredLast - m_dWaterErrorLast,
+      dTotRHS = m_dSinceLastInfiltration + m_dThisIterLostSurfaceWater + m_dThisIterStoredSurfaceWater;
 
    if (! bFPIsEqual(dTotLHS, dTotRHS, WATER_TOLERANCE))
    {
@@ -780,9 +786,9 @@ void CSimulation::CheckMassBalance(void)
       m_ofsLog << "\tLHS (input + previous storage -last error) - RHS (losses + storage) = " << dTotLHS - dTotRHS << endl;
       m_ofsLog << "\tm_dThisIterRain                 = " << m_dThisIterRain << endl;
       m_ofsLog << "\tm_dThisIterRunOn                = " << m_dThisIterRunOn << endl;
-      m_ofsLog << "\tsdWaterStoredLast               = " << sdWaterStoredLast << endl;
-      m_ofsLog << "\tm_dWaterErrorLast              = " << m_dWaterErrorLast << endl;
-      m_ofsLog << "\t\tm_dThisIterInfiltration          = " << m_dThisIterInfiltration << endl;
+      m_ofsLog << "\tm_dWaterStoredLast               = " << m_dWaterStoredLast << endl;
+      m_ofsLog << "\tm_dWaterErrorLast               = " << m_dWaterErrorLast << endl;
+      m_ofsLog << "\t\tm_dSinceLastInfiltration         = " << m_dSinceLastInfiltration << endl;
       m_ofsLog << "\t\tm_dThisIterLostSurfaceWater      = " << m_dThisIterLostSurfaceWater << endl;
       m_ofsLog << "\t\tm_dThisIterStoredSurfaceWater    = " << m_dThisIterStoredSurfaceWater << endl;
 
@@ -792,22 +798,19 @@ void CSimulation::CheckMassBalance(void)
    }
 
    // Store for next iteration
-   sdWaterStoredLast = m_dThisIterStoredSurfaceWater;
+   m_dWaterStoredLast = m_dThisIterStoredSurfaceWater;
 
    // Now check the various this-iteration sediment balances
-   static double sdSedimentLoadDepthLast = 0;
-
    double
       dThisIterSplashDetach = 0,
-      dThisIterSplashDeposit = 0,
-      dThisIterSplashToSedLoad = 0;
+      dThisIterSplashDeposit = 0;
 
    if (m_bSplash && m_bSplashThisIter)
    {
       // Check splash mass balance
       dThisIterSplashDetach = m_dThisIterClaySplashDetach + m_dThisIterSiltSplashDetach + m_dThisIterSandSplashDetach;
       dThisIterSplashDeposit = m_dThisIterClaySplashDeposit + m_dThisIterSiltSplashDeposit + m_dThisIterSandSplashDeposit;
-      dThisIterSplashToSedLoad = m_dThisIterClaySplashToSedLoad + m_dThisIterSiltSplashToSedLoad + m_dThisIterSandSplashToSedLoad;
+      double dThisIterSplashToSedLoad = m_dThisIterClaySplashToSedLoad + m_dThisIterSiltSplashToSedLoad + m_dThisIterSandSplashToSedLoad;
 
       dTotLHS = dThisIterSplashDetach - m_dSplashErrorLast;
       dTotRHS = dThisIterSplashDeposit + dThisIterSplashToSedLoad;
@@ -820,7 +823,7 @@ void CSimulation::CheckMassBalance(void)
          m_ofsLog << m_ulIter << " " << WARN << "splash sediment balance, LHS = " << dTotLHS << " RHS = " << dTotRHS << endl;
          m_ofsLog << "\tLHS (detach - last error) - RHS (deposition + to flow) = " << dTotLHS - dTotRHS << endl;
          m_ofsLog << "\tdThisIterSplashDetach           = " << dThisIterSplashDetach << endl;
-         m_ofsLog << "\tm_dSplashErrorLast             = " << m_dSplashErrorLast << endl;
+         m_ofsLog << "\tm_dSplashErrorLast              = " << m_dSplashErrorLast << endl;
          m_ofsLog << "\t\tdThisIterSplashDeposit           = " << dThisIterSplashDeposit << endl;
          m_ofsLog << "\t\tdThisIterSplashToSedLoad         = " << dThisIterSplashToSedLoad << endl;
 
@@ -833,17 +836,15 @@ void CSimulation::CheckMassBalance(void)
    double
       dThisIterSlumpDetach = 0,
       dThisIterSlumpDeposit = 0,
-      dThisIterSlumpToSedLoad = 0,
       dThisIterToppleDetach = 0,
-      dThisIterToppleDeposit = 0,
-      dThisIterToppleToSedLoad = 0;
+      dThisIterToppleDeposit = 0;
 
    if (m_bSlumping && m_bSlumpThisIter)
    {
       // Check the slumping mass balance
       dThisIterSlumpDetach = m_dSinceLastClaySlumpDetach + m_dSinceLastSiltSlumpDetach  + m_dSinceLastSandSlumpDetach;
       dThisIterSlumpDeposit = m_dSinceLastClaySlumpDeposit + m_dSinceLastSiltSlumpDeposit  + m_dSinceLastSandSlumpDeposit;
-      dThisIterSlumpToSedLoad = m_dSinceLastClaySlumpToSedLoad + m_dSinceLastSiltSlumpToSedLoad  + m_dSinceLastSandSlumpToSedLoad;
+      double dThisIterSlumpToSedLoad = m_dSinceLastClaySlumpToSedLoad + m_dSinceLastSiltSlumpToSedLoad  + m_dSinceLastSandSlumpToSedLoad;
 
       dTotLHS = dThisIterSlumpDetach - m_dSlumpErrorLast,
       dTotRHS = dThisIterSlumpDeposit + dThisIterSlumpToSedLoad;
@@ -856,7 +857,7 @@ void CSimulation::CheckMassBalance(void)
          m_ofsLog << m_ulIter << " " << WARN << "slump sediment balance, LHS = " << dTotLHS << " RHS = " << dTotRHS << endl;
          m_ofsLog << "\tLHS (detach - last error) - RHS (deposition + to flow) = " << dTotLHS - dTotRHS << endl;
          m_ofsLog << "\tdThisIterSlumpDetach            = " << dThisIterSlumpDetach << endl;
-         m_ofsLog << "\tm_dSlumpErrorLast              = " << m_dSlumpErrorLast << endl;
+         m_ofsLog << "\tm_dSlumpErrorLast               = " << m_dSlumpErrorLast << endl;
          m_ofsLog << "\t\tdThisIterSlumpDeposit            = " << dThisIterSlumpDeposit << endl;
          m_ofsLog << "\t\tdThisIterSlumpToSedLoad          = " << dThisIterSlumpToSedLoad << endl;
 
@@ -868,7 +869,7 @@ void CSimulation::CheckMassBalance(void)
       // Now check the toppling mass balance
       dThisIterToppleDetach = m_dSinceLastClayToppleDetach + m_dSinceLastSiltToppleDetach  + m_dSinceLastSandToppleDetach;
       dThisIterToppleDeposit = m_dSinceLastClayToppleDeposit + m_dSinceLastSiltToppleDeposit  + m_dSinceLastSandToppleDeposit;
-      dThisIterToppleToSedLoad = m_dSinceLastClayToppleToSedLoad + m_dSinceLastSiltToppleToSedLoad  + m_dSinceLastSandToppleToSedLoad;
+      double dThisIterToppleToSedLoad = m_dSinceLastClayToppleToSedLoad + m_dSinceLastSiltToppleToSedLoad  + m_dSinceLastSandToppleToSedLoad;
 
       dTotLHS = dThisIterToppleDetach - m_dToppleErrorLast,
       dTotRHS = dThisIterToppleDeposit + dThisIterToppleToSedLoad;
@@ -893,15 +894,14 @@ void CSimulation::CheckMassBalance(void)
 
    double
       dThisIterHeadcutRetreatDetach = 0,
-      dThisIterHeadcutRetreatDeposit = 0,
-      dThisIterHeadcutRetreatToSedLoad = 0;
+      dThisIterHeadcutRetreatDeposit = 0;
 
    if (m_bHeadcutRetreat && m_bHeadcutRetreatThisIter)
    {
       // Check the headcut retreat mass balance
       dThisIterHeadcutRetreatDetach = m_dSinceLastClayHeadcutDetach + m_dSinceLastSiltHeadcutDetach  + m_dSinceLastSandHeadcutDetach;
       dThisIterHeadcutRetreatDeposit = m_dSinceLastClayHeadcutDeposit + m_dSinceLastSiltHeadcutDeposit  + m_dSinceLastSandHeadcutDeposit;
-      dThisIterHeadcutRetreatToSedLoad = m_dSinceLastClayHeadcutToSedLoad + m_dSinceLastSiltHeadcutToSedLoad  + m_dSinceLastSandHeadcutToSedLoad;
+      double dThisIterHeadcutRetreatToSedLoad = m_dSinceLastClayHeadcutToSedLoad + m_dSinceLastSiltHeadcutToSedLoad  + m_dSinceLastSandHeadcutToSedLoad;
 
       dTotLHS = dThisIterHeadcutRetreatDetach - m_dHeadcutErrorLast,
       dTotRHS = dThisIterHeadcutRetreatDeposit + dThisIterHeadcutRetreatToSedLoad;
@@ -929,10 +929,10 @@ void CSimulation::CheckMassBalance(void)
       dTotSedLoad = m_dThisIterClaySedLoad + m_dThisIterSiltSedLoad + m_dThisIterSandSedLoad,
       dThisIterFlowDetach = m_dThisIterClayFlowDetach + m_dThisIterSiltFlowDetach + m_dThisIterSandFlowDetach,
       dThisIterFlowDeposit = m_dThisIterClayFlowDeposit + m_dThisIterSiltFlowDeposit + m_dThisIterSandFlowDeposit,
-      dThisIterInfiltDeposit = m_dThisIterClayInfiltDeposit + m_dThisIterSiltInfiltDeposit + m_dThisIterSandInfiltDeposit,
+      dThisIterInfiltDeposit = m_dSinceLastClayInfiltDeposit + m_dSinceLastSiltInfiltDeposit + m_dSinceLastSandInfiltDeposit,
       dThisIterSedLost = m_dThisIterClaySedLost + m_dThisIterSiltSedLost + m_dThisIterSandSedLost;
 
-   dTotLHS = sdSedimentLoadDepthLast + dThisIterFlowDetach + dThisIterSplashDetach + dThisIterSlumpDetach + dThisIterToppleDetach + dThisIterHeadcutRetreatDetach -m_dFlowErrorLast,
+   dTotLHS = m_dSedimentLoadDepthLast + dThisIterFlowDetach + dThisIterSplashDetach + dThisIterSlumpDetach + dThisIterToppleDetach + dThisIterHeadcutRetreatDetach -m_dFlowErrorLast,
    dTotRHS = dThisIterFlowDeposit + dThisIterSplashDeposit + dThisIterSlumpDeposit + dThisIterToppleDeposit + dThisIterInfiltDeposit + dThisIterHeadcutRetreatDeposit + dThisIterSedLost + dTotSedLoad;
 
    if (! bFPIsEqual(dTotLHS, dTotRHS, SEDIMENT_TOLERANCE))
@@ -948,7 +948,7 @@ void CSimulation::CheckMassBalance(void)
       m_ofsLog << "\tdThisIterSlumpDetach            = " << dThisIterSlumpDetach << endl;
       m_ofsLog << "\tdThisIterToppleDetach           = " << dThisIterToppleDetach << endl;
       m_ofsLog << "\tdThisIterHeadcutRetreatDetach   = " << dThisIterHeadcutRetreatDetach << endl;
-      m_ofsLog << "\tsdSedimentLoadDepthLast         = " << sdSedimentLoadDepthLast << endl;
+      m_ofsLog << "\tm_dSedimentLoadDepthLast         = " << m_dSedimentLoadDepthLast << endl;
       m_ofsLog << "\tm_dFlowErrorLast                = " << m_dFlowErrorLast << endl;
       m_ofsLog << "\t\tdThisIterFlowDeposit             = " << dThisIterFlowDeposit << endl;
       m_ofsLog << "\t\tdThisIterSplashDeposit           = " << dThisIterSplashDeposit << endl;
@@ -965,7 +965,7 @@ void CSimulation::CheckMassBalance(void)
    }
 
    // Store for next iteration
-   sdSedimentLoadDepthLast = dTotSedLoad;
+   m_dSedimentLoadDepthLast = dTotSedLoad;
 }
 
 
@@ -1019,9 +1019,9 @@ void CSimulation::UpdateGrandTotals(void)
 
    if (m_bInfiltThisIter)
    {
-      m_ldGTotInfilt        += (m_dThisIterInfiltration * m_dCellSquare);
-      m_ldGTotExfilt        += (m_dThisIterExfiltration * m_dCellSquare);
-      m_ldGTotInfiltDeposit += (m_dThisIterClayInfiltDeposit + m_dThisIterSiltInfiltDeposit + m_dThisIterSandInfiltDeposit) * m_dCellSquare;
+      m_ldGTotInfilt        += (m_dSinceLastInfiltration * m_dCellSquare);
+      m_ldGTotExfilt        += (m_dSinceLastExfiltration * m_dCellSquare);
+      m_ldGTotInfiltDeposit += (m_dSinceLastClayInfiltDeposit + m_dSinceLastSiltInfiltDeposit + m_dSinceLastSandInfiltDeposit) * m_dCellSquare;
    }
 
    if (m_bSplashThisIter)
@@ -1125,12 +1125,16 @@ int CSimulation::nDoSimulation(void)
 
       // Infiltration next
       m_bInfiltThisIter = false;
-      static int snInfiltCount = 0;
+      m_dSinceLastInfiltration =
+      m_dSinceLastExfiltration =
+      m_dSinceLastClayInfiltDeposit =
+      m_dSinceLastSiltInfiltDeposit =
+      m_dSinceLastSandInfiltDeposit = 0;
 
-      if (m_bDoInfiltration && (CALC_INFILT_INTERVAL-1 == ++snInfiltCount))                 // If we are considering infilt, simulate it this iteration?
+      if (m_bDoInfiltration && (CALC_INFILT_INTERVAL-1 == ++m_nInfiltCount))                 // If we are considering infilt, simulate it this iteration?
       {
          // Yup, simulate infilt from the Cell array
-         snInfiltCount = 0;
+         m_nInfiltCount = 0;
          m_bInfiltThisIter = true;
 
          DoAllInfiltration();
@@ -1155,7 +1159,6 @@ int CSimulation::nDoSimulation(void)
 
       // Next, rill-wall slumping and toppling
       m_bSlumpThisIter = false;
-      static int snSlumpCount = 0;
 
       // Initialize 'since last' values for slumping and toppling
       m_dSinceLastClaySlumpDetach =
@@ -1178,10 +1181,10 @@ int CSimulation::nDoSimulation(void)
       m_dSinceLastSandToppleToSedLoad = 0;
 
       // If we are considering slumping, simulate it this iteration?
-      if (m_bSlumping && (CALC_SLUMP_INTERVAL-1 == ++snSlumpCount))
+      if (m_bSlumping && (CALC_SLUMP_INTERVAL-1 == ++m_nSlumpCount))
       {
          // Yup, simulate slumping and toppling
-         snSlumpCount = 0;
+         m_nSlumpCount = 0;
          m_bSlumpThisIter = true;
          DoAllSlump();
 
@@ -1191,7 +1194,6 @@ int CSimulation::nDoSimulation(void)
 
       // Finally, headcut retreat
       m_bHeadcutRetreatThisIter = false;
-      static int snHeadcutRetreatCount = 0;
 
       // Initialize 'since last' values for headcut retreat
       m_dSinceLastClayHeadcutDetach =
@@ -1205,10 +1207,10 @@ int CSimulation::nDoSimulation(void)
       m_dSinceLastSandHeadcutToSedLoad = 0;
 
       // If we are considering headcut retreat, simulate it this iteration?
-      if (m_bHeadcutRetreat && (CALC_HEADCUT_RETREAT_INTERVAL-1 == ++snHeadcutRetreatCount))
+      if (m_bHeadcutRetreat && (CALC_HEADCUT_RETREAT_INTERVAL-1 == ++m_nHeadcutRetreatCount))
       {
          // Yup, simulate headcut retreat
-         snHeadcutRetreatCount = 0;
+         m_nHeadcutRetreatCount = 0;
          m_bHeadcutRetreatThisIter = true;
          DoAllHeadcutRetreat();
 
@@ -1239,12 +1241,7 @@ int CSimulation::nDoSimulation(void)
       m_dThisIterSandSplashDeposit     =
       m_dThisIterClaySplashToSedLoad   =
       m_dThisIterSiltSplashToSedLoad   =
-      m_dThisIterSandSplashToSedLoad   =
-      m_dThisIterInfiltration          =
-      m_dThisIterClayInfiltDeposit     =
-      m_dThisIterSiltInfiltDeposit     =
-      m_dThisIterSandInfiltDeposit     =
-      m_dThisIterExfiltration          = 0;
+      m_dThisIterSandSplashToSedLoad   = 0;
 
       for (int nX = 0; nX < m_nXGridMax; nX++)
       {
@@ -1273,14 +1270,9 @@ int CSimulation::nDoSimulation(void)
                dSandSplashDeposit = 0,
                dClaySplashToSedLoad = 0,
                dSiltSplashToSedLoad = 0,
-               dSandSplashToSedLoad = 0,
-               dInfiltration = 0,
-               dExfiltration = 0,
-               dClayInfiltDeposit = 0,
-               dSiltInfiltDeposit = 0,
-               dSandInfiltDeposit = 0;
+               dSandSplashToSedLoad = 0;
 
-            Cell[nX][nY].CalcIterTotalsAndInit(bIsWet, dRain, dRunOn, dSurfaceWaterDepth, dSurfaceWaterLost, dClaySedLoad, dSiltSedLoad, dSandSedLoad, dClayFlowDetach, dSiltFlowDetach, dSandFlowDetach, dClayFlowDeposit, dSiltFlowDeposit, dSandFlowDeposit, dClaySplashDetach, dSiltSplashDetach, dSandSplashDetach, dClaySplashDeposit, dSiltSplashDeposit, dSandSplashDeposit, dClaySplashToSedLoad, dSiltSplashToSedLoad, dSandSplashToSedLoad, dInfiltration, dExfiltration, dClayInfiltDeposit, dSiltInfiltDeposit, dSandInfiltDeposit, m_bSlumpThisIter);
+            Cell[nX][nY].CalcIterTotalsAndInit(bIsWet, dRain, dRunOn, dSurfaceWaterDepth, dSurfaceWaterLost, dClaySedLoad, dSiltSedLoad, dSandSedLoad, dClayFlowDetach, dSiltFlowDetach, dSandFlowDetach, dClayFlowDeposit, dSiltFlowDeposit, dSandFlowDeposit, dClaySplashDetach, dSiltSplashDetach, dSandSplashDetach, dClaySplashDeposit, dSiltSplashDeposit, dSandSplashDeposit, dClaySplashToSedLoad, dSiltSplashToSedLoad, dSandSplashToSedLoad, m_bSlumpThisIter);
 
             if (m_dRainIntensity > 0)
             {
@@ -1324,16 +1316,6 @@ int CSimulation::nDoSimulation(void)
                m_dThisIterSiltSplashToSedLoad += dSiltSplashToSedLoad;
                m_dThisIterSandSplashToSedLoad += dSandSplashToSedLoad;
             }
-
-            if (m_bDoInfiltration && m_bInfiltThisIter)
-            {
-               m_dThisIterInfiltration += dInfiltration;
-               m_dThisIterExfiltration += dExfiltration;
-
-               m_dThisIterClayInfiltDeposit += dClayInfiltDeposit;
-               m_dThisIterSiltInfiltDeposit += dSiltInfiltDeposit;
-               m_dThisIterSandInfiltDeposit += dSandInfiltDeposit;
-            }
          }
       }
 
@@ -1355,11 +1337,11 @@ int CSimulation::nDoSimulation(void)
          return (RTN_ERR_TEXTFILEWRITE);
 
       // Update totals for time series output which are not output every iteration
-      m_dSinceLastTSWriteInfiltration      += m_dThisIterInfiltration;
-      m_dSinceLastTSWriteExfiltration      += m_dThisIterExfiltration;
-      m_dSinceLastTSWriteClayInfiltDeposit += m_dThisIterClayInfiltDeposit;
-      m_dSinceLastTSWriteSiltInfiltDeposit += m_dThisIterSiltInfiltDeposit;
-      m_dSinceLastTSWriteSandInfiltDeposit += m_dThisIterSandInfiltDeposit;
+      m_dSinceLastTSWriteInfiltration      += m_dSinceLastInfiltration;
+      m_dSinceLastTSWriteExfiltration      += m_dSinceLastExfiltration;
+      m_dSinceLastTSWriteClayInfiltDeposit += m_dSinceLastClayInfiltDeposit;
+      m_dSinceLastTSWriteSiltInfiltDeposit += m_dSinceLastSiltInfiltDeposit;
+      m_dSinceLastTSWriteSandInfiltDeposit += m_dSinceLastSandInfiltDeposit;
       m_dSinceLastTSWriteClaySplashRedist  += m_dThisIterClaySplashDetach;
       m_dSinceLastTSWriteSiltSplashRedist  += m_dThisIterSiltSplashDetach;
       m_dSinceLastTSWriteSandSplashRedist  += m_dThisIterSandSplashDetach;

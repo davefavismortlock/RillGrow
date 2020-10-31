@@ -1038,7 +1038,6 @@ void CCellSoil::DoHeadcutRetreatDetach(double const dThickness, double& dTotClay
    m_dCumulSandHeadcutRetreatDetach += dTotSandDetached;
 }
 
-
 // Adds sediment to this cell as a result of headcut retreat. If the cell is wet, the sediment is added to sediment load
 void CCellSoil::DoHeadcutRetreatDepositOrToSedLoad(double const dClayChngElev, double const dSiltChngElev, double const dSandChngElev, double& dClayDeposited, double& dSiltDeposited, double& dSandDeposited, double& dClayToSedLoad, double& dSiltToSedLoad, double& dSandToSedLoad)
 {
@@ -1073,73 +1072,73 @@ void CCellSoil::DoHeadcutRetreatDepositOrToSedLoad(double const dClayChngElev, d
 }
 
 // Returns this cell's depth of clay soil lost (mm) by headcut retreat
-double CCellSoil::dGetClayHeadcutRetreatDetach(void)
+double CCellSoil::dGetClayHeadcutRetreatDetach(void) const
 {
    return m_dClayHeadcutRetreatDetach;
 }
 
 // Returns this cell's depth of silt soil lost (mm) by headcut retreat
-double CCellSoil::dGetSiltHeadcutRetreatDetach(void)
+double CCellSoil::dGetSiltHeadcutRetreatDetach(void) const
 {
    return m_dSiltHeadcutRetreatDetach;
 }
 
 // Returns this cell's depth of sand soil lost (mm) by headcut retreat
-double CCellSoil::dGetSandHeadcutRetreatDetach(void)
+double CCellSoil::dGetSandHeadcutRetreatDetach(void) const
 {
    return m_dSandHeadcutRetreatDetach;
 }
 
 // Returns this cell's cumulative depth of clay soil lost (mm) by headcut retreat
-double CCellSoil::dGetCumulClayHeadcutRetreatDetach(void)
+double CCellSoil::dGetCumulClayHeadcutRetreatDetach(void) const
 {
    return m_dCumulClayHeadcutRetreatDetach;
 }
 
 // Returns this cell's cumulative depth of silt soil lost (mm) by headcut retreat
-double CCellSoil::dGetCumulSiltHeadcutRetreatDetach(void)
+double CCellSoil::dGetCumulSiltHeadcutRetreatDetach(void) const
 {
    return m_dCumulSiltHeadcutRetreatDetach;
 }
 
 // Returns this cell's cumulative depth of sand soil lost (mm) by headcut retreat
-double CCellSoil::dGetCumulSandHeadcutRetreatDetach(void)
+double CCellSoil::dGetCumulSandHeadcutRetreatDetach(void) const
 {
    return m_dCumulSandHeadcutRetreatDetach;
 }
 
 // Returns this cell's depth of clay soil gained (mm) by headcut retreat
-double CCellSoil::dGetClayHeadcutRetreatDeposit(void)
+double CCellSoil::dGetClayHeadcutRetreatDeposit(void) const
 {
    return m_dClayHeadcutRetreatDeposit;
 }
 
 // Returns this cell's depth of silt soil gained (mm) by headcut retreat
-double CCellSoil::dGetSiltHeadcutRetreatDeposit(void)
+double CCellSoil::dGetSiltHeadcutRetreatDeposit(void) const
 {
    return m_dSiltHeadcutRetreatDeposit;
 }
 
 // Returns this cell's depth of sand soil gained (mm) by headcut retreat
-double CCellSoil::dGetSandHeadcutRetreatDeposit(void)
+double CCellSoil::dGetSandHeadcutRetreatDeposit(void) const
 {
    return m_dSandHeadcutRetreatDeposit;
 }
 
 // Returns this cell's cumulative depth of clay soil gained (mm) by headcut retreat
-double CCellSoil::dGetCumulClayHeadcutRetreatDeposit(void)
+double CCellSoil::dGetCumulClayHeadcutRetreatDeposit(void) const
 {
    return m_dCumulClayHeadcutRetreatDeposit;
 }
 
 // Returns this cell's cumulative depth of silt soil gained (mm) by headcut retreat
-double CCellSoil::dGetCumulSiltHeadcutRetreatDeposit(void)
+double CCellSoil::dGetCumulSiltHeadcutRetreatDeposit(void) const
 {
    return m_dCumulSiltHeadcutRetreatDeposit;
 }
 
 // Returns this cell's cumulative depth of sand soil gained (mm) by headcut retreat
-double CCellSoil::dGetCumulSandHeadcutRetreatDeposit(void)
+double CCellSoil::dGetCumulSandHeadcutRetreatDeposit(void) const
 {
    return m_dCumulSandHeadcutRetreatDeposit;
 }

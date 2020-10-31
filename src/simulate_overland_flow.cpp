@@ -302,9 +302,25 @@ double CSimulation::dTimeToCrossCell(int const nX, int const nY, int const nDir,
          // Calculate flow speed using the Darcy-Weisbach equation, with its friction factor related to Reynolds' number by this empirical relationship: ff = A * Re^B. Note that the Reynolds' number is calculated using the previous iteration's flow speed
          double
             dRe = dGetReynolds(nX, nY),
-            dFF = m_dFFReynoldsParamA * pow(dRe, m_dFFReynoldsParamB);
+            dFF = 0;
 
-         dFlowSpeed = FLOW_SPEED_CONVERSION_CONST * sqrt((DARCY_WEISBACH_CONST * m_dG * dCalcHydraulicRadius(nX, nY) * dTopSlope) / dFF);
+         dFlowSpeed = 0;
+
+         if (dRe > 0)
+         {
+            dFF = m_dFFReynoldsParamA * pow(dRe, m_dFFReynoldsParamB);
+            dFlowSpeed = FLOW_SPEED_CONVERSION_CONST * sqrt((DARCY_WEISBACH_CONST * m_dG * dCalcHydraulicRadius(nX, nY) * dTopSlope) / dFF);
+         }
+
+         // Have to constrain flow speed if it gets too high TODO say more
+         if (dFlowSpeed > m_dMaxFlowSpeed)
+         {
+            dFlowSpeed = m_dMaxFlowSpeed;
+            dFF = m_dMissingValue;
+         }
+
+         // Also constrain DFF if it gets too big (otherwise get error writing file)
+//          dFF = tMin(dFF, 1e10);
 
          // Save the value of the friction factor
          Cell[nX][nY].pGetSurfaceWater()->SetFrictionFactor(dFF);
@@ -330,13 +346,6 @@ double CSimulation::dTimeToCrossCell(int const nX, int const nY, int const nDir,
 
    // If this flow speed is high enough, save it in m_dPossMaxSpeedNextIter and later use this to set the value of m_dTimeStep for the next iteration
    m_dPossMaxSpeedNextIter = tMax(dFlowSpeed, m_dPossMaxSpeedNextIter);
-
-   // Constrain the flow speed: this is necessary TODO SAY MORE
-   if (dFlowSpeed > m_dMaxFlowSpeed)
-   {
-      Vec2DFlowVelocity = Vec2DFlowVelocity * (m_dMaxFlowSpeed / dFlowSpeed);     // Note can't use *=, get const conversion error
-      dFlowSpeed = m_dMaxFlowSpeed;
-   }
 
    // Must now apply this scalar flow speed in the correct flow direction i.e. must create a flow velocity vector (note that the origin is at top left here). Note also that diagonal flow is faster than orthogonal flow: this is incorrect from a strict vector perspective, but is a necessary artefact of using an eight-way flow: to keep flow equally probable in each of the eight directions (all else being equal), flow must be faster on the longer diagonals. Unpleasant but apparently unavoidable unless e.g. a hexagonal grid is used
    switch (nDir)
@@ -691,10 +700,6 @@ void CSimulation::CellMoveWater(int const nXFrom, int const nYFrom, int const nX
          dClaySedToMove = Cell[nXFrom][nYFrom].pGetSedLoad()->dGetClaySedLoad() * dFrac,
          dSiltSedToMove = Cell[nXFrom][nYFrom].pGetSedLoad()->dGetSiltSedLoad() * dFrac,
          dSandSedToMove = Cell[nXFrom][nYFrom].pGetSedLoad()->dGetSandSedLoad() * dFrac;
-
-      assert(dClaySedToMove >= 0);
-      assert(dSiltSedToMove >= 0);
-      assert(dSandSedToMove >= 0);
 
       if ((dClaySedToMove + dSiltSedToMove + dSandSedToMove) > 0)
       {

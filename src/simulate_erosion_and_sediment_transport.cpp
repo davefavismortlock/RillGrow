@@ -237,8 +237,8 @@ void CSimulation::DoCellErosion(int const nX, int const nY, int const nLowX, int
       double dThisRetreat = dConst * sin(dElevSlope);
 //          m_ofsLog << m_ulIter << " [" << nX << "][" << nY << "] dElevSlope (degrees)=" << dElevSlope * 180 / PI << " dThisRetreat=" << dThisRetreat << endl;
 
-      // AddToStoredRetreat nDirection
-      int nHeadcutDirection = nCalcOppositeDirection(nDirection);
+      // Calculate the opposite direction to flow
+      int nHeadcutDirection = (nDirection + 4) % 8;
       Cell[nX][nY].AddToStoredRetreat(nHeadcutDirection, dThisRetreat);
    }
 }
@@ -298,10 +298,6 @@ void CSimulation::DoCellSedLoadDeposit(int const nX, int const nY, double const 
    dClayFrac *= dTCFrac;
    dSiltFrac *= dTCFrac;
    dSandFrac *= dTCFrac;
-
-   assert(dClayFrac <= 1);
-   assert(dSiltFrac <= 1);
-   assert(dSandFrac <= 1);
 
    // Finally, deposit these fractions of each sediment size class. Note that if there isn't enough being transported, then we will reduce the amount (= depth) which gets deposited. Note too that what is implied here is that deposited sediment becomes indistinguishable from the original soil. TODO To be considered in a later version
    Cell[nX][nY].pGetSoil()->DoSedLoadDeposit(dClayFrac, dSiltFrac, dSandFrac);

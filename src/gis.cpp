@@ -842,6 +842,9 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
       dDiff = 0;
 
    // Fill the array
+   double dMaxFF = 0;
+   if (nDataItem == GIS_FRICTION_FACTOR)
+      cerr << endl;
    for (int nY = 0; nY < m_nYGridMax; nY++)
    {
       for (int nX = 0; nX < m_nXGridMax; nX++)
@@ -969,7 +972,12 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
                break;
 
             case (GIS_FRICTION_FACTOR) :
+               if (Cell[nX][nY].pGetSurfaceWater()->dGetFrictionFactor() > dMaxFF)
+                  dMaxFF = Cell[nX][nY].pGetSurfaceWater()->dGetFrictionFactor();
+
                dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetFrictionFactor();
+
+               cerr << nX << " " << nY << " " << Cell[nX][nY].pGetSurfaceWater()->dGetFrictionFactor() << endl;
                break;
 
             case (GIS_AVG_SHEAR_STRESS) :
@@ -1047,6 +1055,9 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
 
       dDiff += m_dYInc;    // GIS_DETREND_ELEVATION and GIS_TOP_SURFACE only
    }
+
+   if (nDataItem == GIS_FRICTION_FACTOR)
+      cerr << "dMaxFF = " << dMaxFF << endl;
 
    // Now write the data. Create a single raster band
    GDALRasterBand* pBand;

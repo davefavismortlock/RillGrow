@@ -109,7 +109,8 @@ private:
       m_bFrictionFactorReynolds,
       m_bFrictionFactorLawrence,
       m_bLostSave,
-      m_bFlumeTypeSim;
+      m_bFlumeTypeSim,
+      m_bSplashForward;
 
    int
       m_nGISSave,
@@ -121,7 +122,11 @@ private:
       m_nRainChangeTimeMax,
       m_nZUnits,
       m_nNumSoilLayers,
-      m_nSSSQuadrantSize;
+      m_nSSSQuadrantSize,
+      m_nTimeVaryingRainCount,
+      m_nInfiltCount,
+      m_nSlumpCount,
+      m_nHeadcutRetreatCount;
 
    unsigned long
       m_ulIter,
@@ -240,10 +245,11 @@ private:
       m_dSinceLastClayToppleToSedLoad,
       m_dSinceLastSiltToppleToSedLoad,
       m_dSinceLastSandToppleToSedLoad,
-      m_dThisIterInfiltration,
-      m_dThisIterClayInfiltDeposit,
-      m_dThisIterSiltInfiltDeposit,
-      m_dThisIterSandInfiltDeposit,
+      m_dSinceLastInfiltration,
+      m_dSinceLastExfiltration,
+      m_dSinceLastClayInfiltDeposit,
+      m_dSinceLastSiltInfiltDeposit,
+      m_dSinceLastSandInfiltDeposit,
       m_dSinceLastClayHeadcutDetach,
       m_dSinceLastSiltHeadcutDetach,
       m_dSinceLastSandHeadcutDetach,
@@ -253,7 +259,6 @@ private:
       m_dSinceLastClayHeadcutToSedLoad,
       m_dSinceLastSiltHeadcutToSedLoad,
       m_dSinceLastSandHeadcutToSedLoad,
-      m_dThisIterExfiltration,
       m_dLastIterAvgHead,
       m_dThisIterTotHead,
       m_dSimulationDuration,           // Duration of simulation in secs
@@ -314,7 +319,11 @@ private:
       m_dSlumpErrorLast,
       m_dToppleErrorLast,
       m_dHeadcutErrorLast,
-      m_dFlowErrorLast;
+      m_dFlowErrorLast,
+      m_dElapsed,
+      m_dStillToGo,
+      m_dWaterStoredLast,
+      m_dSedimentLoadDepthLast;
 
    // These grand totals are all long doubles, the aim is to minimize rounding errors when many very small numbers are added to a single much larger number, see e.g. http://www.ddj.com/cpp/184403224
    long double
@@ -561,8 +570,6 @@ public:
 
    int nDoRun(int, char*[]);
    void DoEndRun(int const);
-
-   int nCalcOppositeDirection(int const) const;
 
    double dGetTimeStep(void) const;
    double dGetMissingValue(void) const;

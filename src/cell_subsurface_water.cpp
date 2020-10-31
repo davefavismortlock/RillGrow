@@ -59,13 +59,13 @@ void CCellSubsurfaceWater::DoInfiltration(double& dInfilt)
 }
 
 // Loses all this cell's surface water to infilt, and increases the cell's elevation with any sediment that was being transported
-void CCellSubsurfaceWater::InfiltrateAndMakeDry(void)
+void CCellSubsurfaceWater::InfiltrateAndMakeDry(double& dClaySediment, double& dSiltSediment, double& dSandSediment)
 {
-   double
-      dWaterDepth = m_pCell->pGetSurfaceWater()->dGetSurfaceWaterDepth(),
-      dClaySediment = m_pCell->pGetSedLoad()->dGetClaySedLoad(),
-      dSiltSediment = m_pCell->pGetSedLoad()->dGetSiltSedLoad(),
-      dSandSediment = m_pCell->pGetSedLoad()->dGetSandSedLoad();
+   double dWaterDepth = m_pCell->pGetSurfaceWater()->dGetSurfaceWaterDepth();
+
+   dClaySediment = m_pCell->pGetSedLoad()->dGetClaySedLoad(),
+   dSiltSediment = m_pCell->pGetSedLoad()->dGetSiltSedLoad(),
+   dSandSediment = m_pCell->pGetSedLoad()->dGetSandSedLoad();
 
    // First remove the surface water (also decrements the surface water total, and count of wet cells)
    m_pCell->pGetSurfaceWater()->SetSurfaceWaterZero();

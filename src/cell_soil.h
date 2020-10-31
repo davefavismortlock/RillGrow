@@ -232,18 +232,18 @@ public:
 
    void DoHeadcutRetreatDetach(double const, double&, double&, double&);
    void DoHeadcutRetreatDepositOrToSedLoad(double const, double const, double const, double&, double&, double&, double&, double&, double&);
-   double dGetClayHeadcutRetreatDetach(void);
-   double dGetSiltHeadcutRetreatDetach(void);
-   double dGetSandHeadcutRetreatDetach(void);
-   double dGetCumulClayHeadcutRetreatDetach(void);
-   double dGetCumulSiltHeadcutRetreatDetach(void);
-   double dGetCumulSandHeadcutRetreatDetach(void);
-   double dGetClayHeadcutRetreatDeposit(void);
-   double dGetSiltHeadcutRetreatDeposit(void);
-   double dGetSandHeadcutRetreatDeposit(void);
-   double dGetCumulClayHeadcutRetreatDeposit(void);
-   double dGetCumulSiltHeadcutRetreatDeposit(void);
-   double dGetCumulSandHeadcutRetreatDeposit(void);
+   double dGetClayHeadcutRetreatDetach(void) const;
+   double dGetSiltHeadcutRetreatDetach(void) const;
+   double dGetSandHeadcutRetreatDetach(void) const;
+   double dGetCumulClayHeadcutRetreatDetach(void) const;
+   double dGetCumulSiltHeadcutRetreatDetach(void) const;
+   double dGetCumulSandHeadcutRetreatDetach(void) const;
+   double dGetClayHeadcutRetreatDeposit(void) const;
+   double dGetSiltHeadcutRetreatDeposit(void) const;
+   double dGetSandHeadcutRetreatDeposit(void) const;
+   double dGetCumulClayHeadcutRetreatDeposit(void) const;
+   double dGetCumulSiltHeadcutRetreatDeposit(void) const;
+   double dGetCumulSandHeadcutRetreatDeposit(void) const;
 };
 
 #endif         // __SOIL_H__

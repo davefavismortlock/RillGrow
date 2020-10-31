@@ -31,8 +31,7 @@
 void CSimulation::DoAllSplash(void)
 {
    // First calculate the Laplacian for all cells in the grid, also zero each cell's temporary splash deposition value
-   static bool sbSw = true;
-   if (sbSw)
+   if (m_bSplashForward)
    {
       for (int nX = 0; nX < m_nXGridMax; nX++)
       {
@@ -59,7 +58,8 @@ void CSimulation::DoAllSplash(void)
       }
    }
 
-   sbSw = ! sbSw;
+   // Change directon for next time
+   m_bSplashForward = ! m_bSplashForward;
 
    // Now calculate the change in elevation due to splash redistribution for each cell. A problem with this approach is that the totals for detached and deposited sediment are not identical i.e. mass is not conserved. So this has to be corrected
    m_dThisIterKE = 0;
@@ -117,11 +117,6 @@ void CSimulation::DoAllSplash(void)
    }
 
    // Now correct for mass conservation, and partition each deposited depth of sediment into the three size classes
-   double
-      dTotClayDeposit = 0,
-      dTotSiltDeposit = 0,
-      dTotSandDeposit = 0;
-
    if (dTmpTotSplashDepositThisIter > 0)
    {
       for (int nX = 0; nX < m_nXGridMax; nX++)
@@ -143,18 +138,10 @@ void CSimulation::DoAllSplash(void)
                   dSandDeposit = dTotSandDetach * dFracOfTmpTot;
 
                Cell[nX][nY].pGetSoil()->DoSplashToSedLoadOrDeposit(dClayDeposit, dSiltDeposit, dSandDeposit);
-
-               dTotClayDeposit += dClayDeposit;
-               dTotSiltDeposit += dSiltDeposit;
-               dTotSandDeposit += dSandDeposit;
             }
          }
       }
    }
-
-   assert(bFPIsEqual(dTotClayDeposit, dTotClayDetach, TOLERANCE));
-   assert(bFPIsEqual(dTotSiltDeposit, dTotSiltDetach, TOLERANCE));
-   assert(bFPIsEqual(dTotSandDeposit, dTotSandDetach, TOLERANCE));
 }
 
 

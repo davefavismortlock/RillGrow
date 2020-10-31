@@ -78,24 +78,24 @@ public:
    double dGetAllSizeSedConc(void);
 
    void AddToSplashSedLoad(const double, const double, const double);
-   double dGetClaySplashSedLoad(void);
-   double dGetSiltSplashSedLoad(void);
-   double dGetSandSplashSedLoad(void);
+   double dGetClaySplashSedLoad(void) const;
+   double dGetSiltSplashSedLoad(void) const;
+   double dGetSandSplashSedLoad(void) const;
 
    void AddToSlumpSedLoad(const double, const double, const double);
-   double dGetClaySlumpSedLoad(void);
-   double dGetSiltSlumpSedLoad(void);
-   double dGetSandSlumpSedLoad(void);
+   double dGetClaySlumpSedLoad(void) const;
+   double dGetSiltSlumpSedLoad(void) const;
+   double dGetSandSlumpSedLoad(void) const;
 
    void AddToToppleSedLoad(const double, const double, const double);
-   double dGetClayToppleSedLoad(void);
-   double dGetSiltToppleSedLoad(void);
-   double dGetSandToppleSedLoad(void);
+   double dGetClayToppleSedLoad(void) const;
+   double dGetSiltToppleSedLoad(void) const;
+   double dGetSandToppleSedLoad(void) const;
 
    void AddToHeadcutRetreatSedLoad(const double, const double, const double);
-   double dGetClayHeadcutRetreatSedLoad(void);
-   double dGetSiltHeadcutRetreatSedLoad(void);
-   double dGetSandHeadcutRetreatSedLoad(void);
+   double dGetClayHeadcutRetreatSedLoad(void) const;
+   double dGetSiltHeadcutRetreatSedLoad(void) const;
+   double dGetSandHeadcutRetreatSedLoad(void) const;
 
    void InitializeSplashSedLoads(void);
    void InitializeSlumpAndToppleSedLoads(void);
