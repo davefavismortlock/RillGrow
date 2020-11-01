@@ -843,8 +843,8 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
 
    // Fill the array
 //    double dMaxFF = 0;
-   if (nDataItem == GIS_FRICTION_FACTOR)
-      cerr << endl;
+//    if (nDataItem == GIS_FRICTION_FACTOR)
+//       cerr << endl;
    for (int nY = 0; nY < m_nYGridMax; nY++)
    {
       for (int nX = 0; nX < m_nXGridMax; nX++)
