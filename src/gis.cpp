@@ -686,8 +686,8 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
          strFilDat.append(GIS_CUMUL_INFILT_DEPOSIT_FILENAME);
          break;
 
-      case (GIS_TOP_SURFACE) :
-         strFilDat.append(GIS_TOP_SURFACE_FILENAME);
+      case (GIS_TOP_SURFACE_DETREND) :
+         strFilDat.append(GIS_TOP_SURFACE_DETREND_FILENAME);
          break;
 
       case (GIS_SPLASH) :
@@ -842,7 +842,7 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
       dDiff = 0;
 
    // Fill the array
-   double dMaxFF = 0;
+//    double dMaxFF = 0;
    if (nDataItem == GIS_FRICTION_FACTOR)
       cerr << endl;
    for (int nY = 0; nY < m_nYGridMax; nY++)
@@ -923,7 +923,7 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
                dTmp = Cell[nX][nY].pGetSoil()->dGetCumulTotInfiltDeposit();
                break;
 
-            case (GIS_TOP_SURFACE):
+            case (GIS_TOP_SURFACE_DETREND):
                dTmp = Cell[nX][nY].dGetTopElevation();
                if (dTmp != m_dMissingValue)
                {
@@ -935,6 +935,8 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
                      else if (m_nZUnits == Z_UNIT_CM)
                         dTmp /= 1e2;
                   }
+
+                  dTmp += dDiff;
                }
 
                break;
@@ -972,12 +974,12 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
                break;
 
             case (GIS_FRICTION_FACTOR) :
-               if (Cell[nX][nY].pGetSurfaceWater()->dGetFrictionFactor() > dMaxFF)
-                  dMaxFF = Cell[nX][nY].pGetSurfaceWater()->dGetFrictionFactor();
+//                if (Cell[nX][nY].pGetSurfaceWater()->dGetFrictionFactor() > dMaxFF)
+//                   dMaxFF = Cell[nX][nY].pGetSurfaceWater()->dGetFrictionFactor();
 
                dTmp = Cell[nX][nY].pGetSurfaceWater()->dGetFrictionFactor();
 
-               cerr << nX << " " << nY << " " << Cell[nX][nY].pGetSurfaceWater()->dGetFrictionFactor() << endl;
+//                cerr << nX << " " << nY << " " << Cell[nX][nY].pGetSurfaceWater()->dGetFrictionFactor() << endl;
                break;
 
             case (GIS_AVG_SHEAR_STRESS) :
@@ -1053,11 +1055,11 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
          pfRaster[n++] = dTmp;
       }
 
-      dDiff += m_dYInc;    // GIS_DETREND_ELEVATION and GIS_TOP_SURFACE only
+      dDiff += m_dYInc;
    }
 
-   if (nDataItem == GIS_FRICTION_FACTOR)
-      cerr << "dMaxFF = " << dMaxFF << endl;
+//    if (nDataItem == GIS_FRICTION_FACTOR)
+//       cerr << "dMaxFF = " << dMaxFF << endl;
 
    // Now write the data. Create a single raster band
    GDALRasterBand* pBand;
@@ -1094,7 +1096,7 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
       case (GIS_SOIL_WATER) :
       case (GIS_INFILT_DEPOSIT) :
       case (GIS_CUMUL_INFILT_DEPOSIT) :
-      case (GIS_TOP_SURFACE) :
+      case (GIS_TOP_SURFACE_DETREND) :
       case (GIS_SEDIMENT_LOAD) :
       case (GIS_AVG_SEDIMENT_LOAD) :
       case (GIS_SPLASH) :
@@ -1862,7 +1864,7 @@ bool CSimulation::bSaveGISFiles(void)
 
    if (m_bTopSurfaceSave)
    {
-      if (! bWriteGISFileFloat(GIS_TOP_SURFACE, &GIS_TOP_SURFACE_TITLE))
+      if (! bWriteGISFileFloat(GIS_TOP_SURFACE_DETREND, &GIS_TOP_SURFACE_DETREND_TITLE))
          return (false);
    }
 

@@ -183,7 +183,7 @@ void CSimulation::WriteRunDetails(void)
 
    if (m_bTopSurfaceSave)
    {
-      strTmp.append(GIS_TOP_SURFACE_CODE);
+      strTmp.append(GIS_TOP_SURFACE_DETREND_CODE);
       strTmp.append(" ");
 
       WrapLongString(&strTmp);
@@ -748,7 +748,7 @@ if (! m_strRainVarMFile.empty())
          m_ofsOut << "friction factor approach from Lawrence (1997)" << endl;
          m_ofsOut << " In the partially-inundated flow regime:" << endl;
          m_ofsOut << "  D50 of within-cell roughness elements                 \t: " << m_dFFLawrenceD50 << " mm" << endl;
-         m_ofsOut << "* Epsilon (0.5 * D50)                                   \t: " << m_dFFLawrenceEpsilon << endl;
+         m_ofsOut << "* Epsilon (0.5 * D50)                                   \t: " << m_dFFLawrenceEpsilon << " mm" << endl;
          m_ofsOut << "  % of surface covered with roughness elements          \t: " << m_dFFLawrencePr << " %" << endl;
          m_ofsOut << "  Ratio roughness element drag : ideal situation        \t: " << m_dFFLawrenceCd << endl;
       }
@@ -912,7 +912,7 @@ int CSimulation::nWriteFilesAtEnd(void)
          return (RTN_ERR_GISFILEWRITE);
 
    if (m_bTopSurfaceSave)
-      if (! bWriteGISFileFloat(GIS_TOP_SURFACE, &GIS_TOP_SURFACE_TITLE))
+      if (! bWriteGISFileFloat(GIS_TOP_SURFACE_DETREND, &GIS_TOP_SURFACE_DETREND_TITLE))
          return (RTN_ERR_GISFILEWRITE);
 
    if (m_bLostSave)

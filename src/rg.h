@@ -139,7 +139,7 @@ using std::to_string;
 #endif
 
 //========================================================== Hard-Wired Constants =========================================================
-string const   PROGNAME                                     = "RillGrow serial (31 October 2020 version)";
+string const   PROGNAME                                     = "RillGrow serial (1 November 2020 version)";
 string const   SHORTNAME                                    = "RG";
 string const   RG_INI                                       = "rg.ini";
 
@@ -306,8 +306,8 @@ string const   GIS_SURFACE_WATER_DEPTH_FILENAME              = "water_depth";
 string const   GIS_AVG_SURFACE_WATER_DEPTH_FILENAME          = "avg_water_depth";
 string const   GIS_AVG_SURFACE_WATER_DEPTH_CODE              = "avg_water_depth";
 
-string const   GIS_TOP_SURFACE_FILENAME                     = "top_surface";
-string const   GIS_TOP_SURFACE_CODE                         = "topsurf";
+string const   GIS_TOP_SURFACE_DETREND_FILENAME                     = "top_surface";
+string const   GIS_TOP_SURFACE_DETREND_CODE                         = "topsurf";
 
 string const   GIS_SPLASH_FILENAME                          = "splash";
 string const   GIS_SPLASH_CODE                              = "splash";
@@ -386,8 +386,8 @@ int const     GIS_ELEVATION                                 = 1;
 string const  GIS_ELEVATION_TITLE                           = "Elevation";
 int const     GIS_DETREND_ELEVATION                         = 2;
 string const  GIS_DETREND_ELEVATION_TITLE                   = "Detrended elevation";
-int const     GIS_TOP_SURFACE                               = 3;
-string const  GIS_TOP_SURFACE_TITLE                         = "Top surface elevation";
+int const     GIS_TOP_SURFACE_DETREND                               = 3;
+string const  GIS_TOP_SURFACE_DETREND_TITLE                         = "Top surface elevation";
 int const     GIS_CUMUL_RAIN                                = 4;
 string const  GIS_CUMUL_RAIN_TITLE                          = "Cumulative rain";
 int const     GIS_RAIN_SPATIAL_VARIATION                    = 5;

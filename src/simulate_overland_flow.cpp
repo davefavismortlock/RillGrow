@@ -319,18 +319,18 @@ double CSimulation::dTimeToCrossCell(int const nX, int const nY, int const nDir,
             dFF = m_dMissingValue;
          }
 
-         // Also constrain DFF if it gets too big (otherwise get error writing file)
-//          dFF = tMin(dFF, 1e10);
+         // Also constrain DFF, since can get very big numvers here (GDAL writes as a float, not a double)
+         if (dFF > FLT_MAX) dFF = FLT_MAX;
 
-         // Save the value of the friction factor
+         // Save the cell's value of the friction factor
          Cell[nX][nY].pGetSurfaceWater()->SetFrictionFactor(dFF);
       }
 
       if (m_bFrictionFactorLawrence)
       {
-         // Calculate flow speed using the Darcy-Weisbach equation, with its friction factor determined by means of nondimensional boundary roughness (lambda = depth / epsilon), see: Lawrence, D.S.L. (1997). Macroscale surface roughness and frictional resistance in surface water. Earth Surface Processes and Landforms 22, 365-382. Some changes made to equation because of units TODO CHECK UNITS SINCE HYDRAULIC RADIUS IS IN MM
+         // Calculate flow speed using the Darcy-Weisbach equation, with its friction factor determined by means of nondimensional boundary roughness (lambda = depth / epsilon), see: Lawrence, D.S.L. (1997). Macroscale surface roughness and frictional resistance in surface water. Earth Surface Processes and Landforms 22, 365-382. Some changes made to equation because of units
          double
-            dLambda = dThisDepth / m_dFFLawrenceEpsilon,
+            dLambda = dThisDepth / m_dFFLawrenceEpsilon,    // TODO check units, both are in mm, is this correct?
             dFF = dCalcLawrenceFrictionFactor(nX, nY, dLambda, false);
 
          dFlowSpeed = FLOW_SPEED_CONVERSION_CONST * sqrt((DARCY_WEISBACH_CONST * m_dG * dCalcHydraulicRadius(nX, nY) * dTopSlope) / dFF);

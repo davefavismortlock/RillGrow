@@ -480,10 +480,10 @@ bool CSimulation::bReadRunData(void)
                strRH = strRemoveSubstr(&strRH, &GIS_SOIL_WATER_CODE);
             }
 
-            if (strRH.find(GIS_TOP_SURFACE_CODE) != string::npos)
+            if (strRH.find(GIS_TOP_SURFACE_DETREND_CODE) != string::npos)
             {
                m_bTopSurfaceSave = true;
-               strRH = strRemoveSubstr(&strRH, &GIS_TOP_SURFACE_CODE);
+               strRH = strRemoveSubstr(&strRH, &GIS_TOP_SURFACE_DETREND_CODE);
             }
 
             if (strRH.find(GIS_SPLASH_CODE) != string::npos)
