@@ -2,7 +2,7 @@
    #define __SOIL_H__
 /*=========================================================================================================================================
 
-This is m_Cell_soil.h: declaration for the RillGrow class used to represent the soil column
+This is cell_soil.h: declaration for the RillGrow class used to represent the soil column
 
  Copyright (C) 2023 David Favis-Mortlock
 

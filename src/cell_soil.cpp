@@ -1,6 +1,6 @@
 /*=========================================================================================================================================
 
- This is m_Cell_soil.cpp: implementations of the RillGrow class used to represent the soil column
+ This is cell_soil.cpp: implementations of the RillGrow class used to represent the soil column
 
  Copyright (C) 2023 David Favis-Mortlock
 
