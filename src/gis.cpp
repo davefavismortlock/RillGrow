@@ -27,7 +27,7 @@ using std::stringstream;
 
 /*========================================================================================================================================
 
- Reads the microtopgraphy DEM data to the m_Cell array, also set each m_Cell's basement elevation
+ Reads the microtopgraphy DEM data to the cell array, also set each m_Cell's basement elevation
 
 =========================================================================================================================================*/
 int CSimulation::nReadMicrotopographyDEMData(void)
@@ -411,7 +411,7 @@ void CSimulation::MarkEdgem_Cells(void)
 
 /*========================================================================================================================================
 
- Reads the spatial rainfall variation data into the m_Cell array
+ Reads the spatial rainfall variation data into the cell array
 
 =========================================================================================================================================*/
 int CSimulation::nReadRainVarData(void)
@@ -635,7 +635,7 @@ bool CSimulation::bCheckGISOutputFormat(void)
 
 /*========================================================================================================================================
 
- Writes floating point GIS files using GDAL, using data from the m_Cell array
+ Writes floating point GIS files using GDAL, using data from the cell array
 
 =========================================================================================================================================*/
 bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlotTitle)
@@ -1172,7 +1172,7 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
 
 /*========================================================================================================================================
 
- Writes integer GIS files using GDAL, using data from the m_Cell array
+ Writes integer GIS files using GDAL, using data from the cell array
 
 =========================================================================================================================================*/
 bool CSimulation::bWriteGISFileInt(int const nDataItem, string const* pstrPlotTitle)
@@ -1353,7 +1353,7 @@ bool CSimulation::bWriteGISFileInt(int const nDataItem, string const* pstrPlotTi
 
 /*========================================================================================================================================
 
- This subroutine smooths the unbounded edges of the m_Cell array of the DEM to prevent excessive deepening of the edge. For each of the N_LOW_POINTS m_Cells with the lowest elevation on each unbounded grid edge, a new elevation is calculated based on the elevations of nearby m_Cells. This new low-point elevation may be lower or higher than the original value
+ This subroutine smooths the unbounded edges of the cell array of the DEM to prevent excessive deepening of the edge. For each of the N_LOW_POINTS m_Cells with the lowest elevation on each unbounded grid edge, a new elevation is calculated based on the elevations of nearby m_Cells. This new low-point elevation may be lower or higher than the original value
 
 ========================================================================================================================================*/
 void CSimulation::AdjustUnboundedEdges(void)
@@ -1756,7 +1756,7 @@ void CSimulation::AdjustUnboundedEdges(void)
 
 /*========================================================================================================================================
 
- The bSaveGISFiles member function saves the GIS files using values from the m_Cell array
+ The bSaveGISFiles member function saves the GIS files using values from the cell array
 
 ========================================================================================================================================*/
 bool CSimulation::bSaveGISFiles(void)

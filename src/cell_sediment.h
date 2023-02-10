@@ -47,7 +47,7 @@ private:
       m_dFromHeadcutRetreatSiltSedLoad,
       m_dFromHeadcutRetreatSandSedLoad;
 
-   CCell* m_pm_Cell;
+   CCell* pCell;
 
 public:
    CCellSedimentLoad(void);

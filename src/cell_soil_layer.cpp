@@ -208,7 +208,7 @@ void CCellSoilLayer::DoLayerFlowErosion(double const dToErode, double& dClayErod
    if (dTotalThickness == 0)
       return;
 
-   // OK, we have a layer that can be eroded by flow, so partition the total lowering for this m_Cell between the three size fractions: do this by relative erodibility
+   // OK, we have a layer that can be eroded by flow, so partition the total lowering for this cell between the three size fractions: do this by relative erodibility
    int
       nClayWeight = (m_dClayThickness > 0 ? 1 : 0),
       nSiltWeight = (m_dSiltThickness > 0 ? 1 : 0),
@@ -221,7 +221,7 @@ void CCellSoilLayer::DoLayerFlowErosion(double const dToErode, double& dClayErod
       // Erode some clay-sized sediment
       double dTmp = (m_dClayFlowErodibility * dToErode) / dTotErodibility;
 
-      // Make sure we don't get -ve amounts left on the m_Cell
+      // Make sure we don't get -ve amounts left on the cell
       dClayEroded = tMin(m_dClayThickness, dTmp);
 
       // Do the erosion
@@ -233,7 +233,7 @@ void CCellSoilLayer::DoLayerFlowErosion(double const dToErode, double& dClayErod
       // Erode some silt-sized sediment
       double dTmp = (m_dSiltFlowErodibility * dToErode) / dTotErodibility;
 
-      // Make sure we don't get -ve amounts left on the m_Cell
+      // Make sure we don't get -ve amounts left on the cell
       dSiltEroded = tMin(m_dSiltThickness, dTmp);
 
       // Do the erosion
@@ -245,7 +245,7 @@ void CCellSoilLayer::DoLayerFlowErosion(double const dToErode, double& dClayErod
       // Erode some sand-sized sediment
       double dTmp = (m_dSandFlowErodibility * dToErode) / dTotErodibility;
 
-      // Make sure we don't get -ve amounts left on the m_Cell
+      // Make sure we don't get -ve amounts left on the cell
       dSandEroded = tMin(m_dSandThickness, dTmp);
 
       // Do the erosion
@@ -262,7 +262,7 @@ void CCellSoilLayer::DoLayerSplashErosion(double const dToErode, double& dClayEr
    if (dTotalThickness == 0)
       return;
 
-   // OK, we have a layer that can be eroded by splash, so partition the total lowering for this m_Cell between the three size fractions: do this by relative erodibility
+   // OK, we have a layer that can be eroded by splash, so partition the total lowering for this cell between the three size fractions: do this by relative erodibility
    int
       nClayWeight = (m_dClayThickness > 0 ? 1 : 0),
       nSiltWeight = (m_dSiltThickness > 0 ? 1 : 0),
@@ -275,7 +275,7 @@ void CCellSoilLayer::DoLayerSplashErosion(double const dToErode, double& dClayEr
       // Erode some clay-sized sediment
       double dTmp = (m_dClaySplashErodibility * dToErode) / dTotErodibility;
 
-      // Make sure we don't get -ve amounts left on the m_Cell
+      // Make sure we don't get -ve amounts left on the cell
       dClayEroded = tMin(m_dClayThickness, dTmp);
 
       // Do the erosion
@@ -287,7 +287,7 @@ void CCellSoilLayer::DoLayerSplashErosion(double const dToErode, double& dClayEr
       // Erode some silt-sized sediment
       double dTmp = (m_dSiltSplashErodibility * dToErode) / dTotErodibility;
 
-      // Make sure we don't get -ve amounts left on the m_Cell
+      // Make sure we don't get -ve amounts left on the cell
       dSiltEroded = tMin(m_dSiltThickness, dTmp);
 
       // Do the erosion
@@ -299,7 +299,7 @@ void CCellSoilLayer::DoLayerSplashErosion(double const dToErode, double& dClayEr
       // Erode some sand-sized sediment
       double dTmp = (m_dSandSplashErodibility * dToErode) / dTotErodibility;
 
-      // Make sure we don't get -ve amounts left on the m_Cell
+      // Make sure we don't get -ve amounts left on the cell
       dSandEroded = tMin(m_dSandThickness, dTmp);
 
       // Do the erosion
@@ -316,7 +316,7 @@ void CCellSoilLayer::DoLayerSlumpErosion(double const dToErode, double& dClayEro
    if (dTotalThickness == 0)
       return;
 
-   // OK, we have a layer that can be eroded by slumping, so partition the total lowering for this m_Cell between the three size fractions: do this by relative erodibility
+   // OK, we have a layer that can be eroded by slumping, so partition the total lowering for this cell between the three size fractions: do this by relative erodibility
    int
       nClayWeight = (m_dClayThickness > 0 ? 1 : 0),
       nSiltWeight = (m_dSiltThickness > 0 ? 1 : 0),
@@ -329,7 +329,7 @@ void CCellSoilLayer::DoLayerSlumpErosion(double const dToErode, double& dClayEro
       // Erode some clay-sized sediment
       double dTmp = (m_dClaySlumpErodibility * dToErode) / dTotErodibility;
 
-      // Make sure we don't get -ve amounts left on the m_Cell
+      // Make sure we don't get -ve amounts left on the cell
       dClayEroded = tMin(m_dClayThickness, dTmp);
 
       // Do the erosion
@@ -341,7 +341,7 @@ void CCellSoilLayer::DoLayerSlumpErosion(double const dToErode, double& dClayEro
       // Erode some silt-sized sediment
       double dTmp = (m_dSiltSlumpErodibility * dToErode) / dTotErodibility;
 
-      // Make sure we don't get -ve amounts left on the m_Cell
+      // Make sure we don't get -ve amounts left on the cell
       dSiltEroded = tMin(m_dSiltThickness, dTmp);
 
       // Do the erosion
@@ -353,7 +353,7 @@ void CCellSoilLayer::DoLayerSlumpErosion(double const dToErode, double& dClayEro
       // Erode some sand-sized sediment
       double dTmp = (m_dSandSlumpErodibility * dToErode) / dTotErodibility;
 
-      // Make sure we don't get -ve amounts left on the m_Cell
+      // Make sure we don't get -ve amounts left on the cell
       dSandEroded = tMin(m_dSandThickness, dTmp);
 
       // Do the erosion
@@ -369,7 +369,7 @@ void CCellSoilLayer::DoLayerToppleErosion(double const dToErode, double& dClayEr
    if (dTotalThickness == 0)
       return;
 
-   // OK, we have a layer that can be eroded by toppling, so partition the total lowering for this m_Cell between the three size fractions: do this by relative erodibility
+   // OK, we have a layer that can be eroded by toppling, so partition the total lowering for this cell between the three size fractions: do this by relative erodibility
    int
    nClayWeight = (m_dClayThickness > 0 ? 1 : 0),
    nSiltWeight = (m_dSiltThickness > 0 ? 1 : 0),
@@ -382,7 +382,7 @@ void CCellSoilLayer::DoLayerToppleErosion(double const dToErode, double& dClayEr
       // Erode some clay-sized sediment
       double dTmp = (m_dClaySlumpErodibility * dToErode) / dTotErodibility;
 
-      // Make sure we don't get -ve amounts left on the m_Cell
+      // Make sure we don't get -ve amounts left on the cell
       dClayEroded = tMin(m_dClayThickness, dTmp);
 
       // Do the erosion
@@ -394,7 +394,7 @@ void CCellSoilLayer::DoLayerToppleErosion(double const dToErode, double& dClayEr
       // Erode some silt-sized sediment
       double dTmp = (m_dSiltSlumpErodibility * dToErode) / dTotErodibility;
 
-      // Make sure we don't get -ve amounts left on the m_Cell
+      // Make sure we don't get -ve amounts left on the cell
       dSiltEroded = tMin(m_dSiltThickness, dTmp);
 
       // Do the erosion
@@ -406,7 +406,7 @@ void CCellSoilLayer::DoLayerToppleErosion(double const dToErode, double& dClayEr
       // Erode some sand-sized sediment
       double dTmp = (m_dSandSlumpErodibility * dToErode) / dTotErodibility;
 
-      // Make sure we don't get -ve amounts left on the m_Cell
+      // Make sure we don't get -ve amounts left on the cell
       dSandEroded = tMin(m_dSandThickness, dTmp);
 
       // Do the erosion
@@ -447,7 +447,7 @@ void CCellSoilLayer::DoLayerHeadcutRetreatErosion(double const dToErode, double&
    if (dTotalThickness == 0)
       return;
 
-   // OK, we have a layer that can be eroded by slumping, so partition the total lowering for this m_Cell between the three size fractions: do this by relative erodibility
+   // OK, we have a layer that can be eroded by slumping, so partition the total lowering for this cell between the three size fractions: do this by relative erodibility
    int
    nClayWeight = (m_dClayThickness > 0 ? 1 : 0),
    nSiltWeight = (m_dSiltThickness > 0 ? 1 : 0),
@@ -460,7 +460,7 @@ void CCellSoilLayer::DoLayerHeadcutRetreatErosion(double const dToErode, double&
       // Erode some clay-sized sediment
       double dTmp = (m_dClaySlumpErodibility * dToErode) / dTotErodibility;
 
-      // Make sure we don't get -ve amounts left on the m_Cell
+      // Make sure we don't get -ve amounts left on the cell
       dClayEroded = tMin(m_dClayThickness, dTmp);
 
       // Do the erosion
@@ -472,7 +472,7 @@ void CCellSoilLayer::DoLayerHeadcutRetreatErosion(double const dToErode, double&
       // Erode some silt-sized sediment
       double dTmp = (m_dSiltSlumpErodibility * dToErode) / dTotErodibility;
 
-      // Make sure we don't get -ve amounts left on the m_Cell
+      // Make sure we don't get -ve amounts left on the cell
       dSiltEroded = tMin(m_dSiltThickness, dTmp);
 
       // Do the erosion
@@ -484,7 +484,7 @@ void CCellSoilLayer::DoLayerHeadcutRetreatErosion(double const dToErode, double&
       // Erode some sand-sized sediment
       double dTmp = (m_dSandSlumpErodibility * dToErode) / dTotErodibility;
 
-      // Make sure we don't get -ve amounts left on the m_Cell
+      // Make sure we don't get -ve amounts left on the cell
       dSandEroded = tMin(m_dSandThickness, dTmp);
 
       // Do the erosion

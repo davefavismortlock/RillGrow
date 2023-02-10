@@ -136,7 +136,7 @@ void CSimulation::Dom_CellInfiltration(int const nX, int const nY, int const nLa
       if (! m_Cell[nX][nY].pGetSurfaceWater()->bIsWet())
          return;
 
-      // m_Cell is wet, so get the depth of surface water
+      // The cell is wet, so get the depth of surface water
       dWaterDepthAbove = m_Cell[nX][nY].pGetSurfaceWater()->dGetSurfaceWaterDepth();
    }
    else
@@ -173,7 +173,7 @@ void CSimulation::Dom_CellInfiltration(int const nX, int const nY, int const nLa
 
       if (nLayer == 0)
       {
-         // This is the top layer, so remove from the surface water and update total infilt for this m_Cell. Note that if there is insufficient surface water, dDepthToInfiltrate is reduced
+         // This is the top layer, so remove from the surface water and update total infilt for this cell. Note that if there is insufficient surface water, dDepthToInfiltrate is reduced
          m_Cell[nX][nY].pGetSoilWater()->DoInfiltration(dDepthToInfiltrate);
       }
       else
@@ -190,7 +190,7 @@ void CSimulation::Dom_CellInfiltration(int const nX, int const nY, int const nLa
 
       if (nLayer == 0)
       {
-         // This is the top layer, so remove the water, update total infilt for this m_Cell, assume that any in-transport sediment is deposited and add this to the per-iteration total of infitration-deposited sediment
+         // This is the top layer, so remove the water, update total infilt for this cell, assume that any in-transport sediment is deposited and add this to the per-iteration total of infitration-deposited sediment
          double
             dClayDeposited = 0,
             dSiltDeposited = 0,

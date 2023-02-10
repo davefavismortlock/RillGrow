@@ -68,7 +68,7 @@ int CSimulation::nInitSlumping(void)
       }
    }
 
-   // Calculate a weight for each m_Cell in the quadrant. If m_SSSWeightQuadrant[0][0] is considered to be the bottom-left corner, then the weights of the top-left and bottom-right corners are zero. The weights of the m_Cells along the left column and bottom row are interpolated linearly
+   // Calculate a weight for each m_Cell in the quadrant. If m_SSSWeightQuadrant[0][0] is considered to be the bottom-left corner, then the weights of the top-left and bottom-right corners are zero. The weights of the cells along the left column and bottom row are interpolated linearly
    double dTotWeight = m_SSSWeightQuadrant[0][0] = 1;
 
    // Set the N-S and W-E weights, and add to the total of weights
@@ -268,7 +268,7 @@ void CSimulation::DoAllSlump(void)
          double dWaterFrac = 1;
          if (m_bDoInfiltration)
          {
-            // Calculate the saturated (maximum) soil water content (a depth equivalent) for the top soil layer on this m_Cell
+            // Calculate the saturated (maximum) soil water content (a depth equivalent) for the top soil layer on this cell
             CCellSoilLayer* pTopLayer = m_Cell[nX][nY].pGetSoil()->pLayerGetLayer(0);
 
             // Get the current water content (a depth equivalent) for the top soil layer
@@ -504,7 +504,7 @@ void CSimulation::TryTopplem_CellsAbove(int const nX, int const nY, int nRecursi
       dThisElev = m_Cell[nX][nY].pGetSoil()->dGetSoilSurfaceElevation(),
       dDiff;
 
-   // m_Cell at planview bottom
+   // The cell at planview bottom
    nXTmp = nX;
    nYTmp = nY+1;
    if ((nYTmp < m_nYGridMax) && (! m_Cell[nXTmp][nYTmp].bIsMissingValue()) && ((dDiff = m_Cell[nXTmp][nYTmp].pGetSoil()->dGetSoilSurfaceElevation() - dThisElev) > m_dToppleCritDiff))
@@ -516,7 +516,7 @@ void CSimulation::TryTopplem_CellsAbove(int const nX, int const nY, int nRecursi
       TryTopplem_CellsAbove(nXTmp, nYTmp, nRecursionDepth);
    }
 
-   // m_Cell at planview bottom right
+   // The cell at planview bottom right
    nXTmp = nX+1;
    nYTmp = nY+1;
    if ((nXTmp < m_nXGridMax) && (nYTmp < m_nYGridMax) && (! m_Cell[nXTmp][nYTmp].bIsMissingValue()) && ((dDiff = m_Cell[nXTmp][nYTmp].pGetSoil()->dGetSoilSurfaceElevation() - dThisElev) > m_dToppleCritDiffDiag))
@@ -528,7 +528,7 @@ void CSimulation::TryTopplem_CellsAbove(int const nX, int const nY, int nRecursi
       TryTopplem_CellsAbove(nXTmp, nYTmp, nRecursionDepth);
    }
 
-   // m_Cell at planview bottom left
+   // The cell at planview bottom left
    nXTmp = nX-1;
    nYTmp = nY+1;
    if ((nXTmp >= 0) && (nYTmp < m_nYGridMax) && (! m_Cell[nXTmp][nYTmp].bIsMissingValue()) && ((dDiff = m_Cell[nXTmp][nYTmp].pGetSoil()->dGetSoilSurfaceElevation() - dThisElev) > m_dToppleCritDiffDiag))
@@ -540,7 +540,7 @@ void CSimulation::TryTopplem_CellsAbove(int const nX, int const nY, int nRecursi
       TryTopplem_CellsAbove(nXTmp, nYTmp, nRecursionDepth);
    }
 
-   // m_Cell at planview right
+   // The cell at planview right
    nXTmp = nX+1;
    nYTmp = nY;
    if ((nXTmp < m_nXGridMax) && (! m_Cell[nXTmp][nYTmp].bIsMissingValue()) && ((dDiff = m_Cell[nXTmp][nYTmp].pGetSoil()->dGetSoilSurfaceElevation() - dThisElev) > m_dToppleCritDiff))
@@ -552,7 +552,7 @@ void CSimulation::TryTopplem_CellsAbove(int const nX, int const nY, int nRecursi
       TryTopplem_CellsAbove(nXTmp, nYTmp, nRecursionDepth);
    }
 
-   // m_Cell at planview left
+   // The cell at planview left
    nXTmp = nX-1;
    nYTmp = nY;
    if ((nXTmp >= 0) && (! m_Cell[nXTmp][nYTmp].bIsMissingValue()) && ((dDiff = m_Cell[nXTmp][nYTmp].pGetSoil()->dGetSoilSurfaceElevation() - dThisElev) > m_dToppleCritDiff))
@@ -564,7 +564,7 @@ void CSimulation::TryTopplem_CellsAbove(int const nX, int const nY, int nRecursi
       TryTopplem_CellsAbove(nXTmp, nYTmp, nRecursionDepth);
    }
 
-   // m_Cell at planview top right
+   // The cell at planview top right
    nXTmp = nX+1;
    nYTmp = nY-1;
    if ((nXTmp < m_nXGridMax) && (nYTmp >= 0) && (! m_Cell[nXTmp][nYTmp].bIsMissingValue()) && ((dDiff = m_Cell[nXTmp][nYTmp].pGetSoil()->dGetSoilSurfaceElevation() - dThisElev) > m_dToppleCritDiffDiag))
@@ -576,7 +576,7 @@ void CSimulation::TryTopplem_CellsAbove(int const nX, int const nY, int nRecursi
       TryTopplem_CellsAbove(nXTmp, nYTmp, nRecursionDepth);
    }
 
-   // m_Cell at planview top left
+   // The cell at planview top left
    nXTmp = nX-1;
    nYTmp = nY-1;
    if ((nXTmp >= 0) && (nYTmp >= 0) && (! m_Cell[nXTmp][nYTmp].bIsMissingValue()) && ((dDiff = m_Cell[nXTmp][nYTmp].pGetSoil()->dGetSoilSurfaceElevation() - dThisElev) > m_dToppleCritDiffDiag))
@@ -588,7 +588,7 @@ void CSimulation::TryTopplem_CellsAbove(int const nX, int const nY, int nRecursi
       TryTopplem_CellsAbove(nXTmp, nYTmp, nRecursionDepth);
    }
 
-   // m_Cell at planview top
+   // The cell at planview top
    nXTmp = nX;
    nYTmp = nY-1;
    if ((nYTmp >= 0) && (! m_Cell[nXTmp][nYTmp].bIsMissingValue()) && ((dDiff = m_Cell[nXTmp][nYTmp].pGetSoil()->dGetSoilSurfaceElevation() - dThisElev) > m_dToppleCritDiff))
@@ -769,7 +769,7 @@ void CSimulation::DoAllHeadcutRetreat(void)
 
 /*=========================================================================================================================================
 
- Moves soil from one m_Cell to an adjacent m_Cell for headcut retreat. If the target m_Cell is wet, the sediment is added to the m_Cell's sediment load
+ Moves soil from one m_Cell to an adjacent m_Cell for headcut retreat. If the target m_Cell is wet, the sediment is added to the cell's sediment load
 
 =========================================================================================================================================*/
 void CSimulation::DoHeadcutRetreatMoveSoil(int const nDir, int const nFromX, int const nFromY, int const nToX, int const nToY, double const dDiff)

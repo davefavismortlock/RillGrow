@@ -29,7 +29,7 @@
 =========================================================================================================================================*/
 void CSimulation::DoAllFlowRouting(void)
 {
-   // Go through all m_Cells in the m_Cell array, and calculate the outflow from each m_Cell. Write the results additively to the delta fields in the m_Cell array
+   // Go through all m_Cells in the cell array, and calculate the outflow from each m_Cell. Write the results additively to the delta fields in the cell array
    for (int nX = 0; nX < m_nXGridMax; nX++)
    {
       for (int nY = 0; nY < m_nYGridMax; nY++)
@@ -105,7 +105,7 @@ void CSimulation::DoAllFlowRouting(void)
 
 /*=========================================================================================================================================
 
- This routine moves water downhill, out from a single m_Cell, if possible. If water is moved then the transport capacity routine is called, which in turn may call the erosion or deposition routines. Results are written, additively, to the m_Cell array
+ This routine moves water downhill, out from a single m_Cell, if possible. If water is moved then the transport capacity routine is called, which in turn may call the erosion or deposition routines. Results are written, additively, to the cell array
 
 =========================================================================================================================================*/
 void CSimulation::Trym_CellOutFlow(int const nX, int const nY)
@@ -119,7 +119,7 @@ void CSimulation::Trym_CellOutFlow(int const nX, int const nY)
       dTopSlope = 0,
       dHLen = 0;
 
-   // Look at the m_Cell array and find the adjacent m_Cell with the steepest energy slope i.e. the steepest downhill top-surface gradient from the water surface of this wet m_Cell to the top surface (which could be either water or soil) of an adjacent m_Cell. This elevation difference is the head
+   // Look at the cell array and find the adjacent m_Cell with the steepest energy slope i.e. the steepest downhill top-surface gradient from the water surface of this wet m_Cell to the top surface (which could be either water or soil) of an adjacent m_Cell. This elevation difference is the head
    int nDir = nFindSteepestEnergySlope(nX, nY, m_Cell[nX][nY].dGetTopElevation(), nLowX, nLowY, dHead, dTopSlope, dHLen);
    m_Cell[nX][nY].pGetSurfaceWater()->SetFlowDirection(nDir);
    if (DIRECTION_NONE == nDir)
@@ -135,7 +135,7 @@ void CSimulation::Trym_CellOutFlow(int const nX, int const nY)
    double dThisDepth = m_Cell[nX][nY].pGetSurfaceWater()->dGetSurfaceWaterDepth();
    if (dThisDepth <= dHead)
    {
-      // There isn't enough water on this m_Cell to level both water surfaces: so just move (at most) what is there
+      // There isn't enough water on this cell to level both water surfaces: so just move (at most) what is there
       dHead = dThisDepth;
    }
 
@@ -174,7 +174,7 @@ void CSimulation::Trym_CellOutFlow(int const nX, int const nY)
    m_CellMoveWater(nX, nY, nLowX, nLowY, dThisDepth, dDepthToMove);
 
    if (m_bFlowErosion)
-      // This outflow may or may not be erosive: it depends on whether or not it has exceeded its transport capacity. So check transport capacity for this m_Cell, and either erode it or deposit some sediment here
+      // This outflow may or may not be erosive: it depends on whether or not it has exceeded its transport capacity. So check transport capacity for this cell, and either erode it or deposit some sediment here
       CalcTransportCapacity(nX, nY, nLowX, nLowY, nDir, dThisDepth, dHead, dTopSlope, dHLen, dFlowSpeed, dDepthToMove);
 }
 
@@ -193,7 +193,7 @@ void CSimulation::TryEdgem_CellOutFlow(int const nX, int const nY, int const nDi
 
    // Can we move dHead depth off the grid?
    if (dThisDepth < dHead)
-      // We don't have dHead depth of water on the m_Cell, so move only dThisDepth
+      // We don't have dHead depth of water on the cell, so move only dThisDepth
       dHead = dThisDepth;
 
    double
@@ -226,7 +226,7 @@ void CSimulation::TryEdgem_CellOutFlow(int const nX, int const nY, int const nDi
    // Move water from this m_Cell, off the edge. Note that if there is insufficient surface water, dDepthToMove gets reduced
    m_Cell[nX][nY].pGetSurfaceWater()->RemoveSurfaceWater(dDepthToMove);
 
-   // Add this amount to the total of surface water lost from the edge for this m_Cell
+   // Add this amount to the total of surface water lost from the edge for this cell
    m_Cell[nX][nY].pGetSurfaceWater()->AddSurfaceWaterLost(dDepthToMove);
 
    // Now deal with the sediment: move the sediment that was being transported in this depth of water off the edge of the grid. We assume here that all transported sedimentsis well mixed in the water column. First, are we assuming that all transported sediment falls off the edge) as in a flume), or only a fraction of the transported sediment leaves the edge?
@@ -238,28 +238,28 @@ void CSimulation::TryEdgem_CellOutFlow(int const nX, int const nY, int const nDi
       dSiltSedimentToRemove = m_Cell[nX][nY].pGetSedLoad()->dGetSiltSedLoad() * dFractionToMove,
       dSandSedimentToRemove = m_Cell[nX][nY].pGetSedLoad()->dGetSandSedLoad() * dFractionToMove;
 
-   // Remove some clay-sized sediment from the edge m_Cell (and from the total of clay-sized sediment moving as sediment load). Note that dClaySedimentToRemove gets changed if there is insufficient clay-sized sediment on the m_Cell
+   // Remove some clay-sized sediment from the edge m_Cell (and from the total of clay-sized sediment moving as sediment load). Note that dClaySedimentToRemove gets changed if there is insufficient clay-sized sediment on the cell
    if (dClaySedimentToRemove > 0)
    {
       m_Cell[nX][nY].pGetSedLoad()->RemoveFromClaySedLoad(dClaySedimentToRemove);
       m_dThisIterClaySedLost += dClaySedimentToRemove;
    }
 
-   // Remove some silt-sized sediment from the m_Cell (and from the total of silt-sized sediment moving as sediment load). Note that dSiltSedimentToRemove gets changed if there is insufficient silt-sized sediment on the m_Cell
+   // Remove some silt-sized sediment from the cell (and from the total of silt-sized sediment moving as sediment load). Note that dSiltSedimentToRemove gets changed if there is insufficient silt-sized sediment on the cell
    if (dSiltSedimentToRemove > 0)
    {
       m_Cell[nX][nY].pGetSedLoad()->RemoveFromSiltSedLoad(dSiltSedimentToRemove);
       m_dThisIterSiltSedLost += dSiltSedimentToRemove;
    }
 
-   // Remove some sand-sized sediment from the m_Cell (and from the total of sand-sized sediment moving as sediment load). Note that dSandSedimentToRemove gets changed if there is insufficient sand-sized sediment on the m_Cell
+   // Remove some sand-sized sediment from the cell (and from the total of sand-sized sediment moving as sediment load). Note that dSandSedimentToRemove gets changed if there is insufficient sand-sized sediment on the cell
    if (dSandSedimentToRemove > 0)
    {
       m_Cell[nX][nY].pGetSedLoad()->RemoveFromSandSedLoad(dSandSedimentToRemove);
       m_dThisIterSandSedLost += dSandSedimentToRemove;
    }
 
-   // Finally, the off-edge outflow from this edge m_Cell may have been capable of eroding the edge m_Cell, or deposition may have occurred on the edge m_Cell. So check transport capacity for this m_Cell, and either erode it or deposit some sediment. Note that we use the original (i.e. pre-outflow) values here
+   // Finally, the off-edge outflow from this edge m_Cell may have been capable of eroding the edge m_Cell, or deposition may have occurred on the edge m_Cell. So check transport capacity for this cell, and either erode it or deposit some sediment. Note that we use the original (i.e. pre-outflow) values here
    if (m_bFlowErosion)
       CalcTransportCapacity(nX, nY, -1, -1, nDir, dThisDepth, dHead, dTopSlope, m_dm_CellSide, dFlowSpeed, dDepthToMove);
 }
@@ -322,7 +322,7 @@ double CSimulation::dTimeToCrossm_Cell(int const nX, int const nY, int const nDi
          // Also constrain DFF, since can get very big numvers here (GDAL writes as a float, not a double)
          if (dFF > FLT_MAX) dFF = FLT_MAX;
 
-         // Save the m_Cell's value of the friction factor
+         // Save the cell's value of the friction factor
          m_Cell[nX][nY].pGetSurfaceWater()->SetFrictionFactor(dFF);
       }
 

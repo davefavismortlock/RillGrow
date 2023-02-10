@@ -80,7 +80,7 @@ void CSimulation::DoAllSplash(void)
          double dRain = m_Cell[nX][nY].pGetRainAndRunon()->dGetRain();
          if (dRain > 0)
          {
-            // Some rain has fallen on this m_Cell, so calculate the kinetic energy of the rain = 0.5 m v**2
+            // Some rain has fallen on this cell, so calculate the kinetic energy of the rain = 0.5 m v**2
             double dKE = m_dPartKE * dRain;
             m_dThisIterKE += dKE;
 
@@ -126,7 +126,7 @@ void CSimulation::DoAllSplash(void)
             if (m_Cell[nX][nY].bIsMissingValue())
                continue;
 
-            // First get the temporay (incorrect) value for splash deposition on this m_Cell
+            // First get the temporay (incorrect) value for splash deposition on this cell
             double dTmpDeposit = m_Cell[nX][nY].pGetSoil()->dGetSplashDepositTemp();
             if (dTmpDeposit > 0)
             {

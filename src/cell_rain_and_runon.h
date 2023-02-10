@@ -34,7 +34,7 @@ private:
       m_dCumulRunOn,                         // Cumulative runon, as a depth (mm)
       m_dRainVarM;                           // Constant multiplier, default = 1
 
-   CCell* m_pm_Cell;
+   CCell* pCell;
 
 public:
    CCellRainAndRunon(void);

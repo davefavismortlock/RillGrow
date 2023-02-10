@@ -32,7 +32,7 @@ private:
       m_dExfiltWater,                        // Exfiltrated soil water, as a depth (mm)
       m_dCumulExfiltWater;                   // Cumulative exfiltrated soil water, as a depth (mm)
 
-   CCell* m_pm_Cell;
+   CCell* pCell;
 
 public:
    CCellSubsurfaceWater(void);

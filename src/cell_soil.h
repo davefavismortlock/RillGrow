@@ -107,7 +107,7 @@ private:
 
    vector<CCellSoilLayer> m_VLayer;
 
-   CCell* m_pm_Cell;
+   CCell* pCell;
 
 public:
    CCellSoil(void);

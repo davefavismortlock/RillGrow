@@ -66,7 +66,7 @@ void CSimulation::DoRunOnFromOneEdge(int const nEdge)
             {
                if (m_Cell[nX][nY].bIsEdgem_Cell())
                {
-                  // Add the run-on to this edge m_Cell of the m_Cell array
+                  // Add the run-on to this edge m_Cell of the cell array
                   m_Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dRunOnDepth);
                   break;
                }
@@ -83,7 +83,7 @@ void CSimulation::DoRunOnFromOneEdge(int const nEdge)
             {
                if (m_Cell[nX][nY].bIsEdgem_Cell())
                {
-                  // Add the run-on to this edge m_Cell of the m_Cell array
+                  // Add the run-on to this edge m_Cell of the cell array
                   m_Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dRunOnDepth);
                   break;
                }
@@ -100,7 +100,7 @@ void CSimulation::DoRunOnFromOneEdge(int const nEdge)
             {
                if (m_Cell[nX][nY].bIsEdgem_Cell())
                {
-                  // Add the run-on to this edge m_Cell of the m_Cell array
+                  // Add the run-on to this edge m_Cell of the cell array
                   m_Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dRunOnDepth);
                   break;
                }
@@ -117,7 +117,7 @@ void CSimulation::DoRunOnFromOneEdge(int const nEdge)
             {
                if (m_Cell[nX][nY].bIsEdgem_Cell())
                {
-                  // Add the run-on to this edge m_Cell of the m_Cell array
+                  // Add the run-on to this edge m_Cell of the cell array
                   m_Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dRunOnDepth);
                   break;
                }
@@ -187,7 +187,7 @@ void CSimulation::DoAllRain(void)
       // And then use ulGetRand0() to calculate its depth, correcting for spatial variation in rainfall
       double dRainDepth = dGetRand0GaussPos(m_dMeanm_CellWaterVol, m_dStdm_CellWaterVol) * m_dInvm_CellSquare * m_Cell[nX][nY].pGetRainAndRunon()->dGetRainVarM();
 
-      // Add to rainfall amount and water depth for this m_Cell on the m_Cell array
+      // Add to rainfall amount and water depth for this cell on the cell array
       m_Cell[nX][nY].pGetRainAndRunon()->AddRain(dRainDepth);
    }
 }

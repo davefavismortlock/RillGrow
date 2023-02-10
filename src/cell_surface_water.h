@@ -50,7 +50,7 @@ private:
       m_vDWFlowVelocity,                           // Depth-weighted flow velocity
       m_vCumulDWFlowVelocity;                      // Cumulative time-weighted depth-weighted flow velocity
 
-   CCell* m_pm_Cell;
+   CCell* pCell;
 
 public:
    CCellSurfaceWater(void);

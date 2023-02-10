@@ -467,7 +467,7 @@ CSimulation* CCell::m_pSim = NULL;                    // Initialize m_pSim, the 
 CSimulation* CCellSoil::m_pSim = NULL;                    // Ditto for the CCellSoil class
 CSimulation* CCellRainAndRunon::m_pSim = NULL;            // Ditto for the CCellRainAndRunon class
 CSimulation* CCellSurfaceWater::m_pSim = NULL;            // Ditto for the CCellSurfaceWater class
-CSimulation* CCellSedimentLoad::m_pSim = NULL;                // Ditto for the m_CellSediment class
+CSimulation* CCellSedimentLoad::m_pSim = NULL;                // Ditto for the cellSediment class
 
 
 /*========================================================================================================================================
@@ -522,7 +522,7 @@ int CSimulation::nDoSetUpRun(int nArg, char* pcArgv[])
    // Tell the user what is happening
    AnnounceReadDEM();
 
-   // Read in the microtography DEM and create the m_Cell array
+   // Read in the microtography DEM and create the cell array
    nRet = nReadMicrotopographyDEMData();
    if (nRet != RTN_OK)
       return (nRet);
@@ -550,7 +550,7 @@ int CSimulation::nDoSetUpRun(int nArg, char* pcArgv[])
       }
    }
 
-   // If an overall gradient has been specified, impose this on the basement and initial surface elevation values in the m_Cell array; otherwise estimate the array's pre-existing slope
+   // If an overall gradient has been specified, impose this on the basement and initial surface elevation values in the cell array; otherwise estimate the array's pre-existing slope
    CalcGradient();
 
    // Check GIS output format
@@ -561,7 +561,7 @@ int CSimulation::nDoSetUpRun(int nArg, char* pcArgv[])
    if (m_bTimeVaryingRain && ! bReadRainfallTimeSeries())
       return (RTN_ERR_RAINFALLTSFILE);
 
-   // If we have a file for the rainfall variation multiplier mask, read it in to the m_Cell array
+   // If we have a file for the rainfall variation multiplier mask, read it in to the cell array
    if (! m_strRainVarMFile.empty())
    {
       nRet = nReadRainVarData();
@@ -579,7 +579,7 @@ int CSimulation::nDoSetUpRun(int nArg, char* pcArgv[])
    m_dInvCos45      = 1 / cos(PI/4);
    m_dInvXGridMax   = 1 / static_cast<double>(m_nXGridMax);
 
-   // If necessary, set up some initial values for infilt, write to the m_Cell array
+   // If necessary, set up some initial values for infilt, write to the cell array
    if (m_bDoInfiltration)
       InitSoilWater();
 
@@ -1133,7 +1133,7 @@ int CSimulation::nDoSimulation(void)
 
       if (m_bDoInfiltration && (CALC_INFILT_INTERVAL-1 == ++m_nInfiltCount))                 // If we are considering infilt, simulate it this iteration?
       {
-         // Yup, simulate infilt from the m_Cell array
+         // Yup, simulate infilt from the cell array
          m_nInfiltCount = 0;
          m_bInfiltThisIter = true;
 
@@ -1218,7 +1218,7 @@ int CSimulation::nDoSimulation(void)
          m_dLastHeadcutRetreatCalcTime = m_dSimulatedTimeElapsed;
       }
 
-      // Calc end-of-iteration totals then initialize some of the m_Cell array ready for the next iteration (note: m_dThisIterKE is calculated earlier, as are m_dThisIterClaySedLost, m_dThisIterSiltSedLost, m_dThisIterSandSedLost, m_dThisIterClaySplashToSedLoad, m_dThisIterSiltSplashToSedLoad,  m_dThisIterSandSplashToSedLoad)
+      // Calc end-of-iteration totals then initialize some of the cell array ready for the next iteration (note: m_dThisIterKE is calculated earlier, as are m_dThisIterClaySedLost, m_dThisIterSiltSedLost, m_dThisIterSandSedLost, m_dThisIterClaySplashToSedLoad, m_dThisIterSiltSplashToSedLoad,  m_dThisIterSandSplashToSedLoad)
       m_ulNWet = 0;
       m_dThisIterRain                  =
       m_dThisIterRunOn                 =
@@ -1323,7 +1323,7 @@ int CSimulation::nDoSimulation(void)
       m_bSaveGISThisIter = false;
       if ((m_bSaveRegular && (m_dSimulatedTimeElapsed >= m_dRSaveTime) && (m_dSimulatedTimeElapsed < m_dSimulationDuration)) || (! m_bSaveRegular && (m_dSimulatedTimeElapsed >= m_VdSaveTime[m_nThisSave])))
       {
-         // Yes, save the values from the m_Cell array into GIS files
+         // Yes, save the values from the cell array into GIS files
          m_bSaveGISThisIter = true;
          if (! bSaveGISFiles())
             return (RTN_ERR_GISFILEWRITE);
@@ -1371,7 +1371,7 @@ int CSimulation::nDoSimulation(void)
       // Update grand totals (these are all volumes)
       UpdateGrandTotals();
 
-      // If there has been any noticeable loss of sediment from any edge this iteration, then adjust the elevation of the unbounded edge(s), based on the m_Cell values: ugly but necessary
+      // If there has been any noticeable loss of sediment from any edge this iteration, then adjust the elevation of the unbounded edge(s), based on the cell values: ugly but necessary
       int nOpenEdgeLength = 0;
       if (! m_bClosedThisEdge[EDGE_BOTTOM])
          nOpenEdgeLength += m_nXGridMax;
