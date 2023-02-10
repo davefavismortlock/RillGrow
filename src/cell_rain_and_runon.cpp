@@ -1,8 +1,8 @@
 /*=========================================================================================================================================
 
- This is cell_rain_and_runon.cpp: implementations of the RillGrow class used to represent incident water i.e. rain and runon
+ This is m_Cell_rain_and_runon.cpp: implementations of the RillGrow class used to represent incident water i.e. rain and runon
 
- Copyright (C) 2020 David Favis-Mortlock
+ Copyright (C) 2023 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -29,7 +29,7 @@ CCellRainAndRunon::CCellRainAndRunon(void)
    m_dCumulRunOn(0),
    m_dRainVarM(1)
 {
-   m_pCell = NULL;
+   m_pm_Cell = NULL;
 }
 
 CCellRainAndRunon::~CCellRainAndRunon(void)
@@ -39,89 +39,89 @@ CCellRainAndRunon::~CCellRainAndRunon(void)
 
 void CCellRainAndRunon::SetParent(CCell* const pParent)
 {
-   m_pCell = pParent;
+   m_pm_Cell = pParent;
 }
 
 
-// Sets this-iteration rainfall and runon to zero for this cell
+// Sets this-iteration rainfall and runon to zero for this m_Cell
 void CCellRainAndRunon::InitializeRainAndRunon(void)
 {
    m_dRain =
    m_dRunOn = 0;
 }
 
-// Increments rainfall for this cell, also adds to the surface water on the cell
+// Increments rainfall for this m_Cell, also adds to the surface water on the m_Cell
 void CCellRainAndRunon::AddRain(double const dRain)
 {
-   // Add rain to this cell
+   // Add rain to this m_Cell
    m_dRain      += dRain;
    m_dCumulRain += dRain;
 
-   // Was the cell previously dry?
-   if (! m_pCell->pGetSurfaceWater()->bIsWet())
+   // Was the m_Cell previously dry?
+   if (! m_pm_Cell->pGetSurfaceWater()->bIsWet())
    {
-      // It was, so initialize flow velocities on this cell
-      m_pCell->pGetSurfaceWater()->InitializeAllFlowVelocity();
+      // It was, so initialize flow velocities on this m_Cell
+      m_pm_Cell->pGetSurfaceWater()->InitializeAllFlowVelocity();
 
       // Initialize sediment load
-      m_pCell->pGetSedLoad()->InitializeAllSizeSedLoad();
+      m_pm_Cell->pGetSedLoad()->InitializeAllSizeSedLoad();
    }
 
-   // Increase the depth of surface water on the cell
-   m_pCell->pGetSurfaceWater()->AddSurfaceWater(dRain);
+   // Increase the depth of surface water on the m_Cell
+   m_pm_Cell->pGetSurfaceWater()->AddSurfaceWater(dRain);
 }
 
-// Returns the this-timestep rainfall on this cell
+// Returns the this-timestep rainfall on this m_Cell
 double CCellRainAndRunon::dGetRain(void) const
 {
    return m_dRain;
 }
 
-// Returns the cumulative rainfall on this cell
+// Returns the cumulative rainfall on this m_Cell
 double CCellRainAndRunon::dGetCumulRain(void) const
 {
    return m_dCumulRain;
 }
 
-// Sets this cell's rainfall variation multiplier
+// Sets this m_Cell's rainfall variation multiplier
 void CCellRainAndRunon::SetRainVarM(double const dNewVar)
 {
    m_dRainVarM = dNewVar;
 }
 
-// Returns this cell's rainfall variation multiplier
+// Returns this m_Cell's rainfall variation multiplier
 double CCellRainAndRunon::dGetRainVarM(void) const
 {
    return m_dRainVarM;
 }
 
-// Increments this cell's runon, also adds to the surface water on the cell
+// Increments this m_Cell's runon, also adds to the surface water on the m_Cell
 void CCellRainAndRunon::AddRunOn(double const dRunOn)
 {
    m_dRunOn += dRunOn;
    m_dCumulRunOn += dRunOn;
 
-   // Was the cell previously dry?
-   if (! m_pCell->pGetSurfaceWater()->bIsWet())
+   // Was the m_Cell previously dry?
+   if (! m_pm_Cell->pGetSurfaceWater()->bIsWet())
    {
-      // It was, so initialize flow velocities for this cell
-      m_pCell->pGetSurfaceWater()->InitializeAllFlowVelocity();
+      // It was, so initialize flow velocities for this m_Cell
+      m_pm_Cell->pGetSurfaceWater()->InitializeAllFlowVelocity();
 
       // Initialize sediment load
-      m_pCell->pGetSedLoad()->InitializeAllSizeSedLoad();
+      m_pm_Cell->pGetSedLoad()->InitializeAllSizeSedLoad();
    }
 
    // Increase the depth of surface water
-   m_pCell->pGetSurfaceWater()->AddSurfaceWater(dRunOn);
+   m_pm_Cell->pGetSurfaceWater()->AddSurfaceWater(dRunOn);
 }
 
-// Returns the this-timestep run-on on this cell
+// Returns the this-timestep run-on on this m_Cell
 double CCellRainAndRunon::dGetRunOn(void) const
 {
    return m_dRunOn;
 }
 
-// Returns the total run-on on this cell
+// Returns the total run-on on this m_Cell
 double CCellRainAndRunon::dGetCumulRunOn(void) const
 {
    return m_dCumulRunOn;

@@ -2,9 +2,9 @@
    #define __SEDIMENT_H__
 /*=========================================================================================================================================
 
- This is cell_sediment.h: declarations for the RillGrow class used to represent sediment in a cell's surface water
+ This is m_Cell_sediment.h: declarations for the RillGrow class used to represent sediment in a m_Cell's surface water
 
- Copyright (C) 2020 David Favis-Mortlock
+ Copyright (C) 2023 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -47,7 +47,7 @@ private:
       m_dFromHeadcutRetreatSiltSedLoad,
       m_dFromHeadcutRetreatSandSedLoad;
 
-   CCell* m_pCell;
+   CCell* m_pm_Cell;
 
 public:
    CCellSedimentLoad(void);

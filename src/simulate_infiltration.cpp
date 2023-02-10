@@ -2,7 +2,7 @@
 
  This is simulate_infilt.cpp: it simulates infiltration
 
- Copyright (C) 2020 David Favis-Mortlock
+ Copyright (C) 2023 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -23,7 +23,7 @@
 
 /*=========================================================================================================================================
 
- Sets an initial value for subsurface water for every cell
+ Sets an initial value for subsurface water for every m_Cell
 
 =========================================================================================================================================*/
 void CSimulation::InitSoilWater(void)
@@ -31,12 +31,12 @@ void CSimulation::InitSoilWater(void)
    // Do this for all soil layers
    for (int nLayer = 0; nLayer < m_nNumSoilLayers; nLayer++)
    {
-      // Calculate and set initial soil water content in each layer (as a depth equivalent) on all cells
+      // Calculate and set initial soil water content in each layer (as a depth equivalent) on all m_Cells
       for (int nX = 0; nX < m_nXGridMax; nX++)
       {
          for (int nY = 0; nY < m_nYGridMax; nY++)
          {
-            CCellSoilLayer* pLayer = Cell[nX][nY].pGetSoil()->pLayerGetLayer(nLayer);
+            CCellSoilLayer* pLayer = m_Cell[nX][nY].pGetSoil()->pLayerGetLayer(nLayer);
 
             double
                dLayerThickness = pLayer->dGetLayerThickness(),
@@ -60,7 +60,7 @@ void CSimulation::InitSoilWater(void)
 
 /*=========================================================================================================================================
 
- This calculates subsurface water movement for all cells
+ This calculates subsurface water movement for all m_Cells
 
 =========================================================================================================================================*/
 void CSimulation::DoAllInfiltration()
@@ -72,7 +72,7 @@ void CSimulation::DoAllInfiltration()
          // Start at the top soil layer and work downwards
          for (int nLayer = 0; nLayer < m_nNumSoilLayers; nLayer++)
          {
-            CCellSoilLayer* pLayer = Cell[nX][nY].pGetSoil()->pLayerGetLayer(nLayer);
+            CCellSoilLayer* pLayer = m_Cell[nX][nY].pGetSoil()->pLayerGetLayer(nLayer);
 
             // Get the subsurface water content (a depth equivalent) for this layer
             double dLayerSoilWaterDepth = pLayer->dGetSoilWater();
@@ -87,7 +87,7 @@ void CSimulation::DoAllInfiltration()
             if ((dDiff + TOLERANCE) < 0)
             {
                // Yes, so do exfilt
-               DoCellExfiltration(nX, nY, nLayer, pLayer, -dDiff);
+               Dom_CellExfiltration(nX, nY, nLayer, pLayer, -dDiff);
 
                if (nLayer == 0)
                   // This is the top layer
@@ -104,7 +104,7 @@ void CSimulation::DoAllInfiltration()
                // Yes, so do infilt
 //                m_ofsLog << m_ulIter << ": infiltration " << dDiff << " into layer " << nLayer << " at [" << nX << "][" << nY << "] since dLayerMaxSoilWaterDepth = " << dLayerMaxSoilWaterDepth << ", dLayerSoilWaterDepth = " << dLayerSoilWaterDepth << endl;
 
-               DoCellInfiltration(nX, nY, nLayer, pLayer, dDiff);
+               Dom_CellInfiltration(nX, nY, nLayer, pLayer, dDiff);
 
                if (nLayer == 0)
                   // This is the top layer
@@ -112,7 +112,7 @@ void CSimulation::DoAllInfiltration()
             }
 
             // Update the this-operation total
-            m_VdThisIterSoilWater[nLayer] += Cell[nX][nY].pGetSoil()->pLayerGetLayer(nLayer)->dGetSoilWater();
+            m_VdThisIterSoilWater[nLayer] += m_Cell[nX][nY].pGetSoil()->pLayerGetLayer(nLayer)->dGetSoilWater();
          }
       }
    }
@@ -121,11 +121,11 @@ void CSimulation::DoAllInfiltration()
 
 /*=========================================================================================================================================
 
- This member function of CSimulation calculates water loss from infilt for one cell using the EPA Explicit Green-Ampt Model (GAEXP), see
+ This member function of CSimulation calculates water loss from infilt for one m_Cell using the EPA Explicit Green-Ampt Model (GAEXP), see
  http://www.epa.gov/ada/csmos/ninflmod.html
 
 =========================================================================================================================================*/
-void CSimulation::DoCellInfiltration(int const nX, int const nY, int const nLayer, CCellSoilLayer* pLayer, double const dDeficit)
+void CSimulation::Dom_CellInfiltration(int const nX, int const nY, int const nLayer, CCellSoilLayer* pLayer, double const dDeficit)
 {
    // The layer is not fully saturated, so maybe can get water from the layer above, or from surface water if this is the top layer
    CCellSoilLayer* pLayerAbove = NULL;
@@ -133,16 +133,16 @@ void CSimulation::DoCellInfiltration(int const nX, int const nY, int const nLaye
    if (nLayer == 0)
    {
       // This is the top layer
-      if (! Cell[nX][nY].pGetSurfaceWater()->bIsWet())
+      if (! m_Cell[nX][nY].pGetSurfaceWater()->bIsWet())
          return;
 
-      // Cell is wet, so get the depth of surface water
-      dWaterDepthAbove = Cell[nX][nY].pGetSurfaceWater()->dGetSurfaceWaterDepth();
+      // m_Cell is wet, so get the depth of surface water
+      dWaterDepthAbove = m_Cell[nX][nY].pGetSurfaceWater()->dGetSurfaceWaterDepth();
    }
    else
    {
       // This is not the top layer
-      pLayerAbove = Cell[nX][nY].pGetSoil()->pLayerGetLayer(nLayer-1);
+      pLayerAbove = m_Cell[nX][nY].pGetSoil()->pLayerGetLayer(nLayer-1);
 
       // Get the depth of water in the soil layer above
       dWaterDepthAbove = pLayerAbove->dGetSoilWater();
@@ -173,8 +173,8 @@ void CSimulation::DoCellInfiltration(int const nX, int const nY, int const nLaye
 
       if (nLayer == 0)
       {
-         // This is the top layer, so remove from the surface water and update total infilt for this cell. Note that if there is insufficient surface water, dDepthToInfiltrate is reduced
-         Cell[nX][nY].pGetSoilWater()->DoInfiltration(dDepthToInfiltrate);
+         // This is the top layer, so remove from the surface water and update total infilt for this m_Cell. Note that if there is insufficient surface water, dDepthToInfiltrate is reduced
+         m_Cell[nX][nY].pGetSoilWater()->DoInfiltration(dDepthToInfiltrate);
       }
       else
       {
@@ -190,13 +190,13 @@ void CSimulation::DoCellInfiltration(int const nX, int const nY, int const nLaye
 
       if (nLayer == 0)
       {
-         // This is the top layer, so remove the water, update total infilt for this cell, assume that any in-transport sediment is deposited and add this to the per-iteration total of infitration-deposited sediment
+         // This is the top layer, so remove the water, update total infilt for this m_Cell, assume that any in-transport sediment is deposited and add this to the per-iteration total of infitration-deposited sediment
          double
             dClayDeposited = 0,
             dSiltDeposited = 0,
             dSandDeposited = 0;
 
-         Cell[nX][nY].pGetSoilWater()->InfiltrateAndMakeDry(dClayDeposited, dSiltDeposited, dSandDeposited);
+         m_Cell[nX][nY].pGetSoilWater()->InfiltrateAndMakeDry(dClayDeposited, dSiltDeposited, dSandDeposited);
 
          m_dSinceLastClayInfiltDeposit += dClayDeposited;
          m_dSinceLastSiltInfiltDeposit += dSiltDeposited;
@@ -214,16 +214,16 @@ void CSimulation::DoCellInfiltration(int const nX, int const nY, int const nLaye
 
 /*=========================================================================================================================================
 
-Calculates water loss from exfilt for one cell TODO this needs to be looked at
+Calculates water loss from exfilt for one m_Cell TODO this needs to be looked at
 
 =========================================================================================================================================*/
-void CSimulation::DoCellExfiltration(int const nX, int const nY, int const nLayer, CCellSoilLayer* pLayer, double const dExcess)
+void CSimulation::Dom_CellExfiltration(int const nX, int const nY, int const nLayer, CCellSoilLayer* pLayer, double const dExcess)
 {
    // The current soil layer is over-saturated, so we must try to get rid of some water from it. First try to move it downwards to the layer below
    if (nLayer < m_nNumSoilLayers-1)
    {
       // We are not on the lowest (i.e. just above basement) layer, so get a pointer to the layer below
-      CCellSoilLayer* pLayerBelow = Cell[nX][nY].pGetSoil()->pLayerGetLayer(nLayer+1);
+      CCellSoilLayer* pLayerBelow = m_Cell[nX][nY].pGetSoil()->pLayerGetLayer(nLayer+1);
 
       // Get the soil water content for the layer below
       double dLayerBelowSoilWater = pLayerBelow->dGetSoilWater();
@@ -254,7 +254,7 @@ void CSimulation::DoCellExfiltration(int const nX, int const nY, int const nLaye
 //       m_ofsLog << m_ulIter << " [" << nX << "][" << nY << "] exfilt to surface water = " << dExcess << endl;
 
       // Exfiltrate i.e. remove water from this layer and add it to the surface water
-      Cell[nX][nY].pGetSoilWater()->DoExfiltration(dExcess);
+      m_Cell[nX][nY].pGetSoilWater()->DoExfiltration(dExcess);
 
       return;
    }
@@ -267,7 +267,7 @@ void CSimulation::DoCellExfiltration(int const nX, int const nY, int const nLaye
       pLayer->ChangeSoilWater(-dExcess);
 
       // And add it to the layer above
-      CCellSoilLayer* pLayerAbove = Cell[nX][nY].pGetSoil()->pLayerGetLayer(nLayer-1);
+      CCellSoilLayer* pLayerAbove = m_Cell[nX][nY].pGetSoil()->pLayerGetLayer(nLayer-1);
       pLayerAbove->ChangeSoilWater(dExcess);
    }
 }

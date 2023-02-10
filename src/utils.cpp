@@ -2,7 +2,7 @@
 
  This is utils.cpp: utility routines for RillGrow
 
- Copyright (C) 2020 David Favis-Mortlock
+ Copyright (C) 2023 David Favis-Mortlock
 
  =========================================================================================================================================
 
@@ -185,7 +185,7 @@ bool CSimulation::bFindExeDir(char* pcArg)
       // It failed, so try another approach
       strTmp = pcArg;
 #else
-   //   char* pResult = getcwd(szBuf, BUFFER_SIZE);          // Used to use this, but what if cwd is not the same as the CoastalME dir?
+   //   char* pResult = getcwd(szBuf, BUFFER_SIZE);          // Used to use this, but what if cwd is not the same as the RG dir?
 
    if (-1 != readlink("/proc/self/exe", szBuf, BUFFER_SIZE))
       strTmp = szBuf;
@@ -199,7 +199,7 @@ bool CSimulation::bFindExeDir(char* pcArg)
       return false;
 
    // It's OK, so trim off the executable's name
-   int nPos = strTmp.find_last_of(PATH_SEPARATOR);
+   int nPos = static_cast<int>(strTmp.find_last_of(PATH_SEPARATOR));
    m_strRGDir = strTmp.substr(0, nPos+1);            // Note that this must be terminated with a backslash
 
    return true;
@@ -393,7 +393,7 @@ void CSimulation::CalcTime(double const dRunLength)
       m_ofsLog << "CPU time elapsed: " << strDispTime(dDuration, false, true);
 
       // Calculate CPU time per iteration
-      double dPerIter = dDuration / m_ulTotIter;
+      double dPerIter = dDuration / static_cast<double>(m_ulTotIter);
 
       // And write CPU time per iteration to m_ofsOut and m_ofsLog
       m_ofsOut << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << " (" << setprecision(4) << dPerIter << " per iteration)" << endl;
@@ -425,7 +425,7 @@ void CSimulation::CalcTime(double const dRunLength)
    m_ofsLog << "Run time elapsed: " << strDispTime(dDuration, false, true);
 
    // Calculate run time per iteration
-   double dPerIter = dDuration / m_ulTotIter;
+   double dPerIter = dDuration / static_cast<double>(m_ulTotIter);
 
    // And write run time per iteration to m_ofsOut and m_ofsLog
    m_ofsOut << setiosflags(ios::fixed) << " (" << setprecision(4) << dPerIter << " per iteration)" << endl;
@@ -465,8 +465,8 @@ string CSimulation::strDispTime(double const dTimeIn, bool const bRound, bool co
    // Display hours
    if (dTmpTime >= 3600)
    {
-      unsigned long ulHours = dTmpTime / 3600;
-      dTmpTime -= (ulHours * 3600);
+      unsigned long ulHours = static_cast<unsigned long>(dTmpTime / 3600);
+      dTmpTime -= (static_cast<double>(ulHours) * 3600);
 
       stringstream ststrTmp;
       ststrTmp << FillToWidth('0', 2) << ulHours;
@@ -479,8 +479,8 @@ string CSimulation::strDispTime(double const dTimeIn, bool const bRound, bool co
    // Display minutes
    if (dTmpTime >= 60)
    {
-      unsigned long ulMinutes = dTmpTime / 60;
-      dTmpTime -= (ulMinutes * 60);
+      unsigned long ulMinutes = static_cast<unsigned long>(dTmpTime / 60);
+      dTmpTime -= (static_cast<double>(ulMinutes) * 60);
 
       stringstream ststrTmp;
       ststrTmp << FillToWidth('0', 2) << ulMinutes;
@@ -563,33 +563,33 @@ void CSimulation::AnnounceProgress(void)
 ========================================================================================================================================*/
 int CSimulation::nCheckForInstability(void)
 {
-   // If an absurd per-cell average depth of sediment has been detached by flow during this iteration, then abort the run
-   if (tAbs(m_dThisIterClayFlowDetach + m_dThisIterSiltFlowDetach + m_dThisIterSandFlowDetach) / m_ulNActiveCells > ERROR_FLOW_DETACH_MAX)
+   // If an absurd per-m_Cell average depth of sediment has been detached by flow during this iteration, then abort the run
+   if (tAbs(m_dThisIterClayFlowDetach + m_dThisIterSiltFlowDetach + m_dThisIterSandFlowDetach) / static_cast<double>(m_ulNActivem_Cells) > ERROR_FLOW_DETACH_MAX)
       return (RTN_ERR_FLOWDETACHMAX);
 
-   // If an absurd per-cell average depth of sediment has been deposited by flow during this iteration, then abort the run
-   if (tAbs(m_dThisIterClayFlowDeposit + m_dThisIterSiltFlowDeposit + m_dThisIterSandFlowDeposit) / m_ulNActiveCells > ERROR_FLOW_DEPOSIT_MAX)
+   // If an absurd per-m_Cell average depth of sediment has been deposited by flow during this iteration, then abort the run
+   if (tAbs(m_dThisIterClayFlowDeposit + m_dThisIterSiltFlowDeposit + m_dThisIterSandFlowDeposit) / static_cast<double>(m_ulNActivem_Cells) > ERROR_FLOW_DEPOSIT_MAX)
       return (RTN_ERR_SEDLOADDEPOSITMAX);
 
    if (m_bSplashThisIter)
    {
-      // We are calculating splash, and we are doing so this iteration. If an absurd per-cell average splash detachment has occurred this iteration, then abort the run
-      if (tAbs(m_dThisIterClaySplashDetach + m_dThisIterSiltSplashDetach + m_dThisIterSandSplashDetach) / m_ulNActiveCells > ERROR_SPLASH_DETACH_MAX)
+      // We are calculating splash, and we are doing so this iteration. If an absurd per-m_Cell average splash detachment has occurred this iteration, then abort the run
+      if (tAbs(m_dThisIterClaySplashDetach + m_dThisIterSiltSplashDetach + m_dThisIterSandSplashDetach) / static_cast<double>(m_ulNActivem_Cells) > ERROR_SPLASH_DETACH_MAX)
          return (RTN_ERR_SPLASHDETMAX);
 
-      // If an absurd per-cell average splash deposition has occurred this iteration, then abort the run
-      if (tAbs(m_dThisIterClaySplashToSedLoad + m_dThisIterSiltSplashToSedLoad + m_dThisIterSandSplashToSedLoad) / m_ulNActiveCells > ERROR_SPLASH_DEPOSIT_MAX)
+      // If an absurd per-m_Cell average splash deposition has occurred this iteration, then abort the run
+      if (tAbs(m_dThisIterClaySplashToSedLoad + m_dThisIterSiltSplashToSedLoad + m_dThisIterSandSplashToSedLoad) / static_cast<double>(m_ulNActivem_Cells) > ERROR_SPLASH_DEPOSIT_MAX)
          return (RTN_ERR_SPLASHDEPMAX);
    }
 
    if (m_bSlumpThisIter)
    {
-      // We are calculating slump, and we are doing so this iteration. If an absurd per-cell average slump detachment has occurred this iteration, then abort the run
-      if (tAbs(m_dSinceLastClaySlumpDetach + m_dSinceLastSiltSlumpDetach + m_dSinceLastSandSlumpDetach) / m_ulNActiveCells > ERROR_SLUMP_DETACH_MAX)
+      // We are calculating slump, and we are doing so this iteration. If an absurd per-m_Cell average slump detachment has occurred this iteration, then abort the run
+      if (tAbs(m_dSinceLastClaySlumpDetach + m_dSinceLastSiltSlumpDetach + m_dSinceLastSandSlumpDetach) / static_cast<double>(m_ulNActivem_Cells) > ERROR_SLUMP_DETACH_MAX)
          return (RTN_ERR_SLUMPDETMAX);
 
-      // If an absurd per-cell average topple detachment has occurred this iteration, then abort the run
-      if (tAbs(m_dSinceLastClayToppleDetach + m_dSinceLastSiltToppleDetach + m_dSinceLastSandToppleDetach) / m_ulNActiveCells > ERROR_TOPPLE_DETACH_MAX)
+      // If an absurd per-m_Cell average topple detachment has occurred this iteration, then abort the run
+      if (tAbs(m_dSinceLastClayToppleDetach + m_dSinceLastSiltToppleDetach + m_dSinceLastSandToppleDetach) / static_cast<double>(m_ulNActivem_Cells) > ERROR_TOPPLE_DETACH_MAX)
          return (RTN_ERR_TOPPLEDETMAX);
    }
 
@@ -812,9 +812,9 @@ void CSimulation::CalcProcessStats(void)
    rusage ru;
    if (getrusage(RUSAGE_SELF, &ru) >= 0)
    {
-      m_ofsOut << "Time spent executing user code               \t: "  << strDispTime(ru.ru_utime.tv_sec, false, true) << endl;
+      m_ofsOut << "Time spent executing user code               \t: "  << strDispTime(static_cast<double>(ru.ru_utime.tv_sec), false, true) << endl;
 //      m_ofsOut << "ru_utime.tv_usec                             \t: " << ru.ru_utime.tv_usec << endl;
-      m_ofsOut << "Time spent executing kernel code             \t: " << strDispTime(ru.ru_stime.tv_sec, false, true) << endl;
+      m_ofsOut << "Time spent executing kernel code             \t: " << strDispTime(static_cast<double>(ru.ru_stime.tv_sec), false, true) << endl;
 //      m_ofsOut << "ru_stime.tv_usec                             \t: " << ru.ru_stime.tv_usec << endl;
 //      m_ofsOut << "Maximum resident set size                    \t: " << ru.ru_maxrss/1024.0 << " Mb" << endl;
 //      m_ofsOut << "ixrss (???)                                  \t: " << ru.ru_ixrss << endl;
@@ -1048,23 +1048,23 @@ double CSimulation::dGetMissingValue(void) const
 
 /*========================================================================================================================================
 
- Publicly visible, returns the simulation-wide cell side value
+ Publicly visible, returns the simulation-wide m_Cell side value
 
 ========================================================================================================================================*/
-double CSimulation::dGetCellSide(void) const
+double CSimulation::dGetm_CellSide(void) const
 {
-   return m_dCellSide;
+   return m_dm_CellSide;
 }
 
 
 /*========================================================================================================================================
 
- Publicly visible, returns the simulation-wide cell diagonal value
+ Publicly visible, returns the simulation-wide m_Cell diagonal value
 
 ========================================================================================================================================*/
-double CSimulation::dGetCellSideDiag(void) const
+double CSimulation::dGetm_CellSideDiag(void) const
 {
-   return m_dCellDiag;
+   return m_dm_CellDiag;
 }
 
 

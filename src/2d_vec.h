@@ -5,7 +5,7 @@
 This is 2d_vec.h: declarations of the class used to represent a 2D vector in RillGrow. The class is very much 'cut down' by comparison to a 'real' vector class: only
 those methods which are necessary for RG are implemented
 
- Copyright (C) 2020 David Favis-Mortlock
+ Copyright (C) 2023 David Favis-Mortlock
 
  ==========================================================================================================================================
 

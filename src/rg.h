@@ -4,7 +4,7 @@
 
  This is rg.h: contains global definitions for RillGrow
 
- Copyright (C) 2020 David Favis-Mortlock
+ Copyright (C) 2023 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -139,11 +139,11 @@ using std::to_string;
 #endif
 
 //========================================================== Hard-Wired Constants =========================================================
-string const   PROGNAME                                     = "RillGrow serial (1 November 2020 version)";
+string const   PROGNAME                                     = "RillGrow serial (10 Feb 2023 version)";
 string const   SHORTNAME                                    = "RG";
 string const   RG_INI                                       = "rg.ini";
 
-string const   COPYRIGHT                                    = "(C) 2020 David Favis-Mortlock (dfm1@bgs.ac.uk)";
+string const   COPYRIGHT                                    = "(C) 2023 David Favis-Mortlock (dfm1@bgs.ac.uk)";
 string const   LINE                                         = "-------------------------------------------------------------------------------";
 string const   DISCLAIMER1                                  = "This program is distributed in the hope that it will be useful, but WITHOUT ANY";
 string const   DISCLAIMER2                                  = "WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A";
@@ -218,9 +218,9 @@ string const   ERR                                          = "ERROR: ";
 string const   WARN                                         = "WARNING: ";
 
 string const      PERITERHEAD1 =
-   "                  <--------------- HYDROLOGY ------------><FLOW EROSION/DEPOSITION><---- SPLASH --->           <--SLUMP-><-TOPPLE-><-INFILT-><HEADCUT>";
+   "                  <--------------- HYDROLOGY --------------><FLOW EROSION/DEPOSITION><---- SPLASH --->           <--SLUMP-><-TOPPLE-><-INFILT-><-HEADCUT>";
 string const      PERITERHEAD2 =
-   "Iteration  Elapsed   Rain Runon Infilt OffEdge  SurfaceWtr   Detach Deposit OffEdge   Detach Deposit    Sedload    Redist    Redist   Deposit   Detach";
+   "Iteration  Elapsed    Rain  Runon Infilt OffEdge  SurfaceWtr   Detach Deposit OffEdge   Detach Deposit    Sedload    Redist    Redist   Deposit    Detach";
 string const      PERITERHEAD   =
    "PER-ITERATION RESULTS ======================================================================================================================================";
 string const      ENDRAINHEAD   =

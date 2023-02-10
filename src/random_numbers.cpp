@@ -2,7 +2,7 @@
 
  This is random_numbers.cpp: the random number routines for RillGrow
 
- Copyright (C) 2020 David Favis-Mortlock
+ Copyright (C) 2023 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -152,7 +152,7 @@ unsigned long CSimulation::ulGetTausworthe(unsigned long const ulS, unsigned lon
 double CSimulation::dGetRand0d1(void)
 {
    // Uses ulGetRand0() to return a double precision floating point number uniformly distributed in the range [0, 1) i.e. includes 0.0 but excludes 1.0. Based on a routine in taus.c from gsl-1.2
-   return (ulGetRand0() / 4294967296.0);
+   return (static_cast<double>(ulGetRand0()) / 4294967296.0);
 }
 
 
@@ -164,7 +164,7 @@ int CSimulation::nGetRand0To(int const nBound)
 
    do
    {
-      nRtn = ulGetRand0() / ulScale;
+      nRtn = static_cast<int>(ulGetRand0() / ulScale);
    }
    while (nRtn >= nBound);
 
@@ -180,7 +180,7 @@ int CSimulation::nGetRand1To(int const nBound)
 
    do
    {
-      nRtn = ulGetRand1() / ulScale;
+      nRtn = static_cast<int>(ulGetRand1() / ulScale);
    }
    while (nRtn >= nBound);
 

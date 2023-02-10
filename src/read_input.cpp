@@ -2,7 +2,7 @@
 
  This is read_input.cpp: it reads the non-GIS input files for RillGrow
 
- Copyright (C) 2020 David Favis-Mortlock
+ Copyright (C) 2023 David Favis-Mortlock
 
  =========================================================================================================================================
 
@@ -50,11 +50,13 @@ bool CSimulation::bReadIni(void)
       return (false);
    }
 
-   int i = 0;
+   int i = 0, nLine = 0;
    string strRec, strErr;
 
    while (getline(InStream, strRec))
    {
+      nLine++;
+
       // Trim off leading and trailing whitespace
       strRec = strTrim(&strRec);
 
@@ -62,27 +64,19 @@ bool CSimulation::bReadIni(void)
       if ((strRec.empty()) || (strRec[0] == QUOTE1) || (strRec[0] == QUOTE2))
          continue;
 
-      // It isn't so increment counter
-      i++;
-
-      // Find the colon: note that lines MUST have a colon separating data from leading description portion
       size_t nPos = strRec.find(':');
       if (nPos == string::npos)
       {
          // Error: badly formatted line (no colon)
-         cerr << ERR << "badly formatted line (no ':') in " << strFilePathName << endl << "'" << strRec << "'" << endl;
-         return false;
+         cerr << ERR << "badly formatted line " << nLine << " (no ':') in " << strFilePathName << endl << "'" << strRec << "'" << endl;
+         return (false);
       }
 
-      if (nPos == strRec.size()-1)
-      {
-         // Error: badly formatted line (colon with nothing following)
-         cerr << ERR << "badly formatted line (nothing following ':') in " << strFilePathName << endl << "'" << strRec << "'" << endl;
-         return false;
-      }
+      // It is OK, so increment item counter
+      i++;
 
-      // Strip off leading portion (the bit up to and including the colon)
-      string strRH = strRec.substr(nPos+1);
+      // Strip off leading portion (the bit up to and including the colon). Note that strRH could be empty for un-needed data items
+      string strRH = strSplitRH(&strRec);
 
       // Remove leading whitespace
       strRH = strTrimLeft(&strRH);
@@ -171,7 +165,7 @@ bool CSimulation::bReadIni(void)
       if (! strErr.empty())
       {
          // Error in input to initialisation file
-         cerr << ERR << "reading " << strErr << " in " << strFilePathName << endl << "'" << strRec << "'" << endl;
+         cerr << ERR << "reading " << strErr << " on line " << nLine << " of " << strFilePathName << endl << "'" << strRec << "'" << endl;
          InStream.close();
 
          return false;
@@ -207,11 +201,13 @@ bool CSimulation::bReadRunData(void)
       return false;
    }
 
-   int i = 0;
+   int i = 0, nLine = 0;
    string strRec, strRH, strErr;
 
    while (getline(InStream, strRec))
    {
+      nLine++;
+
       // Trim off leading and trailing whitespace
       strRec = strTrim(&strRec);
 
@@ -219,17 +215,19 @@ bool CSimulation::bReadRunData(void)
       if ((strRec.empty()) || (strRec[0] == QUOTE1) || (strRec[0] == QUOTE2))
          continue;
 
-      // It isn't so increment counter
+      size_t nPos = strRec.find(':');
+      if (nPos == string::npos)
+      {
+         // Error: badly formatted line (no colon)
+         cerr << ERR << "badly formatted line " << nLine << " (no ':') in " << m_strDataPathName << endl << "'" << strRec << "'" << endl;
+         return (false);
+      }
+
+      // It is OK, so increment item counter
       i++;
 
-      // Get the RH bit of the string, after the colon
+      // Get the RH bit of the string, after the colon. Note that this might be an empty string for un-needed data items
       strRH = strSplitRH(&strRec);
-//       if (strRH.empty())
-//       {
-//          // Error: badly formatted line (no colon or nothing after colon)
-//          cerr << ERR << "badly formatted line (no ':' or nothing after ':') in " << m_strDataPathName << endl << "'" << strRec << "'" << endl;
-//          return false;
-//       }
 
       int
          nMultiplier = 0,
@@ -247,7 +245,7 @@ bool CSimulation::bReadRunData(void)
          // Split, space separated
          VstrItems = VstrSplit(&strRH, SPACE);
 
-         nLen = VstrItems.size();
+         nLen = static_cast<int>(VstrItems.size());
          if ((nLen < 2) || (nLen > 3))
          {
             strErr = "simulation duration incorrectly specified";
@@ -293,7 +291,6 @@ bool CSimulation::bReadRunData(void)
          // Convert the simulation duration and rain duration to seconds
          m_dSimulationDuration *= nMultiplier;
          m_dSimulatedRainDuration *= nMultiplier;
-
          break;
 
       case 2:
@@ -302,7 +299,7 @@ bool CSimulation::bReadRunData(void)
 
          // Split, space separated
          VstrItems = VstrSplit(&strRH, SPACE);
-         nLen = VstrItems.size();
+         nLen = static_cast<int>(VstrItems.size());
          if (nLen == 0)
          {
             // No save intervals specified, just output at end
@@ -360,13 +357,12 @@ bool CSimulation::bReadRunData(void)
             // Put a dummy save interval as the last entry in the array: this is needed to stop problems at end of run
             m_VdSaveTime.push_back(m_dSimulationDuration + 1);
          }
-
          break;
 
       case 3:
          // Random number seed(s)
          VstrItems = VstrSplit(&strRH, SPACE);
-         nLen = VstrItems.size();
+         nLen = static_cast<int>(VstrItems.size());
          if (nLen == 0)
          {
             // Just use previously set random number seeds
@@ -381,7 +377,6 @@ bool CSimulation::bReadRunData(void)
             else
                m_ulRandSeed[n] = m_ulRandSeed[0];
          }
-
          break;
 
       case 4:
@@ -636,7 +631,6 @@ bool CSimulation::bReadRunData(void)
          m_strLogFile = m_strOutputPath;
          m_strLogFile.append(strRH);
          m_strLogFile.append(LOG_EXT);
-
          break;
 
       case 7:
@@ -656,7 +650,7 @@ bool CSimulation::bReadRunData(void)
             m_bSlumpDetachTS      =
             m_bToppleDetachTS     =
             m_bDoSedLoadDepositTS =
-            m_bSedLoadLostTS          =
+            m_bSedLoadLostTS      =
             m_bSedLoadTS          =
             m_bInfiltDepositTS    =
             m_bSplashRedistTS     =
@@ -829,6 +823,9 @@ bool CSimulation::bReadRunData(void)
             m_nZUnits = Z_UNIT_CM;
          else if (strRH.find("m") != string::npos)
             m_nZUnits = Z_UNIT_M;
+         else
+            // Anything else
+            m_nZUnits = Z_UNIT_NONE;
          break;
 
       case 12:
@@ -911,6 +908,7 @@ bool CSimulation::bReadRunData(void)
                {
                   // Only need to read a line from the file for layers after the first (have already read the line for the first layer)
                   getline(InStream, strRec);
+                  nLine++;
                }
 
                // Trim off leading and trailing whitespace
@@ -920,15 +918,23 @@ bool CSimulation::bReadRunData(void)
                if ((strRec.empty()) || (strRec[0] == QUOTE1) || (strRec[0] == QUOTE2))
                   continue;
 
-               // It isn't so increment counter
+               nPos = strRec.find(':');
+               if (nPos == string::npos)
+               {
+                  // Error: badly formatted line (no colon)
+                  cerr << ERR << "badly formatted line " << nLine << " (no ':') in " << m_strDataPathName << endl << "'" << strRec << "'" << endl;
+                  return (false);
+               }
+
+               // It is OK, so increment counter
                j++;
 
                strRH = strSplitRH(&strRec);
                if (strRH.empty())
                {
-                  // Error: badly formatted line (no colon or nothing after colon)
-                  cerr << ERR << "badly formatted line (no ':' or nothing after ':') in " << m_strDataPathName << endl << "'" << strRec << "'" << endl;
-                  return false;
+                  // Error: badly formatted line (nothing after colon)
+                  cerr << ERR << "badly formatted line " << nLine << " (nothing after ':') in " << m_strDataPathName << endl << "'" << strRec << "'" << endl;
+                  return (false);
                }
 
                switch (j)
@@ -952,7 +958,6 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(dTmp));
                         strErr.append(") for soil layer ");
                         strErr.append(to_string(nLayer+1));
-
                         break;
                      }
                      dPerCentClay = dTmp;
@@ -967,7 +972,6 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(dTmp));
                         strErr.append(") for soil layer ");
                         strErr.append(to_string(nLayer+1));
-
                         break;
                      }
                      dPerCentSilt = dTmp;
@@ -982,7 +986,6 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(dTmp));
                         strErr.append(") for soil layer ");
                         strErr.append(to_string(nLayer+1));
-
                         break;
                      }
                      dPerCentSand = dTmp;
@@ -1007,9 +1010,7 @@ bool CSimulation::bReadRunData(void)
                      m_VdInputSoilLayerPerCentClay.push_back(dPerCentClay);
                      m_VdInputSoilLayerPerCentSilt.push_back(dPerCentSilt);
                      m_VdInputSoilLayerPerCentSand.push_back(dPerCentSand);
-
                      break;
-
 
                   case 6:
                      // Bulk density (t/m**3 or g/cm**3)
@@ -1025,7 +1026,6 @@ bool CSimulation::bReadRunData(void)
                      dTmp *= 1000;
 
                      m_VdInputSoilLayerBulkDensity.push_back(dTmp);
-
                      break;
 
                   case 7:
@@ -1037,11 +1037,9 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(dTmp));
                         strErr.append(") for soil layer ");
                         strErr.append(to_string(nLayer+1));
-
                         break;
                      }
                      m_VdInputSoilLayerClayFlowErodibility.push_back(dTmp);
-
                      break;
 
                   case 8:
@@ -1053,11 +1051,9 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(dTmp));
                         strErr.append(") for soil layer ");
                         strErr.append(to_string(nLayer+1));
-
                         break;
                      }
                      m_VdInputSoilLayerSiltFlowErodibility.push_back(dTmp);
-
                      break;
 
                   case 9:
@@ -1069,11 +1065,9 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(dTmp));
                         strErr.append(") for soil layer ");
                         strErr.append(to_string(nLayer+1));
-
                         break;
                      }
                      m_VdInputSoilLayerSandFlowErodibility.push_back(dTmp);
-
                      break;
 
                   case 10:
@@ -1085,11 +1079,9 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(dTmp));
                         strErr.append(") for soil layer ");
                         strErr.append(to_string(nLayer+1));
-
                         break;
                      }
                      m_VdInputSoilLayerClaySplashErodibility.push_back(dTmp);
-
                      break;
 
                   case 11:
@@ -1101,11 +1093,9 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(dTmp));
                         strErr.append(") for soil layer ");
                         strErr.append(to_string(nLayer+1));
-
                         break;
                      }
                      m_VdInputSoilLayerSiltSplashErodibility.push_back(dTmp);
-
                      break;
 
                   case 12:
@@ -1117,11 +1107,9 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(dTmp));
                         strErr.append(") for soil layer ");
                         strErr.append(to_string(nLayer+1));
-
                         break;
                      }
                      m_VdInputSoilLayerSandSplashErodibility.push_back(dTmp);
-
                      break;
 
                   case 13:
@@ -1133,11 +1121,9 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(dTmp));
                         strErr.append(") for soil layer ");
                         strErr.append(to_string(nLayer+1));
-
                         break;
                      }
                      m_VdInputSoilLayerClaySlumpErodibility.push_back(dTmp);
-
                      break;
 
                   case 14:
@@ -1149,11 +1135,9 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(dTmp));
                         strErr.append(") for soil layer ");
                         strErr.append(to_string(nLayer+1));
-
                         break;
                      }
                      m_VdInputSoilLayerSiltSlumpErodibility.push_back(dTmp);
-
                      break;
 
                   case 15:
@@ -1165,11 +1149,9 @@ bool CSimulation::bReadRunData(void)
                         strErr.append(to_string(dTmp));
                         strErr.append(") for soil layer ");
                         strErr.append(to_string(nLayer+1));
-
                         break;
                      }
                      m_VdInputSoilLayerSandSlumpErodibility.push_back(dTmp);
-
                      break;
                }
 
@@ -1224,7 +1206,7 @@ bool CSimulation::bReadRunData(void)
          if (m_dDropDiameter <= 0)
             strErr = "mean raindrop diameter";
          else
-            m_dMeanCellWaterVol = 4 * PI * pow(m_dDropDiameter * 0.5, 3) / 3;         // in mm**3
+            m_dMeanm_CellWaterVol = 4 * PI * pow(m_dDropDiameter * 0.5, 3) / 3;         // in mm**3
          break;
 
       case 22:
@@ -1233,7 +1215,7 @@ bool CSimulation::bReadRunData(void)
          if (m_dStdDropDiameter < 0)
             strErr = "standard deviation of raindrop diameter";
          else
-            m_dStdCellWaterVol = 4 * PI * pow(m_dStdDropDiameter * 0.5, 3) / 3;       // in mm**3
+            m_dStdm_CellWaterVol = 4 * PI * pow(m_dStdDropDiameter * 0.5, 3) / 3;       // in mm**3
          break;
 
       case 23:
@@ -1303,8 +1285,8 @@ bool CSimulation::bReadRunData(void)
 
       case 27:
          // N in splash efficiency equation (sec**2/mm)
-         m_VdSplashEffN = stod(strRH);
-         if (m_bSplash && (m_VdSplashEffN < 0))
+         m_dSplashEffN = stod(strRH);
+         if (m_bSplash && (m_dSplashEffN < 0))
             strErr = "splash efficiency N";
          break;
 
@@ -1428,6 +1410,7 @@ bool CSimulation::bReadRunData(void)
                {
                   // Only need to read a line from the file for layers after the first (have already read the line for the first layer)
                   getline(InStream, strRec);
+                  nLine++;
                }
 
                // Trim off leading and trailing whitespace
@@ -1437,15 +1420,30 @@ bool CSimulation::bReadRunData(void)
                if ((strRec.empty()) || (strRec[0] == QUOTE1) || (strRec[0] == QUOTE2))
                   continue;
 
+               if (m_bDoInfiltration)
+               {
+                  nPos = strRec.find(':');
+                  if (nPos == string::npos)
+                  {
+                     // Error: badly formatted line (no colon)
+                     cerr << ERR << "badly formatted line " << nLine << " (no ':') in " << m_strDataPathName << endl << "'" << strRec << "'" << endl;
+                     return (false);
+                  }
+               }
+
+
                // It isn't so increment counter
                j++;
 
-               strRH = strSplitRH(&strRec);
-               if (strRH.empty())
+               if (m_bDoInfiltration)
                {
-                  // Error: badly formatted line (no colon or nothing after colon)
-                  cerr << ERR << "badly formatted line (no ':' or nothing after ':') in " << m_strDataPathName << endl << "'" << strRec << "'" << endl;
-                  return false;
+                  strRH = strSplitRH(&strRec);
+                  if (strRH.empty())
+                  {
+                     // Error: badly formatted line (no colon or nothing after colon)
+                     cerr << ERR << "badly formatted line " << nLine << " (nothing after ':') in " << m_strDataPathName << endl << "'" << strRec << "'" << endl;
+                     return (false);
+                  }
                }
 
                switch (j)
@@ -1540,12 +1538,10 @@ bool CSimulation::bReadRunData(void)
 
          if (strRH.find('m') != string::npos)
             m_bManningEqn = true;
-         if (strRH.find('d') != string::npos)
+         else if (strRH.find('d') != string::npos)
             m_bDarcyWeisbachEqn = true;
-
-         if (m_bManningEqn == m_bDarcyWeisbachEqn)
+         else
             strErr = "must choose either Manning or Darcy-Weisbach equation";
-
          break;
 
       case 39:
@@ -1557,7 +1553,6 @@ bool CSimulation::bReadRunData(void)
             if (m_dManningParamA <= 0)
                strErr = "Manning parameter A must be > 0";
          }
-
          break;
 
       case 40:
@@ -1569,7 +1564,6 @@ bool CSimulation::bReadRunData(void)
             if (m_dManningParamB <= 0)
                strErr = "Manning parameter B must be > 0";
          }
-
          break;
 
       case 41:
@@ -1580,18 +1574,13 @@ bool CSimulation::bReadRunData(void)
 
             if (strRH.find('c') != string::npos)
                m_bFrictionFactorConstant = true;
-            if (strRH.find('r') != string::npos)
+            else if (strRH.find('r') != string::npos)
                m_bFrictionFactorReynolds = true;
-            if (strRH.find('l') != string::npos)
+            else if (strRH.find('l') != string::npos)
                m_bFrictionFactorLawrence = true;
-
-            if (!m_bFrictionFactorConstant && !m_bFrictionFactorReynolds && !m_bFrictionFactorLawrence)
-               strErr = "must choose a way of calculating the Darcy-Weisbach friction factor";
-
-            if ((m_bFrictionFactorConstant && m_bFrictionFactorReynolds) || (m_bFrictionFactorConstant && m_bFrictionFactorLawrence) || (m_bFrictionFactorReynolds && m_bFrictionFactorLawrence))
-               strErr = "must choose only one way of calculating the Darcy-Weisbach friction factor";
+            else
+               strErr = "Must choose one way of calculating the Darcy-Weisbach friction factor";
          }
-
          break;
 
       case 42:
@@ -1603,7 +1592,6 @@ bool CSimulation::bReadRunData(void)
             if (m_dFFConstant <= 0)
                strErr = "Constant friction factor for Darcy-Weisbach equation must be > 0";
          }
-
          break;
 
       case 43:
@@ -1615,7 +1603,6 @@ bool CSimulation::bReadRunData(void)
             if (m_dFFReynoldsParamA <= 0)
                strErr = "Parameter A for Reynolds' number-based friction factor for Darcy-Weisbach equation must be > 0";
          }
-
          break;
 
       case 44:
@@ -1627,7 +1614,6 @@ bool CSimulation::bReadRunData(void)
             if (m_dFFReynoldsParamB == 0)
                strErr = "Parameter B for Reynolds' number-based friction factor for Darcy-Weisbach equation cannot be 0";
          }
-
          break;
 
       case 45:
@@ -1641,7 +1627,6 @@ bool CSimulation::bReadRunData(void)
             else
                m_dFFLawrenceEpsilon = 0.5 * m_dFFLawrenceD50;
          }
-
          break;
 
       case 46:
@@ -1653,7 +1638,6 @@ bool CSimulation::bReadRunData(void)
             if ((m_dFFLawrencePr < 0) || (m_dFFLawrencePr > 100))
                strErr = "% of surface covered with roughness elements for Lawrence (1997) friction factor for Darcy-Weisbach equation must be between 0 and 100";
          }
-
          break;
 
       case 47:
@@ -1665,7 +1649,6 @@ bool CSimulation::bReadRunData(void)
             if ((m_dFFLawrenceCd < 0) || (m_dFFLawrenceCd > 1))
                strErr = "ratio between the drag of roughness elements and the ideal situation for Lawrence (1997) friction factor for Darcy-Weisbach equation must be between 0 and 1";
          }
-
          break;
 
       case 48:
@@ -1686,7 +1669,6 @@ bool CSimulation::bReadRunData(void)
             m_bFlowErosion = false;
          else
             strErr = "flow erosion switch";
-
          break;
 
       case 50:
@@ -1887,7 +1869,7 @@ bool CSimulation::bReadRunData(void)
       if (! strErr.empty())
       {
          // Error in input to run details file
-         cerr << ERR << "reading " << strErr << " in " << m_strDataPathName << endl << "'" << strRec << "'" << endl;
+         cerr << ERR << "reading " << strErr << " on line " << nLine << " of " << m_strDataPathName << endl << "'" << strRec << "'" << endl;
          InStream.close();
          return false;
       }
@@ -2000,10 +1982,12 @@ bool CSimulation::bReadRainfallTimeSeries(void)
    }
 
    string strRec, strErr;
-   int i = -2, nMultiplier = 1;
+   int i = -2, nMultiplier = 1, nLine = 0;
 
    while (getline(InStream, strRec))
    {
+      nLine++;
+
       // Convert to lowercase and trim off leading and trailing whitespace
       strRec = strToLower(&strRec);
       strRec = strTrim(&strRec);
@@ -2011,20 +1995,25 @@ bool CSimulation::bReadRainfallTimeSeries(void)
       // If it is not a blank line, but it is a comment line or a blank line, then ignore it
       if ((! strRec.empty()) && (strRec[0] != QUOTE1) && (strRec[0] != QUOTE2))
       {
-         // It isn't, so increment counter
-         i++;
-
-         // Find the colon: note that lines MUST have a colon separating data from leading description portion
          size_t nPos = strRec.find(':');
          if (nPos == string::npos)
          {
             // Error: badly formatted line (no colon)
-            cerr << ERR << "badly formatted line (no ':') in " << m_strDataPathName << endl << strRec << endl;
-            return false;
+            cerr << ERR << "badly formatted line " << nLine << " (no ':') in " << strFilePathName << endl << "'" << strRec << "'" << endl;
+            return (false);
          }
 
+         // It is OK, so increment item counter
+         i++;
+
          // Strip off leading portion (the bit up to and including the colon)
-         string strRH = strRec.substr(nPos+1);
+         string strRH = strSplitRH(&strRec);
+         if (strRH.empty())
+         {
+            // Error: badly formatted line (nothing after colon)
+            cerr << ERR << "badly formatted line " << nLine << " (nothing after ':') in " << strFilePathName << endl << "'" << strRec << "'" << endl;
+            return (false);
+         }
 
          // Remove leading whitespace after the colon
          strRH = strTrimLeft(&strRH);
@@ -2089,7 +2078,6 @@ bool CSimulation::bReadRainfallTimeSeries(void)
             {
                strErr = "rainfall change time must be greater than zero: ";
                strErr.append(strRH);
-
                break;
             }
 
@@ -2103,7 +2091,6 @@ bool CSimulation::bReadRainfallTimeSeries(void)
                   strErr.append(" & ");
                   strErr.append(to_string(i-1));
                   strErr.append(" are out of sequence");
-
                   break;
                }
             }
@@ -2129,7 +2116,7 @@ bool CSimulation::bReadRainfallTimeSeries(void)
          if (! strErr.empty())
          {
             // error in input to run details file
-            cerr << ERR << strErr << endl;
+            cerr << ERR << " on line " << nLine << " of " << strFilePathName << endl << "'" << strErr << "'" << endl;
             InStream.close();
             return (false);
          }
@@ -2158,11 +2145,8 @@ string CSimulation::strSplitRH(string const* pstrRec) const
    // Find the colon: note that lines MUST have a colon separating data from leading description portion
    nPos = pstrRec->find(':');
    if (nPos == string::npos)
-   {
       // Error: badly formatted line (no colon)
-      cerr << ERR << "badly formatted line (no ':') in " << m_strDataPathName << endl << *pstrRec << endl;
-      return strRH;
-   }
+      return "";
 
    // Strip off leading portion (the bit up to and including the colon)
    strRH = pstrRec->substr(nPos+1);
@@ -2170,7 +2154,11 @@ string CSimulation::strSplitRH(string const* pstrRec) const
    // Remove leading whitespace after the colon
    strRH = strTrimLeft(&strRH);
 
-   // Look for trailing comments, if found then terminate string at that point and trim off any trailing whitespace
+   if (strRH.empty())
+      // There was nothing after the colon
+      return "";
+
+   // OK so far, so look for trailing comments, if found then terminate string at that point and trim off any trailing whitespace
    bool bFound = true;
    while (bFound)
    {

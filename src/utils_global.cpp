@@ -2,7 +2,7 @@
 
  This is utils_global.cpp: globally available utility routines for RillGrow
 
- Copyright (C) 2020 David Favis-Mortlock
+ Copyright (C) 2023 David Favis-Mortlock
 
  =========================================================================================================================================
 

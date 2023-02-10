@@ -2,9 +2,9 @@
    #define __SOIL_LAYER_H__
 /*=========================================================================================================================================
 
- This is cell_soil_layer.h: declaration for the RillGrow class used to represent a layer in the soil column
+ This is m_Cell_soil_layer.h: declaration for the RillGrow class used to represent a layer in the soil column
 
- Copyright (C) 2020 David Favis-Mortlock
+ Copyright (C) 2023 David Favis-Mortlock
 
  ==========================================================================================================================================
 

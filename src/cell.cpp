@@ -1,8 +1,8 @@
 /*=========================================================================================================================================
 
- This is cell.cpp: the implementation of the class used to represent each soil cell object
+ This is m_Cell.cpp: the implementation of the class used to represent each soil m_Cell object
 
- Copyright (C) 2020 David Favis-Mortlock
+ Copyright (C) 2023 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -25,7 +25,7 @@
 CCell::CCell(void)
 :
    m_bHadHeadcutRetreat(false),
-   m_nEdgeCell(DIRECTION_NONE),
+   m_nEdgem_Cell(DIRECTION_NONE),
    m_dBasementElevationation(0),
    m_dInitialSoilSurfaceElevation(0)
 {
@@ -46,22 +46,22 @@ CCell::~CCell(void)
 }
 
 
-void CCell::SetEdgeCell(int const nDirection)
+void CCell::SetEdgem_Cell(int const nDirection)
 {
-   m_nEdgeCell = nDirection;
+   m_nEdgem_Cell = nDirection;
 }
 
 int CCell::nGetEdge(void) const
 {
-   return m_nEdgeCell;
+   return m_nEdgem_Cell;
 }
 
-bool CCell::bIsEdgeCell(void) const
+bool CCell::bIsEdgem_Cell(void) const
 {
-   return (m_nEdgeCell != DIRECTION_NONE);
+   return (m_nEdgem_Cell != DIRECTION_NONE);
 }
 
-// Returns true if this cell's elevation is a missing value, is needed for irregularly-shaped DEMs
+// Returns true if this m_Cell's elevation is a missing value, is needed for irregularly-shaped DEMs
 bool CCell::bIsMissingValue(void) const
 {
    if (m_dInitialSoilSurfaceElevation == m_pSim->dGetMissingValue())
@@ -72,39 +72,39 @@ bool CCell::bIsMissingValue(void) const
 
 bool CCell::bIsMissingOrEdge(void) const
 {
-   if ((m_dInitialSoilSurfaceElevation == m_pSim->dGetMissingValue()) || (m_nEdgeCell != DIRECTION_NONE))
+   if ((m_dInitialSoilSurfaceElevation == m_pSim->dGetMissingValue()) || (m_nEdgem_Cell != DIRECTION_NONE))
       return true;
 
    return false;
 }
 
 
-// Set's this cell's basement elevation
+// Set's this m_Cell's basement elevation
 void CCell::SetBasementElevation(double const dElev)
 {
    m_dBasementElevationation = dElev;
 }
 
-// Returns this cell's basement elevation
+// Returns this m_Cell's basement elevation
 double CCell::dGetBasementElevation(void) const
 {
    return m_dBasementElevationation;
 }
 
 
-// Sets this cell's initial soil surface elevation. Note that it must be called only at the start of the simulation (or when adjusting the edge cells during the simulation), because it doesn't calculate either erosion or deposition
+// Sets this m_Cell's initial soil surface elevation. Note that it must be called only at the start of the simulation (or when adjusting the edge m_Cells during the simulation), because it doesn't calculate either erosion or deposition
 void CCell::SetInitialSoilSurfaceElevation(double const dNewElev)
 {
    m_dInitialSoilSurfaceElevation = dNewElev;
 }
 
-// Returns this cell's initial elevation
+// Returns this m_Cell's initial elevation
 double CCell::dGetInitialSoilSurfaceElevation(void) const
 {
    return m_dInitialSoilSurfaceElevation;
 }
 
-// Returns the elevation of this cell's top surface, which could be the water surface if the cell is wet, or the soil surface if dry
+// Returns the elevation of this m_Cell's top surface, which could be the water surface if the m_Cell is wet, or the soil surface if dry
 double CCell::dGetTopElevation(void)
 {
    return (m_Soil.dGetSoilSurfaceElevation() + m_SurfaceWater.dGetSurfaceWaterDepth());
@@ -120,14 +120,14 @@ void CCell::SetSoilSurfaceElevation(double const dNewElev)
    m_Soil.ChangeTopLayerThickness(dDiff);
 }
 
-// Returns the elevation of this cell's soil surface
+// Returns the elevation of this m_Cell's soil surface
 double CCell::dGetSoilSurfaceElevation(void)
 {
    return (m_Soil.dGetSoilSurfaceElevation());
 }
 
 
-// Sets this cell's retreat for one of the eight directions
+// Sets this m_Cell's retreat for one of the eight directions
 double CCell::dGetStoredRetreat(int const nDirection) const
 {
    // Note does not check for valid nDirection
@@ -182,7 +182,7 @@ CCellSurfaceWater* CCell::pGetSurfaceWater(void)
    return &m_SurfaceWater;
 }
 
-// Returns a pointer to the CellSediment object
+// Returns a pointer to the m_CellSediment object
 CCellSedimentLoad* CCell::pGetSedLoad(void)
 {
    return &m_SedLoad;

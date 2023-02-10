@@ -2,9 +2,9 @@
    #define __RAIN_AND_RUNON_H__
 /*=========================================================================================================================================
 
- This is cell_rain_and_runon.h: declarations for the RillGrow class used to represent incident water i.e. rain and runon
+ This is m_Cell_rain_and_runon.h: declarations for the RillGrow class used to represent incident water i.e. rain and runon
 
- Copyright (C) 2020 David Favis-Mortlock
+ Copyright (C) 2023 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -34,7 +34,7 @@ private:
       m_dCumulRunOn,                         // Cumulative runon, as a depth (mm)
       m_dRainVarM;                           // Constant multiplier, default = 1
 
-   CCell* m_pCell;
+   CCell* m_pm_Cell;
 
 public:
    CCellRainAndRunon(void);

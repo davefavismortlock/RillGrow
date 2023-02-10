@@ -1,8 +1,8 @@
 /*=========================================================================================================================================
 
-This is cell_subsurface_water.cpp: implementations of the RillGrow class used to represent subsurface water
+This is m_Cell_subsurface_water.cpp: implementations of the RillGrow class used to represent subsurface water
 
- Copyright (C) 2020 David Favis-Mortlock
+ Copyright (C) 2023 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -28,7 +28,7 @@ CCellSubsurfaceWater::CCellSubsurfaceWater(void)
    m_dExfiltWater(0),
    m_dCumulExfiltWater(0)
 {
-   m_pCell = NULL;
+   m_pm_Cell = NULL;
 }
 
 CCellSubsurfaceWater::~CCellSubsurfaceWater(void)
@@ -38,7 +38,7 @@ CCellSubsurfaceWater::~CCellSubsurfaceWater(void)
 
 void CCellSubsurfaceWater::SetParent(CCell* const pParent)
 {
-   m_pCell = pParent;
+   m_pm_Cell = pParent;
 }
 
 
@@ -46,10 +46,10 @@ void CCellSubsurfaceWater::SetParent(CCell* const pParent)
 void CCellSubsurfaceWater::DoInfiltration(double& dInfilt)
 {
    // If there is insufficient surface water depth to remove the whole of dInfilt, dInfilt gets reduced
-   m_pCell->pGetSurfaceWater()->RemoveSurfaceWater(dInfilt);
+   m_pm_Cell->pGetSurfaceWater()->RemoveSurfaceWater(dInfilt);
 
    // Get a pointer to the top layer
-   CCellSoilLayer* pLayer = m_pCell->pGetSoil()->pLayerGetLayer(0);
+   CCellSoilLayer* pLayer = m_pm_Cell->pGetSoil()->pLayerGetLayer(0);
 
    // And add water to this layer
    pLayer->ChangeSoilWater(dInfilt);
@@ -58,20 +58,20 @@ void CCellSubsurfaceWater::DoInfiltration(double& dInfilt)
    m_dCumulInfiltWater += dInfilt;
 }
 
-// Loses all this cell's surface water to infilt, and increases the cell's elevation with any sediment that was being transported
+// Loses all this m_Cell's surface water to infilt, and increases the m_Cell's elevation with any sediment that was being transported
 void CCellSubsurfaceWater::InfiltrateAndMakeDry(double& dClaySediment, double& dSiltSediment, double& dSandSediment)
 {
-   double dWaterDepth = m_pCell->pGetSurfaceWater()->dGetSurfaceWaterDepth();
+   double dWaterDepth = m_pm_Cell->pGetSurfaceWater()->dGetSurfaceWaterDepth();
 
-   dClaySediment = m_pCell->pGetSedLoad()->dGetClaySedLoad(),
-   dSiltSediment = m_pCell->pGetSedLoad()->dGetSiltSedLoad(),
-   dSandSediment = m_pCell->pGetSedLoad()->dGetSandSedLoad();
+   dClaySediment = m_pm_Cell->pGetSedLoad()->dGetClaySedLoad(),
+   dSiltSediment = m_pm_Cell->pGetSedLoad()->dGetSiltSedLoad(),
+   dSandSediment = m_pm_Cell->pGetSedLoad()->dGetSandSedLoad();
 
-   // First remove the surface water (also decrements the surface water total, and count of wet cells)
-   m_pCell->pGetSurfaceWater()->SetSurfaceWaterZero();
+   // First remove the surface water (also decrements the surface water total, and count of wet m_Cells)
+   m_pm_Cell->pGetSurfaceWater()->SetSurfaceWaterZero();
 
    // Get a pointer to the top layer
-   CCellSoilLayer* pLayer = m_pCell->pGetSoil()->pLayerGetLayer(0);
+   CCellSoilLayer* pLayer = m_pm_Cell->pGetSoil()->pLayerGetLayer(0);
 
    // And add water to this layer
    pLayer->ChangeSoilWater(dWaterDepth);
@@ -80,7 +80,7 @@ void CCellSubsurfaceWater::InfiltrateAndMakeDry(double& dClaySediment, double& d
    m_dCumulInfiltWater += dWaterDepth;
 
    // And then sort out the sediment
-   m_pCell->pGetSoil()->DoInfiltrationDeposit(dClaySediment, dSiltSediment, dSandSediment);
+   m_pm_Cell->pGetSoil()->DoInfiltrationDeposit(dClaySediment, dSiltSediment, dSandSediment);
 }
 
 // Zeros the values (they are kept over several iterations) values for water lost to infilt and sediment deposited due to infilt
@@ -88,7 +88,7 @@ void CCellSubsurfaceWater::InitializeInfiltration(void)
 {
    m_dInfiltWater =
    m_dExfiltWater = 0;
-   m_pCell->pGetSoil()->SetInfiltrationDepositionZero();
+   m_pm_Cell->pGetSoil()->SetInfiltrationDepositionZero();
 }
 
 // Returns the depth of water lost by infilt
@@ -107,10 +107,10 @@ double CCellSubsurfaceWater::dGetCumulInfiltration(void) const
 void CCellSubsurfaceWater::DoExfiltration(double const dExcess)
 {
    // Get a pointer to the top layer
-   CCellSoilLayer* pLayer = m_pCell->pGetSoil()->pLayerGetLayer(0);
+   CCellSoilLayer* pLayer = m_pm_Cell->pGetSoil()->pLayerGetLayer(0);
 
    pLayer->ChangeSoilWater(-dExcess);
-   m_pCell->pGetSurfaceWater()->AddSurfaceWater(dExcess);
+   m_pm_Cell->pGetSurfaceWater()->AddSurfaceWater(dExcess);
 }
 
 // Returns the depth of exfiltrated water
@@ -131,7 +131,7 @@ double CCellSubsurfaceWater::dGetCumulExfiltration(void) const
 double CCellSubsurfaceWater::dGetTopLayerSoilWater(void)
 {
    // Get a pointer to the top layer
-   CCellSoilLayer* pLayer = m_pCell->pGetSoil()->pLayerGetLayer(0);
+   CCellSoilLayer* pLayer = m_pm_Cell->pGetSoil()->pLayerGetLayer(0);
 
    return pLayer->dGetSoilWater();
 }

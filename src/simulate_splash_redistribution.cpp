@@ -2,7 +2,7 @@
 
  This is simulate_splash.cpp: it handles splash redistribution
 
- Copyright (C) 2020 David Favis-Mortlock
+ Copyright (C) 2023 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -30,17 +30,17 @@
 =========================================================================================================================================*/
 void CSimulation::DoAllSplash(void)
 {
-   // First calculate the Laplacian for all cells in the grid, also zero each cell's temporary splash deposition value
+   // First calculate the Laplacian for all m_Cells in the grid, also zero each m_Cell's temporary splash deposition value
    if (m_bSplashForward)
    {
       for (int nX = 0; nX < m_nXGridMax; nX++)
       {
          for (int nY = 0; nY < m_nYGridMax; nY++)
          {
-            if (Cell[nX][nY].bIsMissingValue())
+            if (m_Cell[nX][nY].bIsMissingValue())
                continue;
 
-            Cell[nX][nY].pGetSoil()->SetLaplacian(dCalcLaplacian(nX, nY));
+            m_Cell[nX][nY].pGetSoil()->SetLaplacian(dCalcLaplacian(nX, nY));
          }
       }
    }
@@ -50,10 +50,10 @@ void CSimulation::DoAllSplash(void)
       {
          for (int nY = m_nYGridMax-1; nY >= 0; nY--)
          {
-            if (Cell[nX][nY].bIsMissingValue())
+            if (m_Cell[nX][nY].bIsMissingValue())
                continue;
 
-            Cell[nX][nY].pGetSoil()->SetLaplacian(dCalcLaplacian(nX, nY));
+            m_Cell[nX][nY].pGetSoil()->SetLaplacian(dCalcLaplacian(nX, nY));
          }
       }
    }
@@ -61,7 +61,7 @@ void CSimulation::DoAllSplash(void)
    // Change directon for next time
    m_bSplashForward = ! m_bSplashForward;
 
-   // Now calculate the change in elevation due to splash redistribution for each cell. A problem with this approach is that the totals for detached and deposited sediment are not identical i.e. mass is not conserved. So this has to be corrected
+   // Now calculate the change in elevation due to splash redistribution for each m_Cell. A problem with this approach is that the totals for detached and deposited sediment are not identical i.e. mass is not conserved. So this has to be corrected
    m_dThisIterKE = 0;
    double
       dTotClayDetach = 0,
@@ -73,32 +73,32 @@ void CSimulation::DoAllSplash(void)
    {
       for (int nY = 0; nY < m_nYGridMax; nY++)
       {
-         if (Cell[nX][nY].bIsMissingValue())
+         if (m_Cell[nX][nY].bIsMissingValue())
             continue;
 
          // Get the rainfall depth for this iteration. Note that this assumes that splash calcs are run EVERY iteration when there is rain
-         double dRain = Cell[nX][nY].pGetRainAndRunon()->dGetRain();
+         double dRain = m_Cell[nX][nY].pGetRainAndRunon()->dGetRain();
          if (dRain > 0)
          {
-            // Some rain has fallen on this cell, so calculate the kinetic energy of the rain = 0.5 m v**2
+            // Some rain has fallen on this m_Cell, so calculate the kinetic energy of the rain = 0.5 m v**2
             double dKE = m_dPartKE * dRain;
             m_dThisIterKE += dKE;
 
             // Now calculate the amount of splash detachment or deposition resulting from this KE
-            double dToChange = dKE * m_VdSplashEffN * Cell[nX][nY].pGetSoil()->dGetLaplacian();
+            double dToChange = dKE * m_dSplashEffN * m_Cell[nX][nY].pGetSoil()->dGetLaplacian();
             if (dToChange == 0)
                continue;
             else if (dToChange > 0)
             {
                // Splash deposition: save the dToChange value for the moment, to be corrected later and also split into the correct proportions for each sediment size class
-               Cell[nX][nY].pGetSoil()->SetSplashDepositTemp(dToChange);
+               m_Cell[nX][nY].pGetSoil()->SetSplashDepositTemp(dToChange);
 
                dTmpTotSplashDepositThisIter += dToChange;
             }
             else
             {
                // Splash detachment, first attenuate the dToChange depending on the depth of surface water
-               dToChange *= dCalcSplashCubicSpline(Cell[nX][nY].pGetSurfaceWater()->dGetSurfaceWaterDepth());
+               dToChange *= dCalcSplashCubicSpline(m_Cell[nX][nY].pGetSurfaceWater()->dGetSurfaceWaterDepth());
 
                // Now do the detachment
                double
@@ -106,7 +106,7 @@ void CSimulation::DoAllSplash(void)
                   dSiltDetach = 0,
                   dSandDetach = 0;
 
-               Cell[nX][nY].pGetSoil()->DoSplashDetach(-dToChange, dClayDetach, dSiltDetach, dSandDetach);
+               m_Cell[nX][nY].pGetSoil()->DoSplashDetach(-dToChange, dClayDetach, dSiltDetach, dSandDetach);
 
                dTotClayDetach += dClayDetach;
                dTotSiltDetach += dSiltDetach;
@@ -123,11 +123,11 @@ void CSimulation::DoAllSplash(void)
       {
          for (int nY = 0; nY < m_nYGridMax; nY++)
          {
-            if (Cell[nX][nY].bIsMissingValue())
+            if (m_Cell[nX][nY].bIsMissingValue())
                continue;
 
-            // First get the temporay (incorrect) value for splash deposition on this cell
-            double dTmpDeposit = Cell[nX][nY].pGetSoil()->dGetSplashDepositTemp();
+            // First get the temporay (incorrect) value for splash deposition on this m_Cell
+            double dTmpDeposit = m_Cell[nX][nY].pGetSoil()->dGetSplashDepositTemp();
             if (dTmpDeposit > 0)
             {
                // Now correct the value for splash deposition then partition it
@@ -137,7 +137,7 @@ void CSimulation::DoAllSplash(void)
                   dSiltDeposit = dTotSiltDetach * dFracOfTmpTot,
                   dSandDeposit = dTotSandDetach * dFracOfTmpTot;
 
-               Cell[nX][nY].pGetSoil()->DoSplashToSedLoadOrDeposit(dClayDeposit, dSiltDeposit, dSandDeposit);
+               m_Cell[nX][nY].pGetSoil()->DoSplashToSedLoadOrDeposit(dClayDeposit, dSiltDeposit, dSandDeposit);
             }
          }
       }
@@ -156,7 +156,7 @@ void CSimulation::DoAllSplash(void)
 =========================================================================================================================================*/
 void CSimulation::InitSplashEff(void)
 {
-   int nLen = m_VdSplashDepth.size();
+   int nLen = static_cast<int>(m_VdSplashDepth.size());
    vector<double> VdU(nLen, 0);
 
    // First stab at calculating m_VdSplashEffCoeff[0]
@@ -212,7 +212,7 @@ double CSimulation::dCalcSplashCubicSpline(double dDepth) const
    if (0 == dDepth)
       return (1);
 
-   int nLen = m_VdSplashDepth.size();
+   int nLen = static_cast<int>(m_VdSplashDepth.size());
 
    // If water depth is greater than maximum stored for the splash efficiency-water depth relationship, then use the maximum value (prevents possible spurious values being returned when the spline relationship is used to extrapolate values much higher than those used to define it)
    if (dDepth > m_VdSplashDepth[nLen-1])
@@ -250,7 +250,7 @@ double CSimulation::dCalcSplashCubicSpline(double dDepth) const
 
 /*=========================================================================================================================================
 
- This member function of CSimulation calculates the Laplacian for 4 cells with a centred scheme and ordinary axes (x-x, y-y). It is Eq (20) in the paper.
+ This member function of CSimulation calculates the Laplacian for 4 m_Cells with a centred scheme and ordinary axes (x-x, y-y). It is Eq (20) in the paper.
 
  The original was written by Olivier Planchon, 2 May 2001
 
@@ -259,51 +259,51 @@ double CSimulation::dCalcLaplacian(int const nX, int const nY)
 {
 /*
    // This is the original code
-   double dThisElev = Cell[nX][nY].dGetSoilSurfaceElevation();
-   return (m_dCellSizeKC * (Deriv2(Cell[nX-1][nY].dGetSoilSurfaceElevation(), dThisElev, Cell[nX+1][nY].dGetSoilSurfaceElevation(), m_dCellSquare) + Deriv2(Cell[nX][nY-1].dGetSoilSurfaceElevation(), dThisElev, Cell[nX][nY+1].dGetSoilSurfaceElevation(), m_dCellSquare)));
+   double dThisElev = m_Cell[nX][nY].dGetSoilSurfaceElevation();
+   return (m_dm_CellSizeKC * (Deriv2(m_Cell[nX-1][nY].dGetSoilSurfaceElevation(), dThisElev, m_Cell[nX+1][nY].dGetSoilSurfaceElevation(), m_dm_CellSquare) + Deriv2(m_Cell[nX][nY-1].dGetSoilSurfaceElevation(), dThisElev, m_Cell[nX][nY+1].dGetSoilSurfaceElevation(), m_dm_CellSquare)));
 
    // This is mathematically equivalent to the code above
-   return (m_dCellSizeKC * (Cell[nX-1][nY].dGetSoilSurfaceElevation() + Cell[nX+1][nY].dGetSoilSurfaceElevation() + Cell[nX][nY-1].dGetSoilSurfaceElevation() + Cell[nX][nY+1].dGetSoilSurfaceElevation() - (4 * Cell[nX][nY].dGetSoilSurfaceElevation())));
+   return (m_dm_CellSizeKC * (m_Cell[nX-1][nY].dGetSoilSurfaceElevation() + m_Cell[nX+1][nY].dGetSoilSurfaceElevation() + m_Cell[nX][nY-1].dGetSoilSurfaceElevation() + m_Cell[nX][nY+1].dGetSoilSurfaceElevation() - (4 * m_Cell[nX][nY].dGetSoilSurfaceElevation())));
 */
-   // Modification of the code above to also work with edge cells (which have less than 4 adjacent cells)
+   // Modification of the code above to also work with edge m_Cells (which have less than 4 adjacent m_Cells)
    int nAdj = 0;
    int nXTmp, nYTmp;
    double dLaplacian = 0;
 
    nXTmp = nX-1;
    nYTmp = nY;
-   if ((nXTmp >= 0) && (! Cell[nXTmp][nYTmp].bIsMissingValue()))
+   if ((nXTmp >= 0) && (! m_Cell[nXTmp][nYTmp].bIsMissingValue()))
    {
       nAdj++;
-      dLaplacian += Cell[nXTmp][nYTmp].pGetSoil()->dGetSoilSurfaceElevation();
+      dLaplacian += m_Cell[nXTmp][nYTmp].pGetSoil()->dGetSoilSurfaceElevation();
    }
 
    nXTmp = nX+1;
    nYTmp = nY;
-   if ((nXTmp < m_nXGridMax) && (! Cell[nXTmp][nYTmp].bIsMissingValue()))
+   if ((nXTmp < m_nXGridMax) && (! m_Cell[nXTmp][nYTmp].bIsMissingValue()))
    {
       nAdj++;
-      dLaplacian += Cell[nXTmp][nYTmp].pGetSoil()->dGetSoilSurfaceElevation();
+      dLaplacian += m_Cell[nXTmp][nYTmp].pGetSoil()->dGetSoilSurfaceElevation();
    }
 
    nXTmp = nX;
    nYTmp = nY-1;
-   if ((nYTmp >= 0) && (! Cell[nXTmp][nYTmp].bIsMissingValue()))
+   if ((nYTmp >= 0) && (! m_Cell[nXTmp][nYTmp].bIsMissingValue()))
    {
       nAdj++;
-      dLaplacian += Cell[nXTmp][nYTmp].pGetSoil()->dGetSoilSurfaceElevation();
+      dLaplacian += m_Cell[nXTmp][nYTmp].pGetSoil()->dGetSoilSurfaceElevation();
    }
 
    nXTmp = nX;
    nYTmp = nY+1;
-   if ((nYTmp < m_nYGridMax) && (! Cell[nXTmp][nYTmp].bIsMissingValue()))
+   if ((nYTmp < m_nYGridMax) && (! m_Cell[nXTmp][nYTmp].bIsMissingValue()))
    {
       nAdj++;
-      dLaplacian += Cell[nXTmp][nYTmp].pGetSoil()->dGetSoilSurfaceElevation();
+      dLaplacian += m_Cell[nXTmp][nYTmp].pGetSoil()->dGetSoilSurfaceElevation();
    }
 
-   dLaplacian -= (nAdj * Cell[nX][nY].pGetSoil()->dGetSoilSurfaceElevation());
-   dLaplacian *= m_dCellSizeKC;
+   dLaplacian -= (nAdj * m_Cell[nX][nY].pGetSoil()->dGetSoilSurfaceElevation());
+   dLaplacian *= m_dm_CellSizeKC;
 
    return (dLaplacian);
 }
@@ -338,7 +338,7 @@ void CSimulation::CheckSplashEff(void)
 
 //   SplshStream << "depth\t,\tefficiency" << endl;
    double const dDelta = 0.1;
-   for (double d = 0; d <= (m_VdSplashDepth.size() + 10); d += dDelta)
+   for (double d = 0; d <= (static_cast<int>(m_VdSplashDepth.size()) + 10); d += dDelta)
       SplshStream << d << ",\t" << dCalcSplashCubicSpline(d) << endl;
 
    // Close file

@@ -2,7 +2,7 @@
 
  This is simulate_rain.cpp: it handles rainfall
 
- Copyright (C) 2020 David Favis-Mortlock
+ Copyright (C) 2023 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -38,23 +38,23 @@ void CSimulation::DoRunOnFromOneEdge(int const nEdge)
       dEdgeLen = m_nYGridMax;
 
    // Calculate the average number of raindrops falling during a timestep of this duration. Note that this assumes that m_dRunOnLen is an extension orthogonal to the run-on edge, and is in mm
-   double dRunOnAvgNDrops = m_dTimeStep * m_dRainIntensity * m_dRunOnLen * m_dCellSide * dEdgeLen / (3600 * m_dMeanCellWaterVol);
+   double dRunOnAvgNDrops = m_dTimeStep * m_dRainIntensity * m_dRunOnLen * m_dm_CellSide * dEdgeLen / (3600 * m_dMeanm_CellWaterVol);
 
    // Now calculate the standard deviation of number of raindrops falling on the run-on area during a timestep of this duration
-   double dRunOnStdNDrops = m_dTimeStep * m_dStdRainInt * m_dRunOnLen * m_dCellSide * dEdgeLen / (3600 * m_dMeanCellWaterVol);
+   double dRunOnStdNDrops = m_dTimeStep * m_dStdRainInt * m_dRunOnLen * m_dm_CellSide * dEdgeLen / (3600 * m_dMeanm_CellWaterVol);
 
    // Using ulGetRand0(), calculate the number of raindrops reaching the lower edge of the run-on area (i.e. the top edge of the soil area). The number of drops reaching the lower edge of the run-on area will depend on how much time has elapsed, but only while insufficient time has elapsed for water to have flowed from the top edge of the run-on area. Here, calculate number of drops (can be zero, need not be a whole number)
-   double dDrops = dGetRand0GaussPos(tMin(dRunOnAvgNDrops, (dRunOnAvgNDrops * m_dRunOnSpd * static_cast<double>(m_dSimulatedTimeElapsed)) / m_dRunOnLen), dRunOnStdNDrops);
+   double dDrops = dGetRand0GaussPos(tMin(dRunOnAvgNDrops, (dRunOnAvgNDrops * m_dRunOnSpd * m_dSimulatedTimeElapsed) / m_dRunOnLen), dRunOnStdNDrops);
 
    if (dDrops > 0)
    {
       // Add to grand total of run-on raindrops
       m_ldGTotRunOnDrops += dDrops;
 
-      // Set the depth for a 'representative' single drop, correct for spatial variation in rainfall (assume rainfall is the same all over run-on area), and assume we have dDrops of these (assume identical: an unrealistic assumption but convenient. Note that this has the effect of making rainfall onto run-on area more variable, because otherwise would get some cancelling of variability per iteration)
-      double dRunOnDepth = m_dMeanCellWaterVol * m_dInvCellSquare * m_dRunOnRainVarM * dDrops;
+      // Set the depth for a 'representative' single drop, correct for spatial variation in rainfall (assume rainfall is the same all over run-on area), and assume we have dDrops of these (assume identical: an unrealistic assumption but convenient. Note that this has the effect of making rainfall onto run-on area more variable, because otherwise would get some canm_Celling of variability per iteration)
+      double dRunOnDepth = m_dMeanm_CellWaterVol * m_dInvm_CellSquare * m_dRunOnRainVarM * dDrops;
 
-      // Now add the same fraction of this depth of water to every cell at this edge of the plot. Note that this implies that there is no infilt on the run-on area
+      // Now add the same fraction of this depth of water to every m_Cell at this edge of the plot. Note that this implies that there is no infilt on the run-on area
       dRunOnDepth /= dEdgeLen;
 
       if (nEdge == EDGE_TOP)
@@ -64,10 +64,10 @@ void CSimulation::DoRunOnFromOneEdge(int const nEdge)
          {
             for (int nY = 0; nY < m_nYGridMax; nY++)
             {
-               if (Cell[nX][nY].bIsEdgeCell())
+               if (m_Cell[nX][nY].bIsEdgem_Cell())
                {
-                  // Add the run-on to this edge cell of the Cell array
-                  Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dRunOnDepth);
+                  // Add the run-on to this edge m_Cell of the m_Cell array
+                  m_Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dRunOnDepth);
                   break;
                }
             }
@@ -81,10 +81,10 @@ void CSimulation::DoRunOnFromOneEdge(int const nEdge)
          {
             for (int nX = m_nXGridMax-1; nX >= 0; nX--)
             {
-               if (Cell[nX][nY].bIsEdgeCell())
+               if (m_Cell[nX][nY].bIsEdgem_Cell())
                {
-                  // Add the run-on to this edge cell of the Cell array
-                  Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dRunOnDepth);
+                  // Add the run-on to this edge m_Cell of the m_Cell array
+                  m_Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dRunOnDepth);
                   break;
                }
             }
@@ -98,10 +98,10 @@ void CSimulation::DoRunOnFromOneEdge(int const nEdge)
          {
             for (int nY = m_nYGridMax-1; nY >= 0; nY--)
             {
-               if (Cell[nX][nY].bIsEdgeCell())
+               if (m_Cell[nX][nY].bIsEdgem_Cell())
                {
-                  // Add the run-on to this edge cell of the Cell array
-                  Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dRunOnDepth);
+                  // Add the run-on to this edge m_Cell of the m_Cell array
+                  m_Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dRunOnDepth);
                   break;
                }
             }
@@ -115,10 +115,10 @@ void CSimulation::DoRunOnFromOneEdge(int const nEdge)
          {
             for (int nX = 0; nX < m_nXGridMax; nX++)
             {
-               if (Cell[nX][nY].bIsEdgeCell())
+               if (m_Cell[nX][nY].bIsEdgem_Cell())
                {
-                  // Add the run-on to this edge cell of the Cell array
-                  Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dRunOnDepth);
+                  // Add the run-on to this edge m_Cell of the m_Cell array
+                  m_Cell[nX][nY].pGetRainAndRunon()->AddRunOn(dRunOnDepth);
                   break;
                }
             }
@@ -136,10 +136,10 @@ void CSimulation::DoRunOnFromOneEdge(int const nEdge)
 void CSimulation::DoAllRain(void)
 {
    // First calculate the average number of raindrops falling during a timestep of this duration
-   double dAvgNDrops = m_dTimeStep * m_dRainIntensity * m_ulNActiveCells * m_dCellSquare / (3600 * m_dMeanCellWaterVol);
+   double dAvgNDrops = m_dTimeStep * m_dRainIntensity * static_cast<double>(m_ulNActivem_Cells) * m_dm_CellSquare / (3600 * m_dMeanm_CellWaterVol);
 
    // Now calculate standard deviation of number of raindrops during a timestep of this duration
-   double dStdNDrops = m_dTimeStep * m_dStdRainInt * m_ulNActiveCells * m_dCellSquare / (3600 * m_dMeanCellWaterVol);
+   double dStdNDrops = m_dTimeStep * m_dStdRainInt * static_cast<double>(m_ulNActivem_Cells) * m_dm_CellSquare / (3600 * m_dMeanm_CellWaterVol);
 
    // Using ulGetRand0(), calculate the integer number of new raindrops which will fall during this timestep
    int nDrops = nRound(dGetRand0GaussPos(dAvgNDrops, dStdNDrops));
@@ -154,7 +154,7 @@ void CSimulation::DoAllRain(void)
       if (m_ldGTotDrops < dTargetDrops)
       {
          // Too few, so add some extra drops
-         int nExtraDrops = nRound(dTargetDrops - m_ldGTotDrops);
+         int nExtraDrops = nRound(dTargetDrops - static_cast<double>(m_ldGTotDrops));
          if (nExtraDrops > 0)
          {
             nDrops += nExtraDrops;
@@ -182,13 +182,13 @@ void CSimulation::DoAllRain(void)
          nX = nGetRand0To(m_nXGridMax);
          nY = nGetRand0To(m_nYGridMax);
       }
-      while (Cell[nX][nY].bIsMissingValue());
+      while (m_Cell[nX][nY].bIsMissingValue());
 
       // And then use ulGetRand0() to calculate its depth, correcting for spatial variation in rainfall
-      double dRainDepth = dGetRand0GaussPos(m_dMeanCellWaterVol, m_dStdCellWaterVol) * m_dInvCellSquare * Cell[nX][nY].pGetRainAndRunon()->dGetRainVarM();
+      double dRainDepth = dGetRand0GaussPos(m_dMeanm_CellWaterVol, m_dStdm_CellWaterVol) * m_dInvm_CellSquare * m_Cell[nX][nY].pGetRainAndRunon()->dGetRainVarM();
 
-      // Add to rainfall amount and water depth for this cell on the Cell array
-      Cell[nX][nY].pGetRainAndRunon()->AddRain(dRainDepth);
+      // Add to rainfall amount and water depth for this m_Cell on the m_Cell array
+      m_Cell[nX][nY].pGetRainAndRunon()->AddRain(dRainDepth);
    }
 }
 

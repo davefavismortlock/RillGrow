@@ -2,7 +2,7 @@
 
  This is simulation.cpp: the start-of-simulation routine for RillGrow
 
- Copyright (C) 2020 David Favis-Mortlock
+ Copyright (C) 2023 David Favis-Mortlock
 
  =========================================================================================================================================
 
@@ -135,9 +135,9 @@ CSimulation::CSimulation(void)
    m_ulTotIter                =
    m_ulVarChkStart            =
    m_ulVarChkEnd              =
-   m_ulNActiveCells           =
+   m_ulNActivem_Cells           =
    m_ulNWet                   =
-   m_ulMissingValueCells      =
+   m_ulMissingValuem_Cells      =
    m_ulNumHead                = 0;
 
    for (int n = 0; n < NUMBER_OF_RNGS; n++)
@@ -166,16 +166,16 @@ CSimulation::CSimulation(void)
    m_dStdDropDiameter               =
    m_dRainSpeed                     =
    m_dPartKE                        =
-   m_VdSplashEffN                   =
-   m_dCellSizeKC                    =
-   m_dMeanCellWaterVol              =
-   m_dStdCellWaterVol               =
-   m_dCellSide                      =
-   m_dCellDiag                      =
-   m_dInvCellSide                   =
-   m_dInvCellDiag                   =
-   m_dCellSquare                    =
-   m_dInvCellSquare                 =
+   m_dSplashEffN                   =
+   m_dm_CellSizeKC                    =
+   m_dMeanm_CellWaterVol              =
+   m_dStdm_CellWaterVol               =
+   m_dm_CellSide                      =
+   m_dm_CellDiag                      =
+   m_dInvm_CellSide                   =
+   m_dInvm_CellDiag                   =
+   m_dm_CellSquare                    =
+   m_dInvm_CellSquare                 =
    m_dInvXGridMax                   =
    m_dRho                           =
    m_dG                             =
@@ -366,7 +366,7 @@ CSimulation::CSimulation(void)
    m_tSysStartTime =
    m_tSysEndTime   = 0;
 
-   Cell = NULL;
+   m_Cell = NULL;
    m_SSSWeightQuadrant= NULL;
 }
 
@@ -441,12 +441,12 @@ CSimulation::~CSimulation(void)
    if (m_ofsSoilWaterTS && m_ofsSoilWaterTS.is_open())
       m_ofsSoilWaterTS.close();
 
-   if (Cell)
+   if (m_Cell)
    {
-      // Delete all Cell objects
+      // Delete all m_Cell objects
       for (int nX = 0; nX < m_nXGridMax; nX++)
-         delete [] Cell[nX];
-      delete [] Cell;
+         delete [] m_Cell[nX];
+      delete [] m_Cell;
    }
 
    if (m_SSSWeightQuadrant)
@@ -467,7 +467,7 @@ CSimulation* CCell::m_pSim = NULL;                    // Initialize m_pSim, the 
 CSimulation* CCellSoil::m_pSim = NULL;                    // Ditto for the CCellSoil class
 CSimulation* CCellRainAndRunon::m_pSim = NULL;            // Ditto for the CCellRainAndRunon class
 CSimulation* CCellSurfaceWater::m_pSim = NULL;            // Ditto for the CCellSurfaceWater class
-CSimulation* CCellSedimentLoad::m_pSim = NULL;                // Ditto for the CellSediment class
+CSimulation* CCellSedimentLoad::m_pSim = NULL;                // Ditto for the m_CellSediment class
 
 
 /*========================================================================================================================================
@@ -475,7 +475,7 @@ CSimulation* CCellSedimentLoad::m_pSim = NULL;                // Ditto for the C
  This publicly visible member function of CSimulation sets up and runs the simulation
 
 ========================================================================================================================================*/
-int CSimulation::nDoRun(int nArg, char* pcArgv[])
+int CSimulation::nDoSetUpRun(int nArg, char* pcArgv[])
 {
    // ======================================================= initialization section =====================================================
    // Hello, World!
@@ -522,7 +522,7 @@ int CSimulation::nDoRun(int nArg, char* pcArgv[])
    // Tell the user what is happening
    AnnounceReadDEM();
 
-   // Read in the microtography DEM and create the Cell array
+   // Read in the microtography DEM and create the m_Cell array
    nRet = nReadMicrotopographyDEMData();
    if (nRet != RTN_OK)
       return (nRet);
@@ -534,8 +534,8 @@ int CSimulation::nDoRun(int nArg, char* pcArgv[])
    CCellSurfaceWater::m_pSim = this;
    CCellSedimentLoad::m_pSim = this;
 
-   // Mark edge cells
-   MarkEdgeCells();
+   // Mark edge m_Cells
+   MarkEdgem_Cells();
 
    // Create soil layers
    CreateSoilLayers();
@@ -550,7 +550,7 @@ int CSimulation::nDoRun(int nArg, char* pcArgv[])
       }
    }
 
-   // If an overall gradient has been specified, impose this on the basement and initial surface elevation values in the Cell array; otherwise estimate the array's pre-existing slope
+   // If an overall gradient has been specified, impose this on the basement and initial surface elevation values in the m_Cell array; otherwise estimate the array's pre-existing slope
    CalcGradient();
 
    // Check GIS output format
@@ -561,7 +561,7 @@ int CSimulation::nDoRun(int nArg, char* pcArgv[])
    if (m_bTimeVaryingRain && ! bReadRainfallTimeSeries())
       return (RTN_ERR_RAINFALLTSFILE);
 
-   // If we have a file for the rainfall variation multiplier mask, read it in to the Cell array
+   // If we have a file for the rainfall variation multiplier mask, read it in to the m_Cell array
    if (! m_strRainVarMFile.empty())
    {
       nRet = nReadRainVarData();
@@ -569,17 +569,17 @@ int CSimulation::nDoRun(int nArg, char* pcArgv[])
          return (nRet);
    }
 
-   // Calculate various things which will be constants for the duration of the run (e.g. diagonal of cell side, inverse of cell side and diagonal, area of cell, etc.) now, do this only once for efficiency
-   m_ulNActiveCells = (m_nXGridMax * m_nYGridMax) - m_ulMissingValueCells++;
-   m_dInvCellSide   = 1 / m_dCellSide;                             // mm-1
-   m_dCellSquare    = m_dCellSide * m_dCellSide;                   // mm2
-   m_dInvCellSquare = 1 / m_dCellSquare;                           // mm-2
-   m_dCellDiag      = sqrt(2 * m_dCellSquare);                     // mm
-   m_dInvCellDiag   = 1 / m_dCellDiag;                             // mm-1
+   // Calculate various things which will be constants for the duration of the run (e.g. diagonal of m_Cell side, inverse of m_Cell side and diagonal, area of m_Cell, etc.) now, do this only once for efficiency
+   m_ulNActivem_Cells = (m_nXGridMax * m_nYGridMax) - m_ulMissingValuem_Cells++;
+   m_dInvm_CellSide   = 1 / m_dm_CellSide;                             // mm-1
+   m_dm_CellSquare    = m_dm_CellSide * m_dm_CellSide;                   // mm2
+   m_dInvm_CellSquare = 1 / m_dm_CellSquare;                           // mm-2
+   m_dm_CellDiag      = sqrt(2 * m_dm_CellSquare);                     // mm
+   m_dInvm_CellDiag   = 1 / m_dm_CellDiag;                             // mm-1
    m_dInvCos45      = 1 / cos(PI/4);
    m_dInvXGridMax   = 1 / static_cast<double>(m_nXGridMax);
 
-   // If necessary, set up some initial values for infilt, write to the Cell array
+   // If necessary, set up some initial values for infilt, write to the m_Cell array
    if (m_bDoInfiltration)
       InitSoilWater();
 
@@ -609,21 +609,21 @@ int CSimulation::nDoRun(int nArg, char* pcArgv[])
 
    // If not doing time-varying rainfall, calculate 'target' number of rain drops; this is used for rain intensity correction
    if (! m_bTimeVaryingRain)
-      m_dTargetGTotDrops = m_dRainIntensity * m_ulNActiveCells * m_dCellSquare * m_dSimulatedRainDuration / (3600 * m_dMeanCellWaterVol);
+      m_dTargetGTotDrops = m_dRainIntensity * static_cast<double>(m_ulNActivem_Cells) * m_dm_CellSquare * m_dSimulatedRainDuration / (3600 * m_dMeanm_CellWaterVol);
 
    // If we are doing splash redistribution, set up splash efficiency stuff now
    if (m_bSplash)
    {
       // Calculate these now, for efficiency
-      m_dPartKE  = 0.5 * m_dCellSquare * m_dRho * 1e-3 * m_dRainSpeed * m_dRainSpeed * 1e-12;    // Will be in Joules when multiplied by rain depth in mm
-      m_VdSplashEffN /= (m_dCellSquare * m_dRainSpeed * m_dRainSpeed);
+      m_dPartKE  = 0.5 * m_dm_CellSquare * m_dRho * 1e-3 * m_dRainSpeed * m_dRainSpeed * 1e-12;    // Will be in Joules when multiplied by rain depth in mm
+      m_dSplashEffN /= (m_dm_CellSquare * m_dRainSpeed * m_dRainSpeed);
 
-      // Compensate for grid size in the Laplacian classic splash calculations, assuming that m_VdSplashEffN (as read in) was calibrated for a 10mm grid
+      // Compensate for grid size in the Laplacian classic splash calculations, assuming that m_dSplashEffN (as read in) was calibrated for a 10mm grid
       // TODO does this work correctly?
       double const fAC = 0.619;
       double const fBC = 0.1969;
-      m_dCellSizeKC = (10 * (fAC - fBC * log(10))) / (m_dCellSide * (fAC - fBC * log(m_dCellSide)));
-      m_dCellSizeKC /= m_dCellSquare;
+      m_dm_CellSizeKC = (10 * (fAC - fBC * log(10))) / (m_dm_CellSide * (fAC - fBC * log(m_dm_CellSide)));
+      m_dm_CellSizeKC /= m_dm_CellSquare;
 
       // Read in splash efficiency depth-attenuation parameters
       if (! bReadSplashEffData())
@@ -697,9 +697,9 @@ void CSimulation::CreateSoilLayers(void)
    {
       for (int nY = 0; nY < m_nYGridMax; nY++)
       {
-         double dTotalSoilDepth = Cell[nX][nY].dGetInitialSoilSurfaceElevation() - m_dBasementElevation;
+         double dTotalSoilDepth = m_Cell[nX][nY].dGetInitialSoilSurfaceElevation() - m_dBasementElevation;
 
-         Cell[nX][nY].pGetSoil()->SetSoilLayers(dTotalSoilDepth, m_nNumSoilLayers, &m_VstrInputSoilLayerName, &m_VdInputSoilLayerThickness, &m_VdInputSoilLayerPerCentClay, &m_VdInputSoilLayerPerCentSilt, &m_VdInputSoilLayerPerCentSand, &m_VdInputSoilLayerBulkDensity, &m_VdInputSoilLayerClayFlowErodibility, &m_VdInputSoilLayerSiltFlowErodibility, &m_VdInputSoilLayerSandFlowErodibility, &m_VdInputSoilLayerClaySplashErodibility, &m_VdInputSoilLayerSiltSplashErodibility, &m_VdInputSoilLayerSandSplashErodibility, &m_VdInputSoilLayerClaySlumpErodibility, &m_VdInputSoilLayerSiltSlumpErodibility, &m_VdInputSoilLayerSandSlumpErodibility, &m_VdInfiltCPHWF, &m_VdInfiltChiPart);
+         m_Cell[nX][nY].pGetSoil()->SetSoilLayers(dTotalSoilDepth, m_nNumSoilLayers, &m_VstrInputSoilLayerName, &m_VdInputSoilLayerThickness, &m_VdInputSoilLayerPerCentClay, &m_VdInputSoilLayerPerCentSilt, &m_VdInputSoilLayerPerCentSand, &m_VdInputSoilLayerBulkDensity, &m_VdInputSoilLayerClayFlowErodibility, &m_VdInputSoilLayerSiltFlowErodibility, &m_VdInputSoilLayerSandFlowErodibility, &m_VdInputSoilLayerClaySplashErodibility, &m_VdInputSoilLayerSiltSplashErodibility, &m_VdInputSoilLayerSandSplashErodibility, &m_VdInputSoilLayerClaySlumpErodibility, &m_VdInputSoilLayerSiltSlumpErodibility, &m_VdInputSoilLayerSandSlumpErodibility, &m_VdInfiltCPHWF, &m_VdInfiltChiPart);
       }
    }
 
@@ -718,7 +718,7 @@ void CSimulation::CalcTimestep(void)
    if (m_dPossMaxSpeedNextIter == 0)
    {
       // No flow occurred, so set the timestep for the next iteration based on a guessed-in value for flow speed
-      m_dTimeStep = m_dCellSide / INIT_MAX_SPEED_GUESS;                             // In sec
+      m_dTimeStep = m_dm_CellSide / INIT_MAX_SPEED_GUESS;                             // In sec
    }
    else
    {
@@ -726,7 +726,7 @@ void CSimulation::CalcTimestep(void)
       m_dPossMaxSpeedNextIter = tMin(m_dPossMaxSpeedNextIter, m_dMaxFlowSpeed);
 
       // OK now calculate the possible timestep
-      double dPossNextTimeStep = m_dCellSide / m_dPossMaxSpeedNextIter;             // In sec
+      double dPossNextTimeStep = m_dm_CellSide / m_dPossMaxSpeedNextIter;             // In sec
 
       // Is the timestep increasing or decreasing?
       if (dPossNextTimeStep > m_dTimeStep)
@@ -740,7 +740,7 @@ void CSimulation::CalcTimestep(void)
          }
          else
          {
-            // The change in timestep is large, so we need to make a smaller change. This is equivalent to the 'Courant–Friedrichs–Lewy condition' i.e. the time needed for flow to cross a cell at the maximum speed during the last iteration, plus an arbitrary safety margin. COURANT_ALPHA = delta_time / delta_distance See e.g. http://en.wikipedia.org/wiki/Courant%E2%80%93Friedrichs%E2%80%93Lewy_condition
+            // The change in timestep is large, so we need to make a smaller change. This is equivalent to the 'Courant–Friedrichs–Lewy condition' i.e. the time needed for flow to cross a m_Cell at the maximum speed during the last iteration, plus an arbitrary safety margin. COURANT_ALPHA = delta_time / delta_distance See e.g. http://en.wikipedia.org/wiki/Courant%E2%80%93Friedrichs%E2%80%93Lewy_condition
             m_dTimeStep = m_dTimeStep / COURANT_ALPHA;
          }
       }
@@ -755,7 +755,7 @@ void CSimulation::CalcTimestep(void)
          }
          else
          {
-            // The change in timestep is large, so we need to make a smaller change. This is equivalent to the 'Courant–Friedrichs–Lewy condition' i.e. the time needed for flow to cross a cell at the maximum speed during the last iteration, plus an arbitrary safety margin. COURANT_ALPHA = delta_time / delta_distance See e.g. http://en.wikipedia.org/wiki/Courant%E2%80%93Friedrichs%E2%80%93Lewy_condition
+            // The change in timestep is large, so we need to make a smaller change. This is equivalent to the 'Courant–Friedrichs–Lewy condition' i.e. the time needed for flow to cross a m_Cell at the maximum speed during the last iteration, plus an arbitrary safety margin. COURANT_ALPHA = delta_time / delta_distance See e.g. http://en.wikipedia.org/wiki/Courant%E2%80%93Friedrichs%E2%80%93Lewy_condition
             m_dTimeStep = m_dTimeStep * COURANT_ALPHA;
          }
       }
@@ -1008,45 +1008,45 @@ bool CSimulation::bIsTimeToQuit(void)
 ========================================================================================================================================*/
 void CSimulation::UpdateGrandTotals(void)
 {
-   m_ldGTotRain        += (m_dThisIterRain * m_dCellSquare);
-   m_ldGTotRunOn  += (m_dThisIterRunOn * m_dCellSquare);
-   m_ldGTotWaterLost   += (m_dThisIterLostSurfaceWater * m_dCellSquare);
-   m_ldGTotFlowDetach  += (m_dThisIterClayFlowDetach + m_dThisIterSiltFlowDetach + m_dThisIterSandFlowDetach) * m_dCellSquare;
+   m_ldGTotRain        += (m_dThisIterRain * m_dm_CellSquare);
+   m_ldGTotRunOn  += (m_dThisIterRunOn * m_dm_CellSquare);
+   m_ldGTotWaterLost   += (m_dThisIterLostSurfaceWater * m_dm_CellSquare);
+   m_ldGTotFlowDetach  += (m_dThisIterClayFlowDetach + m_dThisIterSiltFlowDetach + m_dThisIterSandFlowDetach) * m_dm_CellSquare;
 
    // Note that ldGTotFlowDeposit will be an over-estimate of total deposition since there is no allowance made for deposited sediment that is subsequently re-entrained. This is taken care of in the final mass balance calculation
-   m_ldGTotFlowDeposit += (m_dThisIterClayFlowDeposit + m_dThisIterSiltFlowDeposit + m_dThisIterSandFlowDeposit) * m_dCellSquare;
-   m_ldGTotSedLost     += (m_dThisIterClaySedLost + m_dThisIterSiltSedLost + m_dThisIterSandSedLost) * m_dCellSquare;
+   m_ldGTotFlowDeposit += (m_dThisIterClayFlowDeposit + m_dThisIterSiltFlowDeposit + m_dThisIterSandFlowDeposit) * m_dm_CellSquare;
+   m_ldGTotSedLost     += (m_dThisIterClaySedLost + m_dThisIterSiltSedLost + m_dThisIterSandSedLost) * m_dm_CellSquare;
 
    if (m_bInfiltThisIter)
    {
-      m_ldGTotInfilt        += (m_dSinceLastInfiltration * m_dCellSquare);
-      m_ldGTotExfilt        += (m_dSinceLastExfiltration * m_dCellSquare);
-      m_ldGTotInfiltDeposit += (m_dSinceLastClayInfiltDeposit + m_dSinceLastSiltInfiltDeposit + m_dSinceLastSandInfiltDeposit) * m_dCellSquare;
+      m_ldGTotInfilt        += (m_dSinceLastInfiltration * m_dm_CellSquare);
+      m_ldGTotExfilt        += (m_dSinceLastExfiltration * m_dm_CellSquare);
+      m_ldGTotInfiltDeposit += (m_dSinceLastClayInfiltDeposit + m_dSinceLastSiltInfiltDeposit + m_dSinceLastSandInfiltDeposit) * m_dm_CellSquare;
    }
 
    if (m_bSplashThisIter)
    {
-      m_ldGTotSplashDetach  += (m_dThisIterClaySplashDetach + m_dThisIterSiltSplashDetach + m_dThisIterSandSplashDetach) * m_dCellSquare;
-      m_ldGTotSplashDeposit += (m_dThisIterClaySplashDeposit + m_dThisIterSiltSplashDeposit + m_dThisIterSandSplashDeposit) * m_dCellSquare;
-      m_ldGTotSplashToSedLoad += (m_dThisIterClaySplashToSedLoad + m_dThisIterSiltSplashToSedLoad + m_dThisIterSandSplashToSedLoad) * m_dCellSquare;
+      m_ldGTotSplashDetach  += (m_dThisIterClaySplashDetach + m_dThisIterSiltSplashDetach + m_dThisIterSandSplashDetach) * m_dm_CellSquare;
+      m_ldGTotSplashDeposit += (m_dThisIterClaySplashDeposit + m_dThisIterSiltSplashDeposit + m_dThisIterSandSplashDeposit) * m_dm_CellSquare;
+      m_ldGTotSplashToSedLoad += (m_dThisIterClaySplashToSedLoad + m_dThisIterSiltSplashToSedLoad + m_dThisIterSandSplashToSedLoad) * m_dm_CellSquare;
    }
 
    if (m_bSlumpThisIter)
    {
-      m_ldGTotSlumpDetach   += (m_dSinceLastClaySlumpDetach + m_dSinceLastSiltSlumpDetach + m_dSinceLastSandSlumpDetach) * m_dCellSquare;
-      m_ldGTotSlumpDeposit   += (m_dSinceLastClaySlumpDeposit + m_dSinceLastSiltSlumpDeposit + m_dSinceLastSandSlumpDeposit) * m_dCellSquare;
-      m_ldGTotSlumpToSedLoad   += (m_dSinceLastClaySlumpToSedLoad + m_dSinceLastSiltSlumpToSedLoad + m_dSinceLastSandSlumpToSedLoad) * m_dCellSquare;
+      m_ldGTotSlumpDetach   += (m_dSinceLastClaySlumpDetach + m_dSinceLastSiltSlumpDetach + m_dSinceLastSandSlumpDetach) * m_dm_CellSquare;
+      m_ldGTotSlumpDeposit   += (m_dSinceLastClaySlumpDeposit + m_dSinceLastSiltSlumpDeposit + m_dSinceLastSandSlumpDeposit) * m_dm_CellSquare;
+      m_ldGTotSlumpToSedLoad   += (m_dSinceLastClaySlumpToSedLoad + m_dSinceLastSiltSlumpToSedLoad + m_dSinceLastSandSlumpToSedLoad) * m_dm_CellSquare;
 
-      m_ldGTotToppleDetach  += (m_dSinceLastClayToppleDetach + m_dSinceLastSiltToppleDetach + m_dSinceLastSandToppleDetach) * m_dCellSquare;
-      m_ldGTotToppleDeposit += (m_dSinceLastClayToppleDeposit + m_dSinceLastSiltToppleDeposit + m_dSinceLastSandToppleDeposit) * m_dCellSquare;
-      m_ldGTotToppleToSedLoad += (m_dSinceLastClayToppleToSedLoad + m_dSinceLastSiltToppleToSedLoad + m_dSinceLastSandToppleToSedLoad) * m_dCellSquare;
+      m_ldGTotToppleDetach  += (m_dSinceLastClayToppleDetach + m_dSinceLastSiltToppleDetach + m_dSinceLastSandToppleDetach) * m_dm_CellSquare;
+      m_ldGTotToppleDeposit += (m_dSinceLastClayToppleDeposit + m_dSinceLastSiltToppleDeposit + m_dSinceLastSandToppleDeposit) * m_dm_CellSquare;
+      m_ldGTotToppleToSedLoad += (m_dSinceLastClayToppleToSedLoad + m_dSinceLastSiltToppleToSedLoad + m_dSinceLastSandToppleToSedLoad) * m_dm_CellSquare;
    }
 
    if (m_bHeadcutRetreatThisIter)
    {
-      m_ldGTotHeadcutRetreatDetach  += (m_dSinceLastClayHeadcutDetach + m_dSinceLastSiltHeadcutDetach + m_dSinceLastSandHeadcutDetach) * m_dCellSquare;
-      m_ldGTotHeadcutRetreatDeposit += (m_dSinceLastClayHeadcutDeposit + m_dSinceLastSiltHeadcutDeposit + m_dSinceLastSandHeadcutDeposit) * m_dCellSquare;
-      m_ldGTotHeadcutRetreatToSedLoad += (m_dSinceLastClayHeadcutToSedLoad + m_dSinceLastSiltHeadcutToSedLoad + m_dSinceLastSandHeadcutToSedLoad) * m_dCellSquare;
+      m_ldGTotHeadcutRetreatDetach  += (m_dSinceLastClayHeadcutDetach + m_dSinceLastSiltHeadcutDetach + m_dSinceLastSandHeadcutDetach) * m_dm_CellSquare;
+      m_ldGTotHeadcutRetreatDeposit += (m_dSinceLastClayHeadcutDeposit + m_dSinceLastSiltHeadcutDeposit + m_dSinceLastSandHeadcutDeposit) * m_dm_CellSquare;
+      m_ldGTotHeadcutRetreatToSedLoad += (m_dSinceLastClayHeadcutToSedLoad + m_dSinceLastSiltHeadcutToSedLoad + m_dSinceLastSandHeadcutToSedLoad) * m_dm_CellSquare;
    }
 }
 
@@ -1116,12 +1116,12 @@ int CSimulation::nDoSimulation(void)
       m_dThisIterSandSedLost =
       m_dThisIterTotHead = 0;
 
-      // Route all flow from wet cells
+      // Route all flow from wet m_Cells
       DoAllFlowRouting();
 
       // When representing flow off an edge of the grid, we need a value for the off-edge head. Save this iteration's maximum and minimum on-grid values of head for this
       if (m_ulNumHead > 0)
-         m_dLastIterAvgHead = m_dThisIterTotHead / m_ulNumHead;
+         m_dLastIterAvgHead = m_dThisIterTotHead / static_cast<double>(m_ulNumHead);
 
       // Infiltration next
       m_bInfiltThisIter = false;
@@ -1133,7 +1133,7 @@ int CSimulation::nDoSimulation(void)
 
       if (m_bDoInfiltration && (CALC_INFILT_INTERVAL-1 == ++m_nInfiltCount))                 // If we are considering infilt, simulate it this iteration?
       {
-         // Yup, simulate infilt from the Cell array
+         // Yup, simulate infilt from the m_Cell array
          m_nInfiltCount = 0;
          m_bInfiltThisIter = true;
 
@@ -1218,7 +1218,7 @@ int CSimulation::nDoSimulation(void)
          m_dLastHeadcutRetreatCalcTime = m_dSimulatedTimeElapsed;
       }
 
-      // Calc end-of-iteration totals then initialize some of the Cell array ready for the next iteration (note: m_dThisIterKE is calculated earlier, as are m_dThisIterClaySedLost, m_dThisIterSiltSedLost, m_dThisIterSandSedLost, m_dThisIterClaySplashToSedLoad, m_dThisIterSiltSplashToSedLoad,  m_dThisIterSandSplashToSedLoad)
+      // Calc end-of-iteration totals then initialize some of the m_Cell array ready for the next iteration (note: m_dThisIterKE is calculated earlier, as are m_dThisIterClaySedLost, m_dThisIterSiltSedLost, m_dThisIterSandSedLost, m_dThisIterClaySplashToSedLoad, m_dThisIterSiltSplashToSedLoad,  m_dThisIterSandSplashToSedLoad)
       m_ulNWet = 0;
       m_dThisIterRain                  =
       m_dThisIterRunOn                 =
@@ -1272,7 +1272,7 @@ int CSimulation::nDoSimulation(void)
                dSiltSplashToSedLoad = 0,
                dSandSplashToSedLoad = 0;
 
-            Cell[nX][nY].CalcIterTotalsAndInit(bIsWet, dRain, dRunOn, dSurfaceWaterDepth, dSurfaceWaterLost, dClaySedLoad, dSiltSedLoad, dSandSedLoad, dClayFlowDetach, dSiltFlowDetach, dSandFlowDetach, dClayFlowDeposit, dSiltFlowDeposit, dSandFlowDeposit, dClaySplashDetach, dSiltSplashDetach, dSandSplashDetach, dClaySplashDeposit, dSiltSplashDeposit, dSandSplashDeposit, dClaySplashToSedLoad, dSiltSplashToSedLoad, dSandSplashToSedLoad, m_bSlumpThisIter);
+            m_Cell[nX][nY].CalcIterTotalsAndInit(bIsWet, dRain, dRunOn, dSurfaceWaterDepth, dSurfaceWaterLost, dClaySedLoad, dSiltSedLoad, dSandSedLoad, dClayFlowDetach, dSiltFlowDetach, dSandFlowDetach, dClayFlowDeposit, dSiltFlowDeposit, dSandFlowDeposit, dClaySplashDetach, dSiltSplashDetach, dSandSplashDetach, dClaySplashDeposit, dSiltSplashDeposit, dSandSplashDeposit, dClaySplashToSedLoad, dSiltSplashToSedLoad, dSandSplashToSedLoad, m_bSlumpThisIter);
 
             if (m_dRainIntensity > 0)
             {
@@ -1323,7 +1323,7 @@ int CSimulation::nDoSimulation(void)
       m_bSaveGISThisIter = false;
       if ((m_bSaveRegular && (m_dSimulatedTimeElapsed >= m_dRSaveTime) && (m_dSimulatedTimeElapsed < m_dSimulationDuration)) || (! m_bSaveRegular && (m_dSimulatedTimeElapsed >= m_VdSaveTime[m_nThisSave])))
       {
-         // Yes, save the values from the Cell array into GIS files
+         // Yes, save the values from the m_Cell array into GIS files
          m_bSaveGISThisIter = true;
          if (! bSaveGISFiles())
             return (RTN_ERR_GISFILEWRITE);
@@ -1371,7 +1371,7 @@ int CSimulation::nDoSimulation(void)
       // Update grand totals (these are all volumes)
       UpdateGrandTotals();
 
-      // If there has been any noticeable loss of sediment from any edge this iteration, then adjust the elevation of the unbounded edge(s), based on the Cell values: ugly but necessary
+      // If there has been any noticeable loss of sediment from any edge this iteration, then adjust the elevation of the unbounded edge(s), based on the m_Cell values: ugly but necessary
       int nOpenEdgeLength = 0;
       if (! m_bClosedThisEdge[EDGE_BOTTOM])
          nOpenEdgeLength += m_nXGridMax;
@@ -1416,7 +1416,7 @@ double CSimulation::dGetTimeStep(void) const
 
 /*==============================================================================================================================
 
- Publicly-visible wrapper around dGetRand0Gaussian(), needed for cell surface water initialisation
+ Publicly-visible wrapper around dGetRand0Gaussian(), needed for m_Cell surface water initialisation
 
 ==============================================================================================================================*/
 double CSimulation::dGetRandGaussian(void)

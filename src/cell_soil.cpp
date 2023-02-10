@@ -1,8 +1,8 @@
 /*=========================================================================================================================================
 
- This is cell_soil.cpp: implementations of the RillGrow class used to represent the soil column
+ This is m_Cell_soil.cpp: implementations of the RillGrow class used to represent the soil column
 
- Copyright (C) 2020 David Favis-Mortlock
+ Copyright (C) 2023 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -95,7 +95,7 @@ CCellSoil::CCellSoil(void)
    m_dCumulSandHeadcutRetreatDeposit(0)
 
 {
-   m_pCell = NULL;
+   m_pm_Cell = NULL;
 }
 
 CCellSoil::~CCellSoil(void)
@@ -105,7 +105,7 @@ CCellSoil::~CCellSoil(void)
 
 void CCellSoil::SetParent(CCell* const pParent)
 {
-   m_pCell = pParent;
+   m_pm_Cell = pParent;
 }
 
 CCellSoilLayer* CCellSoil::pLayerGetLayer(int const nLayer)
@@ -166,7 +166,7 @@ void CCellSoil::SetSoilLayers(double const dTotalDepth, int const nLayers, vecto
       m_VLayer.back().SetSiltSlumpErodibility(pVdInputSoilLayerSiltSlumpErodibility->at(nLay));
       m_VLayer.back().SetSandSlumpErodibility(pVdInputSoilLayerSandSlumpErodibility->at(nLay));
 
-      // Also create these all-cell infilt values
+      // Also create these all-cell infiltration values
       pVdInfiltCPHWF->push_back(0);
       pVdInfiltChiPart->push_back(0);
    }
@@ -174,7 +174,7 @@ void CCellSoil::SetSoilLayers(double const dTotalDepth, int const nLayers, vecto
 
 double CCellSoil::dGetSoilSurfaceElevation(void)
 {
-   double dSoilSurfaceTop = m_pCell->dGetBasementElevation();
+   double dSoilSurfaceTop = m_pm_Cell->dGetBasementElevation();
 
    for (unsigned int nLay = 0; nLay < m_VLayer.size(); nLay++)
       dSoilSurfaceTop += m_VLayer[nLay].dGetLayerThickness();
@@ -204,7 +204,7 @@ void CCellSoil::ChangeTopLayerThickness(double const dChange)
 }
 
 
-// Do supply-limited detachment from surface water on this cell
+// Do supply-limited detachment from surface water on this m_Cell
 void CCellSoil::DoFlowDetach(double const dDepthToErode)
 {
    double
@@ -234,10 +234,10 @@ void CCellSoil::DoFlowDetach(double const dDepthToErode)
       }
    }
 
-   // Add to the cell's sediment load
-   m_pCell->pGetSedLoad()->AddToSedLoad(dTotClayEroded, dTotSiltDetached, dTotSandDetached);
+   // Add to the m_Cell's sediment load
+   m_pm_Cell->pGetSedLoad()->AddToSedLoad(dTotClayEroded, dTotSiltDetached, dTotSandDetached);
 
-   // Add to the cell's flow detachment totals
+   // Add to the m_Cell's flow detachment totals
    m_dClayFlowDetach += dTotClayEroded;
    m_dSiltFlowDetach += dTotSiltDetached;
    m_dSandFlowDetach += dTotSandDetached;
@@ -246,149 +246,149 @@ void CCellSoil::DoFlowDetach(double const dDepthToErode)
    m_dCumulSandFlowDetach += dTotSandDetached;
 }
 
-// Do deposition from surface water on this cell, constraining if the full amount cannot be deposited
+// Do deposition from surface water on this m_Cell, constraining if the full amount cannot be deposited
 void CCellSoil::DoSedLoadDeposit(double const dClayFraction, double const dSiltFraction, double const dSandFraction)
 {
    double
-      dClaySedLoad = m_pCell->pGetSedLoad()->dGetClaySedLoad(),
-      dSiltSedLoad = m_pCell->pGetSedLoad()->dGetSiltSedLoad(),
-      dSandSedLoad = m_pCell->pGetSedLoad()->dGetSandSedLoad(),
+      dClaySedLoad = m_pm_Cell->pGetSedLoad()->dGetClaySedLoad(),
+      dSiltSedLoad = m_pm_Cell->pGetSedLoad()->dGetSiltSedLoad(),
+      dSandSedLoad = m_pm_Cell->pGetSedLoad()->dGetSandSedLoad(),
       dClayToDeposit = dClayFraction * dClaySedLoad,
       dSiltToDeposit = dSiltFraction * dSiltSedLoad,
       dSandToDeposit = dSandFraction * dSandSedLoad;
 
-   // Do the deposition TODO Should we always deposit to the top layer? What about if top layer has been eroded to zero thickness?
-   m_VLayer.back().DoLayerDeposition(dClayToDeposit, dSiltToDeposit, dSandToDeposit);
+   // Do the deposition (always deposit to the top layer, even if the top layer has previously been eroded to zero thickness)
+   m_VLayer.front().DoLayerDeposition(dClayToDeposit, dSiltToDeposit, dSandToDeposit);
 
    if (dClayToDeposit > 0)
    {
-      // Add to the this-cell totals
+      // Add to the this-m_Cell totals
       m_dClayFlowDeposit += dClayToDeposit;
       m_dCumulClayFlowDeposit += dClayToDeposit;
 
-      // Remove from the cell's surface water sediment load, also from the this-iteration sediment load
-      m_pCell->pGetSedLoad()->RemoveFromClaySedLoad(dClayToDeposit);
+      // Remove from the m_Cell's surface water sediment load, also from the this-iteration sediment load
+      m_pm_Cell->pGetSedLoad()->RemoveFromClaySedLoad(dClayToDeposit);
    }
 
    if (dSiltToDeposit > 0)
    {
-      // Add to the this-cell totals
+      // Add to the this-m_Cell totals
       m_dSiltFlowDeposit += dSiltToDeposit;
       m_dCumulSiltFlowDeposit += dSiltToDeposit;
 
-      // Remove from the cell's surface water sediment load, also from the this-iteration sediment load
-      m_pCell->pGetSedLoad()->RemoveFromSiltSedLoad(dSiltToDeposit);
+      // Remove from the m_Cell's surface water sediment load, also from the this-iteration sediment load
+      m_pm_Cell->pGetSedLoad()->RemoveFromSiltSedLoad(dSiltToDeposit);
    }
 
    if (dSandToDeposit > 0)
    {
-      // Add to the this-cell totals
+      // Add to the this-m_Cell totals
       m_dSandFlowDeposit += dSandToDeposit;
       m_dCumulSandFlowDeposit += dSandToDeposit;
 
-      // Remove from the cell's surface water sediment load, also from the this-iteration sediment load
-      m_pCell->pGetSedLoad()->RemoveFromSandSedLoad(dSandToDeposit);
+      // Remove from the m_Cell's surface water sediment load, also from the this-iteration sediment load
+      m_pm_Cell->pGetSedLoad()->RemoveFromSandSedLoad(dSandToDeposit);
    }
 }
 
-// Returns the this-iteration clay-sized surface water detachment for this cell
+// Returns the this-iteration clay-sized surface water detachment for this m_Cell
 double CCellSoil::dGetClayFlowDetach(void) const
 {
    return m_dClayFlowDetach;
 }
 
-// Returns the this-iteration silt-sized surface water detachment for this cell
+// Returns the this-iteration silt-sized surface water detachment for this m_Cell
 double CCellSoil::dGetSiltFlowDetach(void) const
 {
    return m_dSiltFlowDetach;
 }
 
-// Returns the this-iteration sand-sized surface water detachment for this cell
+// Returns the this-iteration sand-sized surface water detachment for this m_Cell
 double CCellSoil::dGetSandFlowDetach(void) const
 {
    return m_dSandFlowDetach;
 }
 
-// Returns the this-iteration surface water detachment (all sediment sizes) for this cell
+// Returns the this-iteration surface water detachment (all sediment sizes) for this m_Cell
 double CCellSoil::dGetTotFlowDetach(void) const
 {
    return m_dClayFlowDetach + m_dSiltFlowDetach + m_dSandFlowDetach;
 }
 
-// Returns the cumulative clay-sized surface water detachment for this cell
+// Returns the cumulative clay-sized surface water detachment for this m_Cell
 double CCellSoil::dGetCumulClayFlowDetach(void) const
 {
    return m_dCumulClayFlowDetach;
 }
 
-// Returns the cumulative silt-sized surface water detachment for this cell
+// Returns the cumulative silt-sized surface water detachment for this m_Cell
 double CCellSoil::dGetCumulSiltFlowDetach(void) const
 {
    return m_dCumulSiltFlowDetach;
 }
 
-// Returns the cumulative sand-sized surface water detachment for this cell
+// Returns the cumulative sand-sized surface water detachment for this m_Cell
 double CCellSoil::dGetCumulSandFlowDetach(void) const
 {
    return m_dCumulSandFlowDetach;
 }
 
-// Returns the cumulative surface water detachment (all sediment sizes) for this cell
+// Returns the cumulative surface water detachment (all sediment sizes) for this m_Cell
 double CCellSoil::dGetCumulAllSizeFlowDetach(void) const
 {
    return m_dCumulClayFlowDetach + m_dCumulSiltFlowDetach + m_dCumulSandFlowDetach;
 }
 
-// Returns the this-iteration clay-sized surface water deposition on this cell
+// Returns the this-iteration clay-sized surface water deposition on this m_Cell
 double CCellSoil::dGetClayFlowDeposit(void) const
 {
    return m_dClayFlowDeposit;
 }
 
-// Returns the this-iteration silt-sized surface water deposition on this cell
+// Returns the this-iteration silt-sized surface water deposition on this m_Cell
 double CCellSoil::dGetSiltFlowDeposit(void) const
 {
    return m_dSiltFlowDeposit;
 }
 
-// Returns the this-iteration sand-sized surface water deposition on this cell
+// Returns the this-iteration sand-sized surface water deposition on this m_Cell
 double CCellSoil::dGetSandFlowDeposit(void) const
 {
    return m_dSandFlowDeposit;
 }
 
-// Returns the this-iteration depth of surface water deposition (all size classes) for this cell
+// Returns the this-iteration depth of surface water deposition (all size classes) for this m_Cell
 double CCellSoil::dGetAllSizeFlowDeposit(void) const
 {
    return (m_dClayFlowDeposit + m_dSiltFlowDeposit + m_dSandFlowDeposit);
 }
 
-// Returns the cumulative clay-sized surface water deposition on this cell
+// Returns the cumulative clay-sized surface water deposition on this m_Cell
 double CCellSoil::dGetCumulClayFlowDeposit(void) const
 {
    return m_dCumulClayFlowDeposit;
 }
 
-// Returns the cumulative silt-sized surface water deposition on this cell
+// Returns the cumulative silt-sized surface water deposition on this m_Cell
 double CCellSoil::dGetCumulSiltFlowDeposit(void) const
 {
    return m_dCumulSiltFlowDeposit;
 }
 
-// Returns the cumulative sand-sized surface water deposition on this cell
+// Returns the cumulative sand-sized surface water deposition on this m_Cell
 double CCellSoil::dGetCumulSandFlowDeposit(void) const
 {
    return m_dCumulSandFlowDeposit;
 }
 
-// Returns the cumulative depth of surface water deposition (all size classes) for this cell
+// Returns the cumulative depth of surface water deposition (all size classes) for this m_Cell
 double CCellSoil::dGetCumulAllSizeFlowDeposit(void) const
 {
    return (m_dCumulClayFlowDeposit + m_dCumulSiltFlowDeposit + m_dCumulSandFlowDeposit);
 }
 
 
-// Decreases this cell's elevation as a result of splash detachment
+// Decreases this m_Cell's elevation as a result of splash detachment
 void CCellSoil::DoSplashDetach(double const dThickness, double& dTotClayEroded, double& dTotSiltEroded,  double& dTotSandEroded)
 {
    dTotClayEroded =
@@ -417,7 +417,7 @@ void CCellSoil::DoSplashDetach(double const dThickness, double& dTotClayEroded, 
       }
    }
 
-   // Add to the this-cell totals
+   // Add to the this-m_Cell totals
    m_dClaySplashDetach    += dTotClayEroded;
    m_dSiltSplashDetach    += dTotSiltEroded;
    m_dSandSplashDetach    += dTotSandEroded;
@@ -426,7 +426,7 @@ void CCellSoil::DoSplashDetach(double const dThickness, double& dTotClayEroded, 
    m_dCumulSandSplashDetach += dTotSandEroded;
 }
 
-// Set the temporary splash deposition field for this cell
+// Set the temporary splash deposition field for this m_Cell
 void CCellSoil::SetSplashDepositTemp(double const dTemp)
 {
    m_dTemporarySplashDeposit = dTemp;
@@ -438,23 +438,22 @@ double CCellSoil::dGetSplashDepositTemp(void) const
    return m_dTemporarySplashDeposit;
 }
 
-// If the cell is dry, increases this cell's elevation as a result of splash deposition; or if it is wet, add to this cell's sediment load
+// If the m_Cell is dry, increases this m_Cell's elevation as a result of splash deposition; or if it is wet, add to this m_Cell's sediment load
 void CCellSoil::DoSplashToSedLoadOrDeposit(double const dClayChangeElev, double const dSiltChangeElev, double const dSandChangeElev)
 {
 
-   if (m_pCell->pGetSurfaceWater()->bIsWet())
+   if (m_pm_Cell->pGetSurfaceWater()->bIsWet())
    {
-      // Cell is wet, so add to its sediment load
-      m_pCell->pGetSedLoad()->AddToSedLoad(dClayChangeElev, dSiltChangeElev, dSandChangeElev);
-      m_pCell->pGetSedLoad()->AddToSplashSedLoad(dClayChangeElev, dSiltChangeElev, dSandChangeElev);
+      // m_Cell is wet, so add to its sediment load
+      m_pm_Cell->pGetSedLoad()->AddToSedLoad(dClayChangeElev, dSiltChangeElev, dSandChangeElev);
+      m_pm_Cell->pGetSedLoad()->AddToSplashSedLoad(dClayChangeElev, dSiltChangeElev, dSandChangeElev);
    }
    else
    {
-      // Cell is dry, so do deposition
-      // TODO Should we always deposit to the top layer? What about if top layer has been eroded to zero thickness?
-      m_VLayer.back().DoLayerDeposition(dClayChangeElev, dSiltChangeElev, dSandChangeElev);
+      // m_Cell is dry, so do the deposition (always deposit to the top layer, even if the top layer has previously been eroded to zero thickness)
+      m_VLayer.front().DoLayerDeposition(dClayChangeElev, dSiltChangeElev, dSandChangeElev);
 
-      // Update this-cell totals for splash deposition
+      // Update this-m_Cell totals for splash deposition
       m_dClaySplashDeposit    += dClayChangeElev;
       m_dCumulClaySplashDeposit += dClayChangeElev;
       m_dSiltSplashDeposit    += dSiltChangeElev;
@@ -464,107 +463,107 @@ void CCellSoil::DoSplashToSedLoadOrDeposit(double const dClayChangeElev, double 
    }
 }
 
-// Returns the depth of clay-sized splash detachment for this iteration on this cell
+// Returns the depth of clay-sized splash detachment for this iteration on this m_Cell
 double CCellSoil::dGetClaySplashDetach(void) const
 {
    return m_dClaySplashDetach;
 }
 
-// Returns the depth of silt-sized splash detachment for this iteration on this cell
+// Returns the depth of silt-sized splash detachment for this iteration on this m_Cell
 double CCellSoil::dGetSiltSplashDetach(void) const
 {
    return m_dSiltSplashDetach;
 }
 
-// Returns the depth of sand-sized splash detachment for this iteration on this cell
+// Returns the depth of sand-sized splash detachment for this iteration on this m_Cell
 double CCellSoil::dGetSandSplashDetach(void) const
 {
    return m_dSandSplashDetach;
 }
 
-// Returns the depth of splash detachment (all sediment size classes) for this iteration on this cell
+// Returns the depth of splash detachment (all sediment size classes) for this iteration on this m_Cell
 double CCellSoil::dGetAllSizeSplashDetach(void) const
 {
    return (m_dClaySplashDetach + m_dSiltSplashDetach + m_dSandSplashDetach);
 }
 
 
-// Returns the depth of clay-sized splash deposition for for this iteration on this cell
+// Returns the depth of clay-sized splash deposition for for this iteration on this m_Cell
 double CCellSoil::dGetClaySplashDeposit(void) const
 {
    return m_dClaySplashDeposit;
 }
 
-// Returns the depth of silt-sized splash deposition for for this iteration on this cell
+// Returns the depth of silt-sized splash deposition for for this iteration on this m_Cell
 double CCellSoil::dGetSiltSplashDeposit(void) const
 {
    return m_dSiltSplashDeposit;
 }
 
-// Returns the depth of sand-sized splash deposition for for this iteration on this cell
+// Returns the depth of sand-sized splash deposition for for this iteration on this m_Cell
 double CCellSoil::dGetSandSplashDeposit(void) const
 {
    return m_dSandSplashDeposit;
 }
 
-// Returns the depth of splash deposition (all sediment size classes) for for this iteration on this cell
+// Returns the depth of splash deposition (all sediment size classes) for for this iteration on this m_Cell
 double CCellSoil::dGetAllSizeSplashDeposit(void) const
 {
    return (m_dClaySplashDeposit + m_dSiltSplashDeposit + m_dSandSplashDeposit);
 }
 
 
-// Returns the cumulative depth of clay-sized splash detachment for this cell
+// Returns the cumulative depth of clay-sized splash detachment for this m_Cell
 double CCellSoil::dGetCumulClaySplashDetach(void) const
 {
    return m_dCumulClaySplashDetach;
 }
 
-// Returns the cumulative depth of silt-sized splash detachment for this cell
+// Returns the cumulative depth of silt-sized splash detachment for this m_Cell
 double CCellSoil::dGetCumulSiltSplashDetach(void) const
 {
    return m_dCumulSiltSplashDetach;
 }
 
-// Returns the cumulative depth of sand-sized splash detachment for this cell
+// Returns the cumulative depth of sand-sized splash detachment for this m_Cell
 double CCellSoil::dGetCumulSandSplashDetach(void) const
 {
    return m_dCumulSandSplashDetach;
 }
 
-// Returns the cumulative depth of splash detachment (all sediment size classes) for this cell
+// Returns the cumulative depth of splash detachment (all sediment size classes) for this m_Cell
 double CCellSoil::dGetCumulAllSizeSplashDetach(void) const
 {
    return (m_dCumulClaySplashDetach + m_dCumulSiltSplashDetach + m_dCumulSandSplashDetach);
 }
 
 
-// Returns the cumulative depth of clay-sized splash deposition for this cell
+// Returns the cumulative depth of clay-sized splash deposition for this m_Cell
 double CCellSoil::dGetCumulClaySplashDeposit(void) const
 {
    return m_dCumulClaySplashDeposit;
 }
 
-// Returns the cumulative depth of silt-sized splash deposition for this cell
+// Returns the cumulative depth of silt-sized splash deposition for this m_Cell
 double CCellSoil::dGetCumulSiltSplashDeposit(void) const
 {
    return m_dCumulSiltSplashDeposit;
 }
 
-// Returns the cumulative depth of sand-sized splash deposition for this cell
+// Returns the cumulative depth of sand-sized splash deposition for this m_Cell
 double CCellSoil::dGetCumulSandSplashDeposit(void) const
 {
    return m_dCumulSandSplashDeposit;
 }
 
-// Returns the cumulative depth of splash deposition (all sediment size classes) for this cell
+// Returns the cumulative depth of splash deposition (all sediment size classes) for this m_Cell
 double CCellSoil::dGetCumulAllSizeSplashDeposit(void) const
 {
    return (m_dCumulClaySplashDeposit + m_dCumulSiltSplashDeposit + m_dCumulSandSplashDeposit);
 }
 
 
-// Decreases this cell's elevation as a result of slumping
+// Decreases this m_Cell's elevation as a result of slumping
 void CCellSoil::DoSlumpDetach(double const dThickness, double& dTotClayDetached, double& dTotSiltDetached, double& dTotSandDetached)
 {
    for (unsigned int nLayer = 0; nLayer < m_VLayer.size(); nLayer++)
@@ -589,7 +588,7 @@ void CCellSoil::DoSlumpDetach(double const dThickness, double& dTotClayDetached,
       }
    }
 
-   // Add to this-cell totals
+   // Add to this-m_Cell totals
    m_dClaySlumpDetach += dTotClayDetached;
    m_dSiltSlumpDetach += dTotSiltDetached;
    m_dSandSlumpDetach += dTotSandDetached;
@@ -599,14 +598,14 @@ void CCellSoil::DoSlumpDetach(double const dThickness, double& dTotClayDetached,
 }
 
 
-// Adds sediment to this cell as a result of slump: to the top layer of the soil if tdry, or to the sediment load if wet
+// Adds sediment to this m_Cell as a result of slump: to the top layer of the soil if tdry, or to the sediment load if wet
 void CCellSoil::DoSlumpDepositOrToSedLoad(double const dClayChngElev, double const dSiltChngElev, double const dSandChngElev, double& dClayDeposit, double& dSiltDeposit, double& dSandDeposit, double& dClayToSedLoad, double& dSiltToSedLoad, double& dSandToSedLoad)
 {
-   if (m_pCell->pGetSurfaceWater()->bIsWet())
+   if (m_pm_Cell->pGetSurfaceWater()->bIsWet())
    {
-      // Cell is wet, so add to its sediment load
-      m_pCell->pGetSedLoad()->AddToSedLoad(dClayChngElev, dSiltChngElev, dSandChngElev);
-      m_pCell->pGetSedLoad()->AddToSlumpSedLoad(dClayChngElev, dSiltChngElev, dSandChngElev);
+      // m_Cell is wet, so add to its sediment load
+      m_pm_Cell->pGetSedLoad()->AddToSedLoad(dClayChngElev, dSiltChngElev, dSandChngElev);
+      m_pm_Cell->pGetSedLoad()->AddToSlumpSedLoad(dClayChngElev, dSiltChngElev, dSandChngElev);
 
       dClayToSedLoad = dClayChngElev;
       dSiltToSedLoad = dSiltChngElev;
@@ -614,11 +613,10 @@ void CCellSoil::DoSlumpDepositOrToSedLoad(double const dClayChngElev, double con
    }
    else
    {
-      // Do the deposition
-      // TODO Should we always deposit to the top layer? What about if top layer has been eroded to zero thickness?
-      m_VLayer.back().DoLayerDeposition(dClayChngElev, dSiltChngElev, dSandChngElev);
+      // Do the deposition (always deposit to the top layer, even if the top layer has previously been eroded to zero thickness)
+      m_VLayer.front().DoLayerDeposition(dClayChngElev, dSiltChngElev, dSandChngElev);
 
-      // Add to this-cell totals
+      // Add to this-m_Cell totals
       m_dClaySlumpDeposit += dClayChngElev;
       m_dSiltSlumpDeposit += dSiltChngElev;
       m_dSandSlumpDeposit += dSandChngElev;
@@ -632,99 +630,99 @@ void CCellSoil::DoSlumpDepositOrToSedLoad(double const dClayChngElev, double con
    }
 }
 
-// Returns the this-iteration depth of clay-sized slump detachment for this cell
+// Returns the this-iteration depth of clay-sized slump detachment for this m_Cell
 double CCellSoil::dGetClaySlumpDetach(void) const
 {
    return m_dClaySlumpDetach;
 }
 
-// Returns the this-iteration depth of silt-sized slump detachment for this cell
+// Returns the this-iteration depth of silt-sized slump detachment for this m_Cell
 double CCellSoil::dGetSiltSlumpDetach(void) const
 {
    return m_dSiltSlumpDetach;
 }
 
-// Returns the this-iteration depth of sand-sized slump detachment for this cell
+// Returns the this-iteration depth of sand-sized slump detachment for this m_Cell
 double CCellSoil::dGetSandSlumpDetach(void) const
 {
    return m_dSandSlumpDetach;
 }
 
-// Returns the this-iteration depth of slump detachment (all size classes) for this cell
+// Returns the this-iteration depth of slump detachment (all size classes) for this m_Cell
 double CCellSoil::dGetAllSizeSlumpDetach(void) const
 {
    return (m_dClaySlumpDetach + m_dSiltSlumpDetach + m_dSandSlumpDetach);
 }
 
 
-// Returns the cumulative depth of clay-sized slump detachment for this cell
+// Returns the cumulative depth of clay-sized slump detachment for this m_Cell
 double CCellSoil::dGetCumulClaySlumpDetach(void) const
 {
    return m_dCumulClaySlumpDetach;
 }
 
-// Returns the cumulative depth of silt-sized slump detachment for this cell
+// Returns the cumulative depth of silt-sized slump detachment for this m_Cell
 double CCellSoil::dGetCumulSiltSlumpDetach(void) const
 {
    return m_dCumulSiltSlumpDetach;
 }
 
-// Returns the cumulative depth of sand-sized slump detachment for this cell
+// Returns the cumulative depth of sand-sized slump detachment for this m_Cell
 double CCellSoil::dGetCumulSandSlumpDetach(void) const
 {
    return m_dCumulSandSlumpDetach;
 }
 
-// Returns the cumulative depth of slump detachment (all size classes) for this cell
+// Returns the cumulative depth of slump detachment (all size classes) for this m_Cell
 double CCellSoil::dGetCumulAllSizeSlumpDetach(void) const
 {
    return (m_dCumulClaySlumpDetach + m_dCumulSiltSlumpDetach + m_dCumulSandSlumpDetach);
 }
 
-// Returns the this-iteration depth of clay-sized slump deposition for this cell
+// Returns the this-iteration depth of clay-sized slump deposition for this m_Cell
 double CCellSoil::dGetClaySlumpDeposit(void) const
 {
    return m_dClaySlumpDeposit;
 }
 
-// Returns the this-iteration depth of silt-sized slump deposition for this cell
+// Returns the this-iteration depth of silt-sized slump deposition for this m_Cell
 double CCellSoil::dGetSiltSlumpDeposit(void) const
 {
    return m_dSiltSlumpDeposit;
 }
 
-// Returns the this-iteration depth of sand-sized slump deposition for this cell
+// Returns the this-iteration depth of sand-sized slump deposition for this m_Cell
 double CCellSoil::dGetSandSlumpDeposit(void) const
 {
    return m_dSandSlumpDeposit;
 }
 
-// Returns the cumulative depth of clay-sized slump deposition for this cell
+// Returns the cumulative depth of clay-sized slump deposition for this m_Cell
 double CCellSoil::dGetCumulClaySlumpDeposit(void) const
 {
    return m_dCumulClaySlumpDeposit;
 }
 
-// Returns the cumulative depth of silt-sized slump deposition for this cell
+// Returns the cumulative depth of silt-sized slump deposition for this m_Cell
 double CCellSoil::dGetCumulSiltSlumpDeposit(void) const
 {
    return m_dCumulSiltSlumpDeposit;
 }
 
-// Returns the cumulative depth of sand-sized slump deposition for this cell
+// Returns the cumulative depth of sand-sized slump deposition for this m_Cell
 double CCellSoil::dGetCumulSandSlumpDeposit(void) const
 {
    return m_dCumulSandSlumpDeposit;
 }
 
-// Returns the cumulative depth of slump deposition (all size classes) for this cell
+// Returns the cumulative depth of slump deposition (all size classes) for this m_Cell
 double CCellSoil::dGetCumulAllSizeSlumpDeposit(void) const
 {
    return (m_dCumulClaySlumpDeposit + m_dCumulSiltSlumpDeposit + m_dCumulSandSlumpDeposit);
 }
 
 
-// Decreases this cell's elevation as a result of toppling
+// Decreases this m_Cell's elevation as a result of toppling
 void CCellSoil::DoToppleDetach(double const dThickness, double& dTotClayDetached, double& dTotSiltDetached, double& dTotSandDetached)
 {
    for (unsigned int nLayer = 0; nLayer < m_VLayer.size(); nLayer++)
@@ -749,7 +747,7 @@ void CCellSoil::DoToppleDetach(double const dThickness, double& dTotClayDetached
       }
    }
 
-   // Add to this-cell totals
+   // Add to this-m_Cell totals
    m_dClayToppleDetach += dTotClayDetached;
    m_dSiltToppleDetach += dTotSiltDetached;
    m_dSandToppleDetach += dTotSandDetached;
@@ -758,14 +756,14 @@ void CCellSoil::DoToppleDetach(double const dThickness, double& dTotClayDetached
    m_dCumulSandToppleDetach += dTotSandDetached;
 }
 
-// Adds sediment to this cell as a result of toppling. If the cell is wet, the sediment goes to the cell's sediment load
+// Adds sediment to this m_Cell as a result of toppling. If the m_Cell is wet, the sediment goes to the m_Cell's sediment load
 void CCellSoil::DoToppleDepositOrToSedLoad(double const dClayChngElev, double const dSiltChngElev,double const dSandChngElev, double& dClayDeposited, double& dSiltDeposited, double& dSandDeposited, double& dClayToSedLoad, double& dSiltToSedLoad, double& dSandToSedLoad)
 {
-   if (m_pCell->pGetSurfaceWater()->bIsWet())
+   if (m_pm_Cell->pGetSurfaceWater()->bIsWet())
    {
-      // Cell is wet, so add to its sediment load
-      m_pCell->pGetSedLoad()->AddToSedLoad(dClayChngElev, dSiltChngElev, dSandChngElev);
-      m_pCell->pGetSedLoad()->AddToToppleSedLoad(dClayChngElev, dSiltChngElev, dSandChngElev);
+      // m_Cell is wet, so add to its sediment load
+      m_pm_Cell->pGetSedLoad()->AddToSedLoad(dClayChngElev, dSiltChngElev, dSandChngElev);
+      m_pm_Cell->pGetSedLoad()->AddToToppleSedLoad(dClayChngElev, dSiltChngElev, dSandChngElev);
 
       dClayToSedLoad = dClayChngElev;
       dSiltToSedLoad = dSiltChngElev;
@@ -773,11 +771,10 @@ void CCellSoil::DoToppleDepositOrToSedLoad(double const dClayChngElev, double co
    }
    else
    {
-      // Do the deposition
-      // TODO Should we always deposit to the top layer? What about if top layer has been eroded to zero thickness?
-      m_VLayer.back().DoLayerDeposition(dClayChngElev, dSiltChngElev, dSandChngElev);
+      // Do the deposition (always deposit to the top layer, even if the top layer has previously been eroded to zero thickness)
+      m_VLayer.front().DoLayerDeposition(dClayChngElev, dSiltChngElev, dSandChngElev);
 
-      // Add to this-cell totals
+      // Add to this-m_Cell totals
       m_dClayToppleDeposit    += dClayChngElev;
       m_dCumulClayToppleDeposit += dClayChngElev;
       m_dSiltToppleDeposit    += dSiltChngElev;
@@ -791,98 +788,98 @@ void CCellSoil::DoToppleDepositOrToSedLoad(double const dClayChngElev, double co
    }
 }
 
-// Returns the depth of clay-sized toppling detachment for this cell
+// Returns the depth of clay-sized toppling detachment for this m_Cell
 double CCellSoil::dGetClayToppleDetach(void) const
 {
    return m_dClayToppleDetach;
 }
 
-// Returns the depth of silt-sized toppling detachment for this cell
+// Returns the depth of silt-sized toppling detachment for this m_Cell
 double CCellSoil::dGetSiltToppleDetach(void) const
 {
    return m_dSiltToppleDetach;
 }
 
-// Returns the depth of sand-sized toppling detachment for this cell
+// Returns the depth of sand-sized toppling detachment for this m_Cell
 double CCellSoil::dGetSandToppleDetach(void) const
 {
    return m_dSandToppleDetach;
 }
 
-// Returns the depth of toppling detachment (all sediment size classes) for this cell
+// Returns the depth of toppling detachment (all sediment size classes) for this m_Cell
 double CCellSoil::dGetAllSizeToppleDetach(void) const
 {
    return m_dClayToppleDetach + m_dSiltToppleDetach + m_dSandToppleDetach;
 }
 
-// Returns the cumulative depth of clay-sized toppling detachment for this cell
+// Returns the cumulative depth of clay-sized toppling detachment for this m_Cell
 double CCellSoil::dGetCumulClayToppleDetach(void) const
 {
    return m_dCumulClayToppleDetach;
 }
 
-// Returns the cumulative depth of silt-sized toppling detachment for this cell
+// Returns the cumulative depth of silt-sized toppling detachment for this m_Cell
 double CCellSoil::dGetCumulSiltToppleDetach(void) const
 {
    return m_dCumulSiltToppleDetach;
 }
 
-// Returns the cumulative depth of sand-sized toppling detachment for this cell
+// Returns the cumulative depth of sand-sized toppling detachment for this m_Cell
 double CCellSoil::dGetCumulSandToppleDetach(void) const
 {
    return m_dCumulSandToppleDetach;
 }
 
-// Returns the cumulative depth of toppling detachment (all sediment size classes) for this cell
+// Returns the cumulative depth of toppling detachment (all sediment size classes) for this m_Cell
 double CCellSoil::dGetCumulAllSizeToppleDetach(void) const
 {
    return m_dCumulClayToppleDetach + m_dCumulSiltToppleDetach + m_dCumulSandToppleDetach;
 }
 
 
-// Returns the depth of clay-sized toppling deposition for this cell
+// Returns the depth of clay-sized toppling deposition for this m_Cell
 double CCellSoil::dGetClayToppleDeposit(void) const
 {
    return m_dClayToppleDeposit;
 }
 
-// Returns the depth of silt-sized toppling deposition for this cell
+// Returns the depth of silt-sized toppling deposition for this m_Cell
 double CCellSoil::dGetSiltToppleDeposit(void) const
 {
    return m_dSiltToppleDeposit;
 }
 
-// Returns the depth of sand-sized toppling deposition for this cell
+// Returns the depth of sand-sized toppling deposition for this m_Cell
 double CCellSoil::dGetSandToppleDeposit(void) const
 {
    return m_dSandToppleDeposit;
 }
 
-// Returns the depth of toppling deposition (all size classes) for this cell
+// Returns the depth of toppling deposition (all size classes) for this m_Cell
 double CCellSoil::dGetAllSizeToppleDeposit(void) const
 {
    return m_dClayToppleDeposit + m_dSiltToppleDeposit + m_dSandToppleDeposit;
 }
 
-// Returns the cumulative depth of clay-sized toppling deposition for this cell
+// Returns the cumulative depth of clay-sized toppling deposition for this m_Cell
 double CCellSoil::dGetCumulClayToppleDeposit(void) const
 {
    return m_dCumulClayToppleDeposit;
 }
 
-// Returns the cumulative depth of silt-sized toppling deposition for this cell
+// Returns the cumulative depth of silt-sized toppling deposition for this m_Cell
 double CCellSoil::dGetCumulSiltToppleDeposit(void) const
 {
    return m_dCumulSiltToppleDeposit;
 }
 
-// Returns the cumulative depth of sand-sized toppling deposition for this cell
+// Returns the cumulative depth of sand-sized toppling deposition for this m_Cell
 double CCellSoil::dGetCumulSandToppleDeposit(void) const
 {
    return m_dCumulSandToppleDeposit;
 }
 
-// Returns the cumulative depth of toppling deposition (all size classes) for this cell
+// Returns the cumulative depth of toppling deposition (all size classes) for this m_Cell
 double CCellSoil::dGetCumulAllSizeToppleDeposit(void) const
 {
    return m_dCumulClayToppleDeposit + m_dCumulSiltToppleDeposit + m_dCumulSandToppleDeposit;
@@ -904,11 +901,10 @@ void CCellSoil::ZeroThisOperationSlump(void)
 
 void CCellSoil::DoInfiltrationDeposit(double const dClayDeposit, double const dSiltDeposit, double const dSandDeposit)
 {
-   // Cell is dry, so do the deposition
-   // TODO Should we always deposit to the top layer? What about if top layer has been eroded to zero thickness?
-   m_VLayer.back().DoLayerDeposition(dClayDeposit, dSiltDeposit, dSandDeposit);
+   // Do the deposition (always deposit to the top layer, even if the top layer has previously been eroded to zero thickness)
+   m_VLayer.front().DoLayerDeposition(dClayDeposit, dSiltDeposit, dSandDeposit);
 
-   // Add to the cell's totals
+   // Add to the m_Cell's totals
    m_dClayInfiltDeposit += dClayDeposit;
    m_dSiltInfiltDeposit += dSiltDeposit;
    m_dSandInfiltDeposit += dSandDeposit;
@@ -970,20 +966,20 @@ double CCellSoil::dGetCumulTotInfiltDeposit(void) const
 }
 
 
-// Increments the shear stress and the cumulative shear stress for this cell
+// Increments the shear stress and the cumulative shear stress for this m_Cell
 void CCellSoil::IncShearStress(double const dNewShearStress)
 {
    m_dShearStress += dNewShearStress;
    m_dCumulShearStress += dNewShearStress;
 }
 
-// Returns the shear stress for this cell
+// Returns the shear stress for this m_Cell
 double CCellSoil::dGetShearStress(void) const
 {
    return (m_dShearStress);
 }
 
-// Returns the cumulative shear stress for this cell
+// Returns the cumulative shear stress for this m_Cell
 double CCellSoil::dGetCumulShearStress(void) const
 {
    return (m_dCumulShearStress);
@@ -1004,7 +1000,7 @@ double CCellSoil::dGetCumulAllSizeLowering(void) const
    return (dTotFlowDetach - dTotFlowDeposit + dTotSplashDetach - dTotSplashDeposit + dTotSlumpDetach - dTotInfiltDeposit);
 }
 
-// Removes soil (i.e. decreases elevation) from this cell during headcut retreat
+// Removes soil (i.e. decreases elevation) from this m_Cell during headcut retreat
 void CCellSoil::DoHeadcutRetreatDetach(double const dThickness, double& dTotClayDetached, double& dTotSiltDetached, double& dTotSandDetached)
 {
    for (unsigned int nLayer = 0; nLayer < m_VLayer.size(); nLayer++)
@@ -1029,7 +1025,7 @@ void CCellSoil::DoHeadcutRetreatDetach(double const dThickness, double& dTotClay
       }
    }
 
-   // Add to this-cell totals
+   // Add to this-m_Cell totals
    m_dClayHeadcutRetreatDetach += dTotClayDetached;
    m_dSiltHeadcutRetreatDetach += dTotSiltDetached;
    m_dSandHeadcutRetreatDetach += dTotSandDetached;
@@ -1038,14 +1034,14 @@ void CCellSoil::DoHeadcutRetreatDetach(double const dThickness, double& dTotClay
    m_dCumulSandHeadcutRetreatDetach += dTotSandDetached;
 }
 
-// Adds sediment to this cell as a result of headcut retreat. If the cell is wet, the sediment is added to sediment load
+// Adds sediment to this m_Cell as a result of headcut retreat. If the m_Cell is wet, the sediment is added to sediment load
 void CCellSoil::DoHeadcutRetreatDepositOrToSedLoad(double const dClayChngElev, double const dSiltChngElev, double const dSandChngElev, double& dClayDeposited, double& dSiltDeposited, double& dSandDeposited, double& dClayToSedLoad, double& dSiltToSedLoad, double& dSandToSedLoad)
 {
-   if (m_pCell->pGetSurfaceWater()->bIsWet())
+   if (m_pm_Cell->pGetSurfaceWater()->bIsWet())
    {
-      // Cell is wet, so add to its sediment load
-      m_pCell->pGetSedLoad()->AddToSedLoad(dClayChngElev, dSiltChngElev, dSandChngElev);
-      m_pCell->pGetSedLoad()->AddToHeadcutRetreatSedLoad(dClayChngElev, dSiltChngElev, dSandChngElev);
+      // m_Cell is wet, so add to its sediment load
+      m_pm_Cell->pGetSedLoad()->AddToSedLoad(dClayChngElev, dSiltChngElev, dSandChngElev);
+      m_pm_Cell->pGetSedLoad()->AddToHeadcutRetreatSedLoad(dClayChngElev, dSiltChngElev, dSandChngElev);
 
       dClayToSedLoad = dClayChngElev;
       dSiltToSedLoad = dSiltChngElev;
@@ -1053,11 +1049,10 @@ void CCellSoil::DoHeadcutRetreatDepositOrToSedLoad(double const dClayChngElev, d
    }
    else
    {
-      // Do the deposition
-      // TODO Should we always deposit to the top layer? What about if top layer has been eroded to zero thickness?
-      m_VLayer.back().DoLayerDeposition(dClayChngElev, dSiltChngElev, dSandChngElev);
+      // Do the deposition (always deposit to the top layer, even if the top layer has previously been eroded to zero thickness)
+      m_VLayer.front().DoLayerDeposition(dClayChngElev, dSiltChngElev, dSandChngElev);
 
-      // Add to this-cell totals
+      // Add to this-m_Cell totals
       m_dClayHeadcutRetreatDeposit += dClayChngElev;
       m_dSiltHeadcutRetreatDeposit += dSiltChngElev;
       m_dSandHeadcutRetreatDeposit += dSandChngElev;
@@ -1071,73 +1066,73 @@ void CCellSoil::DoHeadcutRetreatDepositOrToSedLoad(double const dClayChngElev, d
    }
 }
 
-// Returns this cell's depth of clay soil lost (mm) by headcut retreat
+// Returns this m_Cell's depth of clay soil lost (mm) by headcut retreat
 double CCellSoil::dGetClayHeadcutRetreatDetach(void) const
 {
    return m_dClayHeadcutRetreatDetach;
 }
 
-// Returns this cell's depth of silt soil lost (mm) by headcut retreat
+// Returns this m_Cell's depth of silt soil lost (mm) by headcut retreat
 double CCellSoil::dGetSiltHeadcutRetreatDetach(void) const
 {
    return m_dSiltHeadcutRetreatDetach;
 }
 
-// Returns this cell's depth of sand soil lost (mm) by headcut retreat
+// Returns this m_Cell's depth of sand soil lost (mm) by headcut retreat
 double CCellSoil::dGetSandHeadcutRetreatDetach(void) const
 {
    return m_dSandHeadcutRetreatDetach;
 }
 
-// Returns this cell's cumulative depth of clay soil lost (mm) by headcut retreat
+// Returns this m_Cell's cumulative depth of clay soil lost (mm) by headcut retreat
 double CCellSoil::dGetCumulClayHeadcutRetreatDetach(void) const
 {
    return m_dCumulClayHeadcutRetreatDetach;
 }
 
-// Returns this cell's cumulative depth of silt soil lost (mm) by headcut retreat
+// Returns this m_Cell's cumulative depth of silt soil lost (mm) by headcut retreat
 double CCellSoil::dGetCumulSiltHeadcutRetreatDetach(void) const
 {
    return m_dCumulSiltHeadcutRetreatDetach;
 }
 
-// Returns this cell's cumulative depth of sand soil lost (mm) by headcut retreat
+// Returns this m_Cell's cumulative depth of sand soil lost (mm) by headcut retreat
 double CCellSoil::dGetCumulSandHeadcutRetreatDetach(void) const
 {
    return m_dCumulSandHeadcutRetreatDetach;
 }
 
-// Returns this cell's depth of clay soil gained (mm) by headcut retreat
+// Returns this m_Cell's depth of clay soil gained (mm) by headcut retreat
 double CCellSoil::dGetClayHeadcutRetreatDeposit(void) const
 {
    return m_dClayHeadcutRetreatDeposit;
 }
 
-// Returns this cell's depth of silt soil gained (mm) by headcut retreat
+// Returns this m_Cell's depth of silt soil gained (mm) by headcut retreat
 double CCellSoil::dGetSiltHeadcutRetreatDeposit(void) const
 {
    return m_dSiltHeadcutRetreatDeposit;
 }
 
-// Returns this cell's depth of sand soil gained (mm) by headcut retreat
+// Returns this m_Cell's depth of sand soil gained (mm) by headcut retreat
 double CCellSoil::dGetSandHeadcutRetreatDeposit(void) const
 {
    return m_dSandHeadcutRetreatDeposit;
 }
 
-// Returns this cell's cumulative depth of clay soil gained (mm) by headcut retreat
+// Returns this m_Cell's cumulative depth of clay soil gained (mm) by headcut retreat
 double CCellSoil::dGetCumulClayHeadcutRetreatDeposit(void) const
 {
    return m_dCumulClayHeadcutRetreatDeposit;
 }
 
-// Returns this cell's cumulative depth of silt soil gained (mm) by headcut retreat
+// Returns this m_Cell's cumulative depth of silt soil gained (mm) by headcut retreat
 double CCellSoil::dGetCumulSiltHeadcutRetreatDeposit(void) const
 {
    return m_dCumulSiltHeadcutRetreatDeposit;
 }
 
-// Returns this cell's cumulative depth of sand soil gained (mm) by headcut retreat
+// Returns this m_Cell's cumulative depth of sand soil gained (mm) by headcut retreat
 double CCellSoil::dGetCumulSandHeadcutRetreatDeposit(void) const
 {
    return m_dCumulSandHeadcutRetreatDeposit;
@@ -1145,7 +1140,7 @@ double CCellSoil::dGetCumulSandHeadcutRetreatDeposit(void) const
 
 
 // ============================================================== m_dLaplacian =========================================================
-// Sets the Laplacian value for this cell
+// Sets the Laplacian value for this m_Cell
 void CCellSoil::SetLaplacian(double const dNewLapl)
 {
    m_dLaplacian = dNewLapl;
@@ -1154,7 +1149,7 @@ void CCellSoil::SetLaplacian(double const dNewLapl)
    m_dTemporarySplashDeposit = 0;
 }
 
-// Returns the Laplacian value for this cell
+// Returns the Laplacian value for this m_Cell
 double CCellSoil::dGetLaplacian(void) const
 {
    return (m_dLaplacian);
@@ -1178,7 +1173,7 @@ void CCellSoil::InitializeDetachAndDeposit(bool const bSlump)
    m_dSandSplashDeposit =
    m_dLaplacian         = 0;
 
-   m_pCell->pGetSedLoad()->InitializeSplashSedLoads();
+   m_pm_Cell->pGetSedLoad()->InitializeSplashSedLoads();
 
    if (bSlump)
    {
@@ -1196,7 +1191,7 @@ void CCellSoil::InitializeDetachAndDeposit(bool const bSlump)
       m_dSiltToppleDeposit =
       m_dSandToppleDeposit = 0;
 
-      m_pCell->pGetSedLoad()->InitializeSlumpAndToppleSedLoads();
+      m_pm_Cell->pGetSedLoad()->InitializeSlumpAndToppleSedLoads();
    }
 }
 

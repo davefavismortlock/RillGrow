@@ -2,9 +2,9 @@
    #define __SUBSURFACE_WATER_H__
 /*=========================================================================================================================================
 
- This is cell_subsurface_water.h: declarations for the RillGrow class used to represent subsurface water
+ This is m_Cell_subsurface_water.h: declarations for the RillGrow class used to represent subsurface water
 
- Copyright (C) 2020 David Favis-Mortlock
+ Copyright (C) 2023 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -32,7 +32,7 @@ private:
       m_dExfiltWater,                        // Exfiltrated soil water, as a depth (mm)
       m_dCumulExfiltWater;                   // Cumulative exfiltrated soil water, as a depth (mm)
 
-   CCell* m_pCell;
+   CCell* m_pm_Cell;
 
 public:
    CCellSubsurfaceWater(void);

@@ -2,9 +2,9 @@
    #define __SOIL_H__
 /*=========================================================================================================================================
 
-This is cell_soil.h: declaration for the RillGrow class used to represent the soil column
+This is m_Cell_soil.h: declaration for the RillGrow class used to represent the soil column
 
- Copyright (C) 2020 David Favis-Mortlock
+ Copyright (C) 2023 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -107,7 +107,7 @@ private:
 
    vector<CCellSoilLayer> m_VLayer;
 
-   CCell* m_pCell;
+   CCell* m_pm_Cell;
 
 public:
    CCellSoil(void);

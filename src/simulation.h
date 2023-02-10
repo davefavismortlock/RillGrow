@@ -5,7 +5,7 @@
 
  This is simulation.h: this class runs RillGrow simulations
 
- Copyright (C) 2020 David Favis-Mortlock
+ Copyright (C) 2023 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -134,9 +134,9 @@ private:
       m_ulRandSeed[NUMBER_OF_RNGS],
       m_ulVarChkStart,
       m_ulVarChkEnd,
-      m_ulNActiveCells,
+      m_ulNActivem_Cells,
       m_ulNWet,
-      m_ulMissingValueCells,
+      m_ulMissingValuem_Cells,
       m_ulNumHead;
 
    double
@@ -165,16 +165,16 @@ private:
       m_dStdDropDiameter,
       m_dRainSpeed,
       m_dPartKE,
-      m_VdSplashEffN,
-      m_dCellSizeKC,
-      m_dMeanCellWaterVol,
-      m_dStdCellWaterVol,
-      m_dCellSide,               // in mm
-      m_dCellDiag,
-      m_dInvCellSide,
-      m_dInvCellDiag,
-      m_dCellSquare,
-      m_dInvCellSquare,
+      m_dSplashEffN,
+      m_dm_CellSizeKC,
+      m_dMeanm_CellWaterVol,
+      m_dStdm_CellWaterVol,
+      m_dm_CellSide,               // in mm
+      m_dm_CellDiag,
+      m_dInvm_CellSide,
+      m_dInvm_CellDiag,
+      m_dm_CellSquare,
+      m_dInvm_CellSquare,
       m_dInvXGridMax,
       m_dRho,
       m_dG,
@@ -444,7 +444,7 @@ private:
       m_ofsSplashKETS,
       m_ofsSoilWaterTS;
 
-   CCell** Cell;                       // Pointer to 2D array of soil cell objects
+   CCell** m_Cell;                     // Pointer to 2D array of soil cell objects
    double** m_SSSWeightQuadrant;       // Pointer to 2D array for weights for soil shear stress spatial distribution, used for slumping
 
 private:
@@ -488,7 +488,7 @@ private:
    // Simulation routines
    int nDoSimulation(void);
    void CalcTimestep(void);
-   void MarkEdgeCells(void);
+   void MarkEdgem_Cells(void);
    void DoRunOnFromOneEdge(int const);
    void DoAllRain(void);
    void DoAllFlowRouting(void);
@@ -498,23 +498,23 @@ private:
    void DoAllHeadcutRetreat(void);
 
    // Lower-level simulation routines
-   void TryCellOutFlow(int const, int const);
-   void TryEdgeCellOutFlow(int const, int const, int const);
+   void Trym_CellOutFlow(int const, int const);
+   void TryEdgem_CellOutFlow(int const, int const, int const);
    int nFindSteepestEnergySlope(int const, int const, double const, int&, int&, double&, double&, double&);
-   void CellMoveWater(int const, int const, int const, int const, double const&, double&);
-   double dTimeToCrossCell(int const, int const, int const, double const, double, double const, C2DVec&, double&);
+   void m_CellMoveWater(int const, int const, int const, int const, double const&, double&);
+   double dTimeToCrossm_Cell(int const, int const, int const, double const, double, double const, C2DVec&, double&);
    double dCalcHydraulicRadius(int const, int const);
    double dCalcLawrenceFrictionFactor(int const, int const, double const, bool const);
    void CalcTransportCapacity(int const, int const, int const, int const, int const, double const, double const, double const, double const, double const, double const);
-   void DoCellErosion(int const, int const, int const, int const, int const, double const, double const, double const, double const, double const);
-   void DoCellSedLoadDeposit(int const, int const, double const, double const, double const);
+   void Dom_CellErosion(int const, int const, int const, int const, int const, double const, double const, double const, double const, double const);
+   void Dom_CellSedLoadDeposit(int const, int const, double const, double const, double const);
    double dCalcSplashCubicSpline(double) const;
    double dCalcLaplacian(int const, int const);
    int nFindSteepestSoilSurface(int const, int const, double const, int&, int&, double&, bool&);
-   void TryToppleCellsAbove(int const, int const, int);
-   void DoToppleCells(int const, int const, int const, int const, double, bool const);
-   void DoCellInfiltration(int const, int const, int const, CCellSoilLayer*, double const);
-   void DoCellExfiltration(int const, int const, int const, CCellSoilLayer*, double const);
+   void TryTopplem_CellsAbove(int const, int const, int);
+   void DoTopplem_Cells(int const, int const, int const, int const, double, bool const);
+   void Dom_CellInfiltration(int const, int const, int const, CCellSoilLayer*, double const);
+   void Dom_CellExfiltration(int const, int const, int const, CCellSoilLayer*, double const);
    void DoHeadcutRetreatMoveSoil(int const, int const, int const, int const, int const, double const);
    void DoDistributeShearStress(int const, int const, double const);
    double dGetReynolds(int const, int const);
@@ -568,13 +568,13 @@ public:
    CSimulation(void);
    ~CSimulation(void);
 
-   int nDoRun(int, char*[]);
+   int nDoSetUpRun(int, char*[]);
    void DoEndRun(int const);
 
    double dGetTimeStep(void) const;
    double dGetMissingValue(void) const;
-   double dGetCellSide(void) const;
-   double dGetCellSideDiag(void) const;
+   double dGetm_CellSide(void) const;
+   double dGetm_CellSideDiag(void) const;
 
    double dGetRandGaussian(void);
 };

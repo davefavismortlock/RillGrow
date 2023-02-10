@@ -1,10 +1,10 @@
-#ifndef __CELL_H__
-   #define __CELL_H__
+#ifndef __m_Cell_H__
+   #define __m_Cell_H__
 /*=========================================================================================================================================
 
- This is cell.h: the declaration of the class used to represent each soil cell object
+ This is m_Cell.h: the declaration of the class used to represent each soil m_Cell object
 
- Copyright (C) 2020 David Favis-Mortlock
+ Copyright (C) 2023 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -34,11 +34,11 @@ public:
 
 private:
    bool m_bHadHeadcutRetreat;
-   int m_nEdgeCell;
+   int m_nEdgem_Cell;
    double
       m_dBasementElevationation,                            // Elevation of bottom of lowest soil layer, in mm
       m_dInitialSoilSurfaceElevation,                       // Initial elevation of soil surface, in mm
-      m_dStoredRetreat[8];                                  // Stored (i.e. within-cell) headcut retreat along directions 1 to 8
+      m_dStoredRetreat[8];                                  // Stored (i.e. within-m_Cell) headcut retreat along directions 1 to 8
 
    CCellSoil m_Soil;
    CCellRainAndRunon m_RainAndRunOn;
@@ -51,9 +51,9 @@ public:
    CCell(void);
    ~CCell(void);
 
-   void SetEdgeCell(int const);
+   void SetEdgem_Cell(int const);
    int nGetEdge(void) const;
-   bool bIsEdgeCell(void) const;
+   bool bIsEdgem_Cell(void) const;
    bool bIsMissingValue(void) const;
    bool bIsMissingOrEdge(void) const;
 
@@ -82,4 +82,4 @@ public:
 
    void CalcIterTotalsAndInit(bool&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, double&, bool const);
 };
-#endif         // __CELL_H__
+#endif         // __m_Cell_H__

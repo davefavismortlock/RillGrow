@@ -2,9 +2,9 @@
    #define __SURFACE_WATER_H__
 /*=========================================================================================================================================
 
- This is cell_surface_water.h: declarations for the RillGrow class used to represent a cell's surface water
+ This is m_Cell_surface_water.h: declarations for the RillGrow class used to represent a m_Cell's surface water
 
- Copyright (C) 2020 David Favis-Mortlock
+ Copyright (C) 2023 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -38,8 +38,8 @@ private:
    double
       m_dSurfaceWaterDepth,                        // Water on soil surface, as a depth (mm)
       m_dCumulSurfaceWaterDepth,                   // Cumulative depth of water on soil surface (mm)
-      m_dSurfaceWaterDepthLost,                    // This-iteration depth lost via edge cell (mm)
-      m_dCumulSurfaceWaterDepthLost,               // Cumulative depth lost via edge cell (mm)
+      m_dSurfaceWaterDepthLost,                    // This-iteration depth lost via edge m_Cell (mm)
+      m_dCumulSurfaceWaterDepthLost,               // Cumulative depth lost via edge m_Cell (mm)
       m_dStreamPower,
       m_dTransportCapacity,
       m_dFrictionFactor;
@@ -50,7 +50,7 @@ private:
       m_vDWFlowVelocity,                           // Depth-weighted flow velocity
       m_vCumulDWFlowVelocity;                      // Cumulative time-weighted depth-weighted flow velocity
 
-   CCell* m_pCell;
+   CCell* m_pm_Cell;
 
 public:
    CCellSurfaceWater(void);

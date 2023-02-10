@@ -1,8 +1,8 @@
 /*=========================================================================================================================================
 
- This is cell_surface_water.cpp: implementations of the RillGrow class used to represent a cell's surface water
+ This is m_Cell_surface_water.cpp: implementations of the RillGrow class used to represent a m_Cell's surface water
 
- Copyright (C) 2020 David Favis-Mortlock
+ Copyright (C) 2023 David Favis-Mortlock
 
  ==========================================================================================================================================
 
@@ -34,7 +34,7 @@ CCellSurfaceWater::CCellSurfaceWater(void)
    m_dTransportCapacity(0),
    m_dFrictionFactor(0)
 {
-   m_pCell = NULL;
+   m_pm_Cell = NULL;
 }
 
 CCellSurfaceWater::~CCellSurfaceWater(void)
@@ -44,7 +44,7 @@ CCellSurfaceWater::~CCellSurfaceWater(void)
 
 void CCellSurfaceWater::SetParent(CCell* const pParent)
 {
-   m_pCell = pParent;
+   m_pm_Cell = pParent;
 }
 
 void CCellSurfaceWater::SetFlowThisIter(void)
@@ -94,17 +94,17 @@ int CCellSurfaceWater::nGetFlowDirection(void) const
    return m_nFlowDirection;
 }
 
-// Adds to this cell's surface water depth. Also handles the this-iteration total of surface water
+// Adds to this m_Cell's surface water depth. Also handles the this-iteration total of surface water
 void CCellSurfaceWater::AddSurfaceWater(double const dAddDepth)
 {
    m_dSurfaceWaterDepth += dAddDepth;
    m_dCumulSurfaceWaterDepth += dAddDepth;
 
-   // And make sure that this cell is not processed a second time this iteration
+   // And make sure that this m_Cell is not processed a second time this iteration
    m_bFlowThisIter = true;
 }
 
-// Removes from this cell's surface water depth; if there is insufficient water, then the function returns false and sets the parameter to the depth actually removed, it also  handles the per-simulation count of wet cells and the per-iteration total of surface water
+// Removes from this m_Cell's surface water depth; if there is insufficient water, then the function returns false and sets the parameter to the depth actually removed, it also  handles the per-simulation count of wet m_Cells and the per-iteration total of surface water
 void CCellSurfaceWater::RemoveSurfaceWater(double& dRemoveDepth)
 {
    if (dRemoveDepth > m_dSurfaceWaterDepth)
@@ -119,7 +119,7 @@ void CCellSurfaceWater::RemoveSurfaceWater(double& dRemoveDepth)
    }
 }
 
-// Sets this cell's surface water depth to zero, also decrements the count of wet cells and removes from the this-iteration surface water total
+// Sets this m_Cell's surface water depth to zero, also decrements the count of wet m_Cells and removes from the this-iteration surface water total
 void CCellSurfaceWater::SetSurfaceWaterZero(void)
 {
    m_dCumulSurfaceWaterDepth -= m_dSurfaceWaterDepth;
@@ -128,7 +128,7 @@ void CCellSurfaceWater::SetSurfaceWaterZero(void)
    this->ZeroAllFlowVelocity();
 }
 
-// Returns the depth of surface water (in mm) on this cell
+// Returns the depth of surface water (in mm) on this m_Cell
 double CCellSurfaceWater::dGetSurfaceWaterDepth(void) const
 {
    return m_dSurfaceWaterDepth;
@@ -147,20 +147,20 @@ double CCellSurfaceWater::dGetCumulSurfaceWater(void) const
    return m_dCumulSurfaceWaterDepth;
 }
 
-// Increments the total depth of water lost from the grid via this cell (only meaningful for edge cells)
+// Increments the total depth of water lost from the grid via this m_Cell (only meaningful for edge m_Cells)
 void CCellSurfaceWater::AddSurfaceWaterLost(double const dAddWater)
 {
    m_dSurfaceWaterDepthLost += dAddWater;
    m_dCumulSurfaceWaterDepthLost += dAddWater;
 }
 
-// Returns the this-iteration depth of water lost from the grid via this cell (only meaningful for edge cells)
+// Returns the this-iteration depth of water lost from the grid via this m_Cell (only meaningful for edge m_Cells)
 double CCellSurfaceWater::dGetSurfaceWaterLost(void) const
 {
    return m_dSurfaceWaterDepthLost;
 }
 
-// Returns the cumulative depth of water lost from the grid via this cell (only meaningful for edge cells)
+// Returns the cumulative depth of water lost from the grid via this m_Cell (only meaningful for edge m_Cells)
 double CCellSurfaceWater::dGetCumulSurfaceWaterLost(void) const
 {
    return m_dCumulSurfaceWaterDepthLost;
@@ -187,7 +187,7 @@ void CCellSurfaceWater::ZeroAllFlowVelocity(void)
    m_vDWFlowVelocity.y = 0;
 }
 
-// Sets the vector which stores the surface water velocity for a cell
+// Sets the vector which stores the surface water velocity for a m_Cell
 void CCellSurfaceWater::SetFlowVelocity(const C2DVec& vNewVel)
 {
    m_vFlowVelocity.x = vNewVel.x;
@@ -220,13 +220,13 @@ void CCellSurfaceWater::SetFlowVelocity(double const dInx, double const dIny)
    m_vCumulFlowVelocity.y += (dIny * dTimeStep);
 }
 
-// Returns the surface water velocity for a cell as a pointer to an existing vector
+// Returns the surface water velocity for a m_Cell as a pointer to an existing vector
 C2DVec* CCellSurfaceWater::vecGetFlowVel(void)
 {
    return &m_vFlowVelocity;
 }
 
-// Returns the surface water velocity for a cell as a scalar
+// Returns the surface water velocity for a m_Cell as a scalar
 double CCellSurfaceWater::dGetFlowSpd(void) const
 {
    return m_vFlowVelocity.dToScalar();
@@ -240,7 +240,7 @@ double CCellSurfaceWater::dCumulFlowSpeed(void) const
 }
 
 
-// Sets the vector which stores the depth-weighted surface water velocity for a cell
+// Sets the vector which stores the depth-weighted surface water velocity for a m_Cell
 void CCellSurfaceWater::SetDepthWeightedFlowVelocity(const C2DVec& vNewVel)
 {
    m_vDWFlowVelocity.x = vNewVel.x;
@@ -273,25 +273,25 @@ void CCellSurfaceWater::SetDepthWeightedFlowVelocity(double const dInX, double c
    m_vCumulFlowVelocity.y += (dInY * dTimeStep);
 }
 
-// Returns the depth-weighted surface water velocity for a cell as a pointer to an existing vector
+// Returns the depth-weighted surface water velocity for a m_Cell as a pointer to an existing vector
 C2DVec* CCellSurfaceWater::vecGetDWFlowVel(void)
 {
    return &m_vDWFlowVelocity;
 }
 
-// Returns the x component of depth-weighted surface water velocity for a cell as a double
+// Returns the x component of depth-weighted surface water velocity for a m_Cell as a double
 double CCellSurfaceWater::dGetDWFlowVelX(void) const
 {
    return m_vDWFlowVelocity.x;
 }
 
-// Returns the y component of depth-weighted surface water velocity for a cell as a double
+// Returns the y component of depth-weighted surface water velocity for a m_Cell as a double
 double CCellSurfaceWater::dGetDWFlowVelY(void) const
 {
    return m_vDWFlowVelocity.y;
 }
 
-// Returns the depth-weighted surface water velocity for a cell as a scalar
+// Returns the depth-weighted surface water velocity for a m_Cell as a scalar
 double CCellSurfaceWater::dGetDWFlowSpd(void) const
 {
    return m_vDWFlowVelocity.dToScalar();
@@ -305,40 +305,40 @@ double CCellSurfaceWater::dGetCumulDWFlowSpd(void) const
 }
 
 
-// Sets a cell's surface water streampower
+// Sets a m_Cell's surface water streampower
 void CCellSurfaceWater::SetStreamPower(double const dNewStreamPower)
 {
    m_dStreamPower = dNewStreamPower;
 }
 
-// Returns the surface water streampower value for this cell
+// Returns the surface water streampower value for this m_Cell
 double CCellSurfaceWater::dGetStreamPower(void) const
 {
    return m_dStreamPower;
 }
 
 
-// Sets this cell's transport capacity: as with all others, it's a depth equivalent i.e. what depth of sediment could be transported
+// Sets this m_Cell's transport capacity: as with all others, it's a depth equivalent i.e. what depth of sediment could be transported
 void CCellSurfaceWater::SetTransportCapacity(double const dNewTC)
 {
    m_dTransportCapacity = dNewTC;
 }
 
-// Returns the transport capacity for this cell
+// Returns the transport capacity for this m_Cell
 double CCellSurfaceWater::dGetTransportCapacity(void) const
 {
    return m_dTransportCapacity;
 }
 
 
-// Sets this cell's friction factor
+// Sets this m_Cell's friction factor
 void CCellSurfaceWater::SetFrictionFactor(double const dNewFrictionFactor)
 {
    m_dFrictionFactor = dNewFrictionFactor;
 }
 
 
-// Returns the friction factor for this cell
+// Returns the friction factor for this m_Cell
 double CCellSurfaceWater::dGetFrictionFactor(void) const
 {
    return (m_dFrictionFactor);

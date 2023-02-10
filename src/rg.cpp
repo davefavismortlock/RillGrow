@@ -1,22 +1,20 @@
 /*=========================================================================================================================================
 
- This is rg.cpp: the start-up routine for RillGrow. This software simulates the growth and development of rills on a bare soil area as a
- self-organising complex system.
+This is rg.cpp: the start-up routine for RillGrow. This software simulates the growth and development of rills on a bare soil area as a self-organising complex system.
 
- Copyright (C) 2020 David Favis-Mortlock
+Copyright (C) 2023 David Favis-Mortlock
 
- ==========================================================================================================================================
+==========================================================================================================================================
 
- This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by
- the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
+This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
 
- This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
- You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation,
- Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 =========================================================================================================================================*/
+// TODO Rename m_Cell to m_m_Cell (see parallel version)
+
 // TODO check all uses of strcpy for buffer overflow, see http://cwe.mitre.org/data/definitions/676.html#Demonstrative%20Examples
 // TODO Read in a saved CSimulation object (use Boost for this: http://www.boost.org/doc/libs/1_39_0/libs/serialization/doc/index.html), and save one at the end; so can restart
 // TODO use unsigned integers where poss; check for integer overflow, http://cwe.mitre.org/data/definitions/190.html#Demonstrative%20Examples
@@ -27,10 +25,9 @@
 #include "rg.h"
 #include "simulation.h"
 
-
 /*=========================================================================================================================================
 
-  RillGrow's main function
+RillGrow's main function
 
 =========================================================================================================================================*/
 int main (int argc, char* argv[])
@@ -38,7 +35,7 @@ int main (int argc, char* argv[])
    CSimulation* pRun = new CSimulation;
 
    // Run the simulation and then check how it ends
-   int nRtn = pRun->nDoRun(argc, argv);
+   int nRtn = pRun->nDoSetUpRun(argc, argv);
    pRun->DoEndRun(nRtn);
 
    delete pRun;
