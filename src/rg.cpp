@@ -13,8 +13,6 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 =========================================================================================================================================*/
-// TODO Rename m_Cell to m_m_Cell (see parallel version)
-
 // TODO check all uses of strcpy for buffer overflow, see http://cwe.mitre.org/data/definitions/676.html#Demonstrative%20Examples
 // TODO Read in a saved CSimulation object (use Boost for this: http://www.boost.org/doc/libs/1_39_0/libs/serialization/doc/index.html), and save one at the end; so can restart
 // TODO use unsigned integers where poss; check for integer overflow, http://cwe.mitre.org/data/definitions/190.html#Demonstrative%20Examples
