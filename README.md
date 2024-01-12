@@ -2,7 +2,7 @@
 
 RillGrow simulates the growth and development of rills on a bare soil area: the rills are a self-organizing complex system.
 
-For discussions regarding aspects of this model, many thanks to:
+For inspiration and for discussions regarding aspects of this model, many thanks to:
 <ul>
 <li>John Boardman (University of Oxford)</li>
 <li>Bob Evans (Anglia Polytechnic University)</li>
