@@ -1,37 +1,31 @@
 /*=========================================================================================================================================
 
- This is simulate_infilt.cpp: it simulates infiltration
+This is infiltration.cpp: it simulates infiltration for RillGrow
 
- Copyright (C) 2023 David Favis-Mortlock
+Copyright (C) 2025 David Favis-Mortlock
 
- ==========================================================================================================================================
+==========================================================================================================================================
 
- This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by
- the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
+This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
 
- This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
- You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation,
- Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 =========================================================================================================================================*/
 #include "rg.h"
 #include "simulation.h"
 #include "cell.h"
 
-
-/*=========================================================================================================================================
-
- Sets an initial value for subsurface water for every m_Cell
-
-=========================================================================================================================================*/
+//=========================================================================================================================================
+//! Sets an initial value for subsurface water for every cell
+//=========================================================================================================================================
 void CSimulation::InitSoilWater(void)
 {
    // Do this for all soil layers
    for (int nLayer = 0; nLayer < m_nNumSoilLayers; nLayer++)
    {
-      // Calculate and set initial soil water content in each layer (as a depth equivalent) on all m_Cells
+      // Calculate and set initial soil water content in each layer (as a depth equivalent) on all cells
       for (int nX = 0; nX < m_nXGridMax; nX++)
       {
          for (int nY = 0; nY < m_nYGridMax; nY++)
@@ -57,12 +51,9 @@ void CSimulation::InitSoilWater(void)
    }
 }
 
-
-/*=========================================================================================================================================
-
- This calculates subsurface water movement for all m_Cells
-
-=========================================================================================================================================*/
+//=========================================================================================================================================
+//! This calculates subsurface water movement for all cells
+//=========================================================================================================================================
 void CSimulation::DoAllInfiltration()
 {
    for (int nX = 0; nX < m_nXGridMax; nX++)
@@ -87,11 +78,11 @@ void CSimulation::DoAllInfiltration()
             if ((dDiff + TOLERANCE) < 0)
             {
                // Yes, so do exfilt
-               Dom_CellExfiltration(nX, nY, nLayer, pLayer, -dDiff);
+               DoCellExfiltration(nX, nY, nLayer, pLayer, -dDiff);
 
                if (nLayer == 0)
                   // This is the top layer
-                  m_dSinceLastExfiltration += dDiff;
+                  m_dEndOfIterExfiltration += dDiff;
 
 //                m_ofsLog << m_ulIter << ": exfiltration " << -dDiff << " from layer " << nLayer << " at [" << nX << "][" << nY << "] since dLayerMaxSoilWaterDepth = " << dLayerMaxSoilWaterDepth << ", dLayerSoilWaterDepth = " << dLayerSoilWaterDepth << endl;
 
@@ -104,11 +95,11 @@ void CSimulation::DoAllInfiltration()
                // Yes, so do infilt
 //                m_ofsLog << m_ulIter << ": infiltration " << dDiff << " into layer " << nLayer << " at [" << nX << "][" << nY << "] since dLayerMaxSoilWaterDepth = " << dLayerMaxSoilWaterDepth << ", dLayerSoilWaterDepth = " << dLayerSoilWaterDepth << endl;
 
-               Dom_CellInfiltration(nX, nY, nLayer, pLayer, dDiff);
+               DoCellInfiltration(nX, nY, nLayer, pLayer, dDiff);
 
                if (nLayer == 0)
                   // This is the top layer
-                  m_dSinceLastInfiltration += dDiff;
+                  m_dEndOfIterInfiltration += dDiff;
             }
 
             // Update the this-operation total
@@ -118,14 +109,10 @@ void CSimulation::DoAllInfiltration()
    }
 }
 
-
-/*=========================================================================================================================================
-
- This member function of CSimulation calculates water loss from infilt for one m_Cell using the EPA Explicit Green-Ampt Model (GAEXP), see
- http://www.epa.gov/ada/csmos/ninflmod.html
-
-=========================================================================================================================================*/
-void CSimulation::Dom_CellInfiltration(int const nX, int const nY, int const nLayer, CCellSoilLayer* pLayer, double const dDeficit)
+//=========================================================================================================================================
+//! This member function of CSimulation calculates water loss from infilt for one cell using the EPA Explicit Green-Ampt Model (GAEXP), see https://www.epa.gov/water-research/infiltration-models#Explicitgreen
+//=========================================================================================================================================
+void CSimulation::DoCellInfiltration(int const nX, int const nY, int const nLayer, CCellSoilLayer* pLayer, double const dDeficit)
 {
    // The layer is not fully saturated, so maybe can get water from the layer above, or from surface water if this is the top layer
    CCellSoilLayer* pLayerAbove = NULL;
@@ -198,9 +185,9 @@ void CSimulation::Dom_CellInfiltration(int const nX, int const nY, int const nLa
 
          m_Cell[nX][nY].pGetSoilWater()->InfiltrateAndMakeDry(dClayDeposited, dSiltDeposited, dSandDeposited);
 
-         m_dSinceLastClayInfiltDeposit += dClayDeposited;
-         m_dSinceLastSiltInfiltDeposit += dSiltDeposited;
-         m_dSinceLastSandInfiltDeposit += dSandDeposited;
+         m_dEndOfIterClayInfiltDeposit += dClayDeposited;
+         m_dEndOfIterSiltInfiltDeposit += dSiltDeposited;
+         m_dEndOfIterSandInfiltDeposit += dSandDeposited;
       }
       else
       {
@@ -211,13 +198,10 @@ void CSimulation::Dom_CellInfiltration(int const nX, int const nY, int const nLa
    }
 }
 
-
-/*=========================================================================================================================================
-
-Calculates water loss from exfilt for one m_Cell TODO this needs to be looked at
-
-=========================================================================================================================================*/
-void CSimulation::Dom_CellExfiltration(int const nX, int const nY, int const nLayer, CCellSoilLayer* pLayer, double const dExcess)
+//=========================================================================================================================================
+//! Calculates water loss from exfilt for one cell TODO this needs to be looked at
+//=========================================================================================================================================
+void CSimulation::DoCellExfiltration(int const nX, int const nY, int const nLayer, CCellSoilLayer* pLayer, double const dExcess)
 {
    // The current soil layer is over-saturated, so we must try to get rid of some water from it. First try to move it downwards to the layer below
    if (nLayer < m_nNumSoilLayers-1)

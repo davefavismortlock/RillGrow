@@ -1,8 +1,8 @@
 /*=========================================================================================================================================
 
-This is rg.cpp: the start-up routine for RillGrow. This software simulates the growth and development of rills on a bare soil area as a self-organising complex system.
+This is rg.cpp: the start-up routine for RillGrow (serial). This software simulates the growth and development of rills on a bare soil area as a self-organising complex system.
 
-Copyright (C) 2023 David Favis-Mortlock
+Copyright (C) 2025 David Favis-Mortlock
 
 ==========================================================================================================================================
 
@@ -13,6 +13,11 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 =========================================================================================================================================*/
+// TODO Add friction factor equations
+// TODO finish extra GIS outputs
+// TODO Need to re-arrange read_input, see TODO there
+// TODO Check GDAL error message in gis.cpp, see TODO there
+// TODO Manning equation
 // TODO check all uses of strcpy for buffer overflow, see http://cwe.mitre.org/data/definitions/676.html#Demonstrative%20Examples
 // TODO Read in a saved CSimulation object (use Boost for this: http://www.boost.org/doc/libs/1_39_0/libs/serialization/doc/index.html), and save one at the end; so can restart
 // TODO use unsigned integers where poss; check for integer overflow, http://cwe.mitre.org/data/definitions/190.html#Demonstrative%20Examples
@@ -23,11 +28,9 @@ You should have received a copy of the GNU General Public License along with thi
 #include "rg.h"
 #include "simulation.h"
 
-/*=========================================================================================================================================
-
-RillGrow's main function
-
-=========================================================================================================================================*/
+//=========================================================================================================================================
+//! The RillGrow (serial version) main function
+//=========================================================================================================================================
 int main (int argc, char* argv[])
 {
    CSimulation* pRun = new CSimulation;
