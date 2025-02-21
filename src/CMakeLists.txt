@@ -4,31 +4,50 @@
 #
 #########################################################################################
 set (CMAKE_LEGACY_CYGWIN_WIN32 0) # Remove when CMake >= 2.8.4 is required
-message ("Creating Makefile for RillGrow (serial)")
+message ("Creating Makefile for RillGrow serial")
 message ("")
 
 message ("Checking compiler")
-cmake_minimum_required (VERSION 2.8.12)
-enable_language (CXX)
+cmake_minimum_required (VERSION 3.5)
 set (FIND_LIBRARY_USE_LIB64_PATHS true)
 
 # We need c++11, first set the c++11 flag (note that later on we check the compiler for c++11 capability)
 set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -std=c++11")
 set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++11")
 
+# Create a .json file for use with cppcheck and clang-tidy
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 #########################################################################################
 project (RG)
-file(GLOB RG_SOURCE_FILES *.cpp)
+enable_language (CXX)
+
 set (RG_EXECUTABLE rg)
 set (RG_INSTALL_DIR "$ENV{HOME}/erosion/rg")
+set (RG_SOURCE_DIR "${RG_INSTALL_DIR}/src")
 set (CMAKE_PREFIX_PATH "$ENV{HOME}")
+file(GLOB RG_SOURCE_FILES ${RG_SOURCE_DIR}/*.cpp)
 
 #
 # If build type not specified, assume a Debug build
 #
-if (NOT CMAKE_BUILD_TYPE)
-   set (CMAKE_BUILD_TYPE Debug)
-endif (NOT CMAKE_BUILD_TYPE)
+#variable_watch(CMAKE_BUILD_TYPE)
+# if (NOT CMAKE_BUILD_TYPE)
+#    message (FATAL_ERROR "Build type not specified, CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+# #   set (CMAKE_BUILD_TYPE Debug)
+# endif (NOT CMAKE_BUILD_TYPE)
+
+# IF (CMAKE_BUILD_TYPE MATCHES Debug)
+#   message("Debug build.")
+#   set (CMAKE_BUILD_TYPE Debug FORCE)
+# ELSEIF(CMAKE_BUILD_TYPE MATCHES Release)
+#   message("Release build.")
+#   set (CMAKE_BUILD_TYPE Release FORCE)
+# ELSE()
+#   message("Some other build type.")
+# ENDIF()
+
+
 
 #
 # Set up the compiler flags and build directories for the various build types
@@ -70,7 +89,7 @@ if (CMAKE_COMPILER_IS_GNUCC)
    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 
    if (CMAKE_BUILD_TYPE MATCHES Debug)
-      set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wpointer-arith -Wconversion -Wcast-qual -Wcast-align -Wwrite-strings -Wredundant-decls -Wno-strict-overflow -Wshadow -Wuninitialized -Wnull-dereference -Wformat -Wformat-overflow -Wformat-signedness -Wuseless-cast -Wempty-body")
+      set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wpointer-arith -Wconversion -Wcast-qual -Wcast-align -Wwrite-strings -Wredundant-decls -Wno-strict-overflow -Wshadow -Wuninitialized -Wnull-dereference -Wformat -Wformat-overflow -Wformat-signedness -Wuseless-cast -Wempty-body -Wfloat-equal")
 
       if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "4.8")
          # Undefined behaviour sanitizer introduced with gcc 4.9, see http://developerblog.redhat.com/2014/10/16/gcc-undefined-behavior-sanitizer-ubsan/
@@ -159,8 +178,8 @@ set (CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} ${GDAL_INCLUDE_DIRS})
 #
 # Finally, the important bits
 #
-include_directories (${RG_SOURCE_DIR} ${CMAKE_INCLUDE_PATH})
-add_executable (${RG_EXECUTABLE} ${RG_SOURCE_FILES})
+include_directories (${RG_SOURCE_DIR} ${RG_SHARED_DIR} ${CMAKE_INCLUDE_PATH})
+add_executable (${RG_EXECUTABLE} ${RG_SOURCE_FILES} ${RG_SHARED_FILES})
 target_link_libraries (${RG_EXECUTABLE} ${LIBS})
 install (TARGETS ${RG_EXECUTABLE} RUNTIME DESTINATION ${RG_INSTALL_DIR})
 
@@ -172,13 +191,32 @@ set_property (TARGET ${RG_EXECUTABLE} PROPERTY CXX_STANDARD_REQUIRED ON)
 #
 # Tell the user what has happened
 #
-message ("Serial Makefile written")
+message ("RillGrow serial Makefile written")
+message (STATUS "CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 message (STATUS "CMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}")
 message (STATUS "CMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}")
 #message (STATUS "CMAKE_RUNTIME_OUTPUT_DIRECTORY=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 message (STATUS "CMAKE_INCLUDE_PATH=${CMAKE_INCLUDE_PATH}")
 message (STATUS "LIBS=${LIBS}")
-message (STATUS "RG_INSTALL_DIR=${RG_INSTALL_DIR}")
+#message (STATUS "RG_SOURCE_FILES= ${RG_SOURCE_FILES}")
+message (STATUS "RG_SOURCE_DIR=${RG_SOURCE_DIR}")
 message (STATUS "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}")
-message (STATUS "CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+message (STATUS "RG_INSTALL_DIR=${RG_INSTALL_DIR}")
 
+#########################################################################################
+# Some extra messages
+if (CMAKE_BUILD_TYPE_LC STREQUAL "valgrind")
+   message ("")
+   message ("When the build has finished, use valgrind/callgrind as follows.")
+   message ("")
+   message ("To check for memory leaks:")
+   message ("valgrind --leak-check=yes --suppressions=system-libs.supp --track-origins=yes ./cme &> valgrind.txt")
+   message ("Then look at valgrind.txt")
+   message ("")
+   message ("Or to check coverage:")
+   message ("valgrind --tool=callgrind ./cme")
+   message ("Then run:")
+   message ("callgrind_annotate --auto=yes callgrind.out.XXXXX > ./profile/callgrind/callgrind.txt")
+   message ("where XXXXX is the number of the callgrind.out.XXXXX that was produced by valgrind. Then look at ./profile/callgrind.txt")
+   message ("")
+endif ()

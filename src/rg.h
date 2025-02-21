@@ -1,19 +1,36 @@
 #ifndef __RG_H__
    #define __RG_H__
+
+/*!
+\mainpage
+\section intro_sec Introduction
+<b>RillGrow</b> simulates soil erosion by water as a self-organising complex system: rills are formed emergently by overland flow. Development of RillGrow is ongoing. Watch this space!\n\n
+
+RillGrow was devised and constructed by David Favis-Mortlock (British Geological Survey: dfm1@bgs.ac.uk and d.favismortlock@gmail.com; formerly at the Environmental Change Institute, University of Oxford). I am very grateful to the following for inspiration and for discussions regarding aspects of this model: John Boardman (University of Oxford), Bob Evans (Anglia Polytechnic University), Peter Kinnell (University of Canberra), Mike Kirkby (University of Leeds), Mark Nearing (USDA), Tony Parsons (University of Sheffield), Olivier Planchon (INRA), and (the late) John Thornes (King's College London).\nzn
+
+See <a href="https://github.com/davefavismortlock/RillGrow" target="_blank">https://github.com/davefavismortlock/RillGrow</a> for the up-to-date version of the source code, and <a href="http://rillgrow.co.uk" target="_blank">http://rillgrow.co.uk</a> for more information.\n\n
+
+\section install_sec Installation
+
+\subsection step1 Step 1: Opening the box
+
+\subsection step2 Step 2: Running RillGrow
+
+\subsection step3 Step 3: Building datasets
+
+\file rg.h
+\brief This file contains global definitions for RillGrow
+\details TODO
+\author David Favis-Mortlock
+\date 2025
+\copyright GNU General Public License
+*/
 /*=========================================================================================================================================
+This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
 
- This is rg.h: contains global definitions for RillGrow
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
- Copyright (C) 2023 David Favis-Mortlock
-
- ==========================================================================================================================================
-
- This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
-
- This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
- You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-
+You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 =========================================================================================================================================*/
 #include <stdlib.h>
 
@@ -29,6 +46,7 @@ using std::ios;
 
 #include <iomanip>
 using std::setw;
+using std::setfill;
 using std::setiosflags;
 using std::setprecision;
 
@@ -53,44 +71,51 @@ using std::to_string;
 #include <gdal_priv.h>
 #include <cpl_string.h>
 
+#ifdef _DEBUG
+   #define DEBUG_SEDLOAD(x) DEBUGShowSedLoad(x);
+#else
+   #define DEBUG_SEDLOAD(x)
+#endif
 
 //========================================================== Platform-Specific Stuff ======================================================
-#if defined _MSC_VER
-   // MS Visual C++, byte order is IEEE little-endian, 32-bit
-   #include <windows.h>
-   #include <direct.h>                                // For chdir()
-   #include <io.h>                                    // For isatty()
-   #include <psapi.h>                                 // Not available if compiling under Win 9.x?
-//   #pragma warning(disable:4786)                    // Disable warning C4786: symbol greater than 255 characters, since using part of STL
-//   #define WIN32_LEAN_AND_MEAN                      // See <windows.h>
-   #if defined _DEBUG
-      #include <crtdbg.h>                             // Useful
-   #endif
+// #if defined _MSC_VER
+//    // MS Visual C++, byte order is IEEE little-endian, 32-bit
+//    #include <windows.h>
+//    #include <direct.h>                                // For chdir()
+//    #include <io.h>                                    // For isatty()
+//    #include <psapi.h>                                 // Not available if compiling under Win 9.x?
+// //   #pragma warning(disable:4786)                    // Disable warning C4786: symbol greater than 255 characters, since using part of STL
+// //   #define WIN32_LEAN_AND_MEAN                      // See <windows.h>
+//    #if defined _DEBUG
+//       #include <crtdbg.h>                             // Useful
+//    #endif
+//
+//    // clock_t is a signed long: see <time.h>
+//    const long     CLOCK_T_MIN                               = LONG_MIN;
+//    double const   CLOCK_T_RANGE                             = static_cast<double>(LONG_MAX) - static_cast<double>(CLOCK_T_MIN);
+//    #if defined _M_ALPHA
+//       string const      PLATFORM                            = "Alpha/MS Visual C++";
+//    #elif defined _M_IX86
+//       string const      PLATFORM                            = "Intel x86/MS Visual C++";
+//    #elif defined _M_MPPC
+//       string const      PLATFORM                            = "Power PC/MS Visual C++";
+//    #elif defined _M_MRX000
+//       string const      PLATFORM                            = "MIPS/MS Visual C++";
+//    #else
+//       string const      PLATFORM                            = "Other/MS Visual C++";
+//    #endif
+// #endif
+//
+// #if defined __BCPLUSPLUS__
+//    // Borland C++, byte order is IEEE little-endian, 32-bit
+//
+//    // clock_t is a signed long: see <time.h>
+//    const long     CLOCK_T_MIN                               = LONG_MIN;
+//    double const   CLOCK_T_RANGE                             = static_cast<double>(LONG_MAX) - static_cast<double>(CLOCK_T_MIN);
+//    string const      PLATFORM                               = "Intel x86/Borland C++";
+// #endif
 
-   // clock_t is a signed long: see <time.h>
-   const long     CLOCK_T_MIN                               = LONG_MIN;
-   double const   CLOCK_T_RANGE                             = static_cast<double>(LONG_MAX) - static_cast<double>(CLOCK_T_MIN);
-   #if defined _M_ALPHA
-      string const      PLATFORM                            = "Alpha/MS Visual C++";
-   #elif defined _M_IX86
-      string const      PLATFORM                            = "Intel x86/MS Visual C++";
-   #elif defined _M_MPPC
-      string const      PLATFORM                            = "Power PC/MS Visual C++";
-   #elif defined _M_MRX000
-      string const      PLATFORM                            = "MIPS/MS Visual C++";
-   #else
-      string const      PLATFORM                            = "Other/MS Visual C++";
-   #endif
-
-#elif defined __BCPLUSPLUS__
-   // Borland C++, byte order is IEEE little-endian, 32-bit
-
-   // clock_t is a signed long: see <time.h>
-   const long     CLOCK_T_MIN                               = LONG_MIN;
-   double const   CLOCK_T_RANGE                             = static_cast<double>(LONG_MAX) - static_cast<double>(CLOCK_T_MIN);
-   string const      PLATFORM                               = "Intel x86/Borland C++";
-
-#elif defined __GNUG__
+#if defined __GNUG__
    // GNU C++
    #include <sys/resource.h>                             // needed for CalcProcessStats()
 
@@ -124,26 +149,26 @@ using std::to_string;
          double const CLOCK_T_RANGE                         = static_cast<double>(LONG_MAX) - static_cast<double>(CLOCK_T_MIN);
       #endif
    #endif
+#endif
 
-#elif defined __HP_aCC
-   // HP-UX aCC, byte order is big-endian, can be either 32-bit or 64-bit
-   string const      PLATFORM                               = "HP-UX aC++";
-   // clock_t is an unsigned long: see <time.h>
-   const unsigned long CLOCK_T_MIN                          = 0;
-#ifdef __ia64
-   // However, clock_t is a 32-bit unsigned long and we are using 64-bit unsigned longs here
-   double const CLOCK_T_RANGE                               = 4294967295UL;   // crude, improve
-#else
-   double const CLOCK_T_RANGE                               = static_cast<double>(ULONG_MAX);
-#endif
-#endif
+// #if defined __HP_aCC
+//    // HP-UX aCC, byte order is big-endian, can be either 32-bit or 64-bit
+//    string const      PLATFORM                               = "HP-UX aC++";
+//    // clock_t is an unsigned long: see <time.h>
+//    const unsigned long CLOCK_T_MIN                          = 0;
+// #endif
+
+// #ifdef __ia64
+//    // However, clock_t is a 32-bit unsigned long and we are using 64-bit unsigned longs here
+//    double const CLOCK_T_RANGE                               = 4294967295UL;   // crude, improve
+// #endif
 
 //========================================================== Hard-Wired Constants =========================================================
-string const   PROGNAME                                     = "RillGrow serial (10 Feb 2023 version)";
+string const   PROGNAME                                     = "RillGrow serial 1.1.02 (21 Feb 2025)";
 string const   SHORTNAME                                    = "RG";
 string const   RG_INI                                       = "rg.ini";
 
-string const   COPYRIGHT                                    = "(C) 2023 David Favis-Mortlock (dfm1@bgs.ac.uk)";
+string const   COPYRIGHT                                    = "(C) 2025 David Favis-Mortlock (d.favismortlock@gmail.com and dfm1@bgs.ac.uk)";
 string const   LINE                                         = "-------------------------------------------------------------------------------";
 string const   DISCLAIMER1                                  = "This program is distributed in the hope that it will be useful, but WITHOUT ANY";
 string const   DISCLAIMER2                                  = "WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A";
@@ -161,7 +186,7 @@ string const   USAGE1                                       = "  --gdal         
 string const   USAGE2                                       = "  --about            Information about this program";
 string const   USAGE3                                       = "  --help             Display this text";
 string const   USAGE4                                       = "  --home=DIRECTORY   Specify the location of the .ini file etc.";
-string const   USAGE5                                       = "  --datafile =FILE    Specify the location and name of the main datafile";
+string const   USAGE5                                       = "  --datafile=FILE    Specify the location and name of the main datafile";
 
 string const   START_NOTICE                                 = "- Started on ";
 string const   INIT_NOTICE                                  = "- Initializing";
@@ -198,12 +223,13 @@ int const      MAX_RECURSION_DEPTH                          = 100;              
 // TODO does this still work on 64-bit platforms?
 const unsigned long  MASK                                   = 0xfffffffful;
 
+double const   NODATA                                       = -9999;
 double const   PI                                           = 3.141592653589793238462643;
 double const   INIT_MAX_SPEED_GUESS                         = 10;                // mm/sec
 double const   COURANT_ALPHA                                = 0.95;              // i.e. 5% margin
-double const   TOLERANCE                                    = 1e-6;              // In mm. If too small (e.g. 1e-10), get spurious "rounding" errors
-double const   WATER_TOLERANCE                              = 1e-6;              // In mm, ditto
-double const   SEDIMENT_TOLERANCE                           = 1e-5;              // In mm, ditto
+double const   TOLERANCE                                    = 1e-10;              // In mm. If too small (e.g. 1e-10), get spurious "rounding" errors
+double const   WATER_TOLERANCE                              = 1e-10;              // In mm, ditto
+double const   SEDIMENT_TOLERANCE                           = 1e-10;              // In mm, ditto
 
 double const   ERROR_FLOW_DETACH_MAX                        = 10;                // In mm, is max avg depth per timestep before aborting run
 double const   ERROR_FLOW_DEPOSIT_MAX                       = 10;                // Ditto
@@ -221,23 +247,23 @@ string const      PERITERHEAD1 =
    "                  <--------------- HYDROLOGY --------------><FLOW EROSION/DEPOSITION><---- SPLASH --->           <--SLUMP-><-TOPPLE-><-INFILT-><-HEADCUT>";
 string const      PERITERHEAD2 =
    "Iteration  Elapsed    Rain  Runon Infilt OffEdge  SurfaceWtr   Detach Deposit OffEdge   Detach Deposit    Sedload    Redist    Redist   Deposit    Detach";
-string const      PERITERHEAD   =
+string const      PERITERHEAD =
    "PER-ITERATION RESULTS ======================================================================================================================================";
-string const      ENDRAINHEAD   =
+string const      ENDRAINHEAD =
    "RAINFALL ===================================================================================================================================================";
 string const      ENDINFILTHEAD =
    "INFILTRATION ===============================================================================================================================================";
-string const      ENDHYDHEAD    =
+string const      ENDHYDHEAD =
    "HYDROLOGY ==================================================================================================================================================";
 string const      ENDSEDDELHEAD =
    "SEDIMENT LOST ==============================================================================================================================================";
-string const      DETDEPHEAD    =
+string const      DETDEPHEAD =
    "DETACHMENT AND DEPOSITION BY PROCESS =======================================================================================================================";
-string const      RELCONTRIBLOSTHEAD    =
+string const      RELCONTRIBLOSTHEAD =
    "CONTRIBUTION OF EACH PROCESS TO TOTAL SEDIMENT ERODED ======================================================================================================";
-string const      RELCONTRIBDETACHHEAD  =
+string const      RELCONTRIBDETACHHEAD =
    "CONTRIBUTION OF EACH PROCESS TO TOTAL SEDIMENT DETACHED ====================================================================================================";
-string const      PERFORMHEAD   =
+string const      PERFORMHEAD  =
    "PERFORMANCE ================================================================================================================================================";
 
 int const      NO_FLOW                                      = 0;
@@ -250,7 +276,7 @@ int const      EDGE_RIGHT                                   = 1;
 int const      EDGE_BOTTOM                                  = 2;
 int const      EDGE_LEFT                                    = 3;
 
-// NOTE cannot change these: need to be like this to calc opposite direction to flow for headcut retreat
+// NOTE cannot change these: need to be like this to calc opposite direction to flow for splash and for headcut retreat
 int const      DIRECTION_NONE                               = -1;                 // Planview
 int const      DIRECTION_TOP                                = 0;
 int const      DIRECTION_TOP_RIGHT                          = 1;
@@ -267,7 +293,7 @@ int const      Z_UNIT_CM                                    = 1;
 int const      Z_UNIT_M                                     = 2;
 
 string const   FRICTION_FACTOR_CHECK                        = "friction_factor_check";
-string const   SPLASH_EFFICIENCY_CHECK                      = "splash_efficiency_check";
+string const   SPLASH_ATTENUATION_CHECK                      = "splash_efficiency_check";
 
 string const   OUT_EXT                                      = ".out";
 string const   LOG_EXT                                      = ".log";
@@ -306,17 +332,17 @@ string const   GIS_SURFACE_WATER_DEPTH_FILENAME              = "water_depth";
 string const   GIS_AVG_SURFACE_WATER_DEPTH_FILENAME          = "avg_water_depth";
 string const   GIS_AVG_SURFACE_WATER_DEPTH_CODE              = "avg_water_depth";
 
-string const   GIS_TOP_SURFACE_DETREND_FILENAME                     = "top_surface";
-string const   GIS_TOP_SURFACE_DETREND_CODE                         = "topsurf";
+string const   GIS_TOP_SURFACE_DETREND_FILENAME              = "top_surface";
+string const   GIS_TOP_SURFACE_DETREND_CODE                  = "topsurf";
 
-string const   GIS_SPLASH_FILENAME                          = "splash";
-string const   GIS_SPLASH_CODE                              = "splash";
+string const   GIS_SPLASH_FILENAME                           = "splash";
+string const   GIS_SPLASH_CODE                               = "splash";
 
-string const   GIS_CUMUL_SPLASH_FILENAME                    = "cumul_splash";
-string const   GIS_CUMUL_SPLASH_CODE                        = "c_splash";
+string const   GIS_CUMUL_SPLASH_FILENAME                     = "cumul_splash";
+string const   GIS_CUMUL_SPLASH_CODE                         = "c_splash";
 
-string const   GIS_INUNDATION_REGIME_FILENAME               = "inundation_regime";
-string const   GIS_INUNDATION_REGIME_CODE                   = "inund";
+string const   GIS_INUNDATION_REGIME_FILENAME                = "inundation_regime";
+string const   GIS_INUNDATION_REGIME_CODE                    = "inund";
 
 string const   GIS_SURFACE_WATER_DIRECTION_FILENAME          = "flow_direction";
 string const   GIS_SURFACE_WATER_DIRECTION_CODE              = "flowdir";
@@ -381,13 +407,12 @@ string const   GIS_CUMUL_ALL_PROC_SURF_LOWER_CODE           = "c_lowerall";
 
 string const   GIS_CUMUL_BINARY_HEADCUT_RETREAT_FILENAME    = "headcut_retreat";
 
-
 int const     GIS_ELEVATION                                 = 1;
 string const  GIS_ELEVATION_TITLE                           = "Elevation";
 int const     GIS_DETREND_ELEVATION                         = 2;
 string const  GIS_DETREND_ELEVATION_TITLE                   = "Detrended elevation";
-int const     GIS_TOP_SURFACE_DETREND                               = 3;
-string const  GIS_TOP_SURFACE_DETREND_TITLE                         = "Top surface elevation";
+int const     GIS_TOP_SURFACE_DETREND                       = 3;
+string const  GIS_TOP_SURFACE_DETREND_TITLE                 = "Top surface elevation";
 int const     GIS_CUMUL_RAIN                                = 4;
 string const  GIS_CUMUL_RAIN_TITLE                          = "Cumulative rain";
 int const     GIS_RAIN_SPATIAL_VARIATION                    = 5;
@@ -397,13 +422,13 @@ string const  GIS_CUMUL_RUNON_TITLE                         = "Cumulative runon"
 int const     GIS_INFILT                                    = 7;
 string const  GIS_INFILT_TITLE                              = "Infiltration";
 int const     GIS_CUMUL_INFILT                              = 8;
-string const  GIS_CUMUL_INFILT_TITLE                        = "Cumulative infilt depth";
+string const  GIS_CUMUL_INFILT_TITLE                        = "Cumulative infiltration depth";
 int const     GIS_SOIL_WATER                                = 9;
 string const  GIS_SOIL_WATER_TITLE                          = "Soil water content";
 int const     GIS_INFILT_DEPOSIT                            = 10;
 string const  GIS_INFILT_DEPOSIT_TITLE                      = "Infiltration deposition";
 int const     GIS_CUMUL_INFILT_DEPOSIT                      = 11;
-string const  GIS_CUMUL_INFILT_DEPOSIT_TITLE                = "Cumulative infilt deposition";
+string const  GIS_CUMUL_INFILT_DEPOSIT_TITLE                = "Cumulative infiltration deposition";
 int const     GIS_SPLASH                                    = 12;
 string const  GIS_SPLASH_TITLE                              = "Splash lowering";
 int const     GIS_CUMUL_SPLASH                              = 13;
@@ -411,19 +436,19 @@ string const  GIS_CUMUL_SPLASH_TITLE                        = "Cumulative splash
 int const     GIS_SURFACE_WATER_DEPTH                       = 14;
 string const  GIS_SURFACE_WATER_DEPTH_TITLE                 = "Surface water depth";
 int const     GIS_AVG_SURFACE_WATER_DEPTH                   = 15;
-string const  GIS_AVG_SURFACE_WATER_DEPTH_TITLE             = "Cumulative average surface water depth";
+string const  GIS_AVG_SURFACE_WATER_DEPTH_TITLE             = "Average surface water depth";
 int const     GIS_INUNDATION_REGIME                         = 16;
-string const  GIS_INUNDATION_REGIME_TITLE                   = "Surface water inundation regime";
+string const  GIS_INUNDATION_REGIME_TITLE                   = "Surface water Lawrence inundation regime";
 int const     GIS_SURFACE_WATER_DIRECTION                   = 17;
-string const  GIS_SURFACE_WATER_DIRECTION_TITLE             = "Surface water direction";
+string const  GIS_SURFACE_WATER_DIRECTION_TITLE             = "Surface water flow direction";
 int const     GIS_SURFACE_WATER_SPEED                       = 18;
-string const  GIS_SURFACE_WATER_SPEED_TITLE                 = "Surface water speed";
+string const  GIS_SURFACE_WATER_SPEED_TITLE                 = "Surface water flow speed";
 int const     GIS_SURFACE_WATER_DW_SPEED                    = 19;
-string const  GIS_SURFACE_WATER_DW_SPEED_TITLE              = "Surface water depth-weighted speed";
+string const  GIS_SURFACE_WATER_DW_SPEED_TITLE              = "Surface water depth-weighted flow speed";
 int const     GIS_AVG_SURFACE_WATER_SPEED                   = 20;
-string const  GIS_AVG_SURFACE_WATER_SPEED_TITLE             = "Surface water cumulative average speed";
+string const  GIS_AVG_SURFACE_WATER_SPEED_TITLE             = "Surface water average flow speed";
 int const     GIS_AVG_SURFACE_WATER_DW_SPEED                = 21;
-string const  GIS_AVG_SURFACE_WATER_DW_SPEED_TITLE          = "Surface water cumulative average depth-weighted flow speed";
+string const  GIS_AVG_SURFACE_WATER_DW_SPEED_TITLE          = "Surface water average depth-weighted flow speed";
 int const     GIS_STREAMPOWER                               = 22;
 string const  GIS_STREAMPOWER_TITLE                         = "Surface water stream power";
 int const     GIS_SHEAR_STRESS                              = 23;
@@ -431,7 +456,7 @@ string const  GIS_SHEAR_STRESS_TITLE                        = "Shear stress due 
 int const     GIS_FRICTION_FACTOR                           = 24;
 string const  GIS_FRICTION_FACTOR_TITLE                     = "Friction factor for surface water";
 int const     GIS_AVG_SHEAR_STRESS                          = 25;
-string const  GIS_AVG_SHEAR_STRESS_TITLE                    = "Cumulative average shear stress due to surface water";
+string const  GIS_AVG_SHEAR_STRESS_TITLE                    = "Average shear stress due to surface water";
 int const     GIS_REYNOLDS_NUMBER                           = 26;
 string const  GIS_REYNOLDS_NUMBER_TITLE                     = "Surface water Reynolds number";
 int const     GIS_FROUDE_NUMBER                             = 27;
@@ -439,17 +464,17 @@ string const  GIS_FROUDE_NUMBER_TITLE                       = "Surface water Fro
 int const     GIS_TRANSPORT_CAPACITY                        = 28;
 string const  GIS_TRANSPORT_CAPACITY_TITLE                  = "Surface water transport capacity";
 int const     GIS_ALL_SIZE_FLOW_DETACH                      = 29;
-string const  GIS_ALL_SIZE_FLOW_DETACH_TITLE                = "Detachment due to surface water, all size classes";
+string const  GIS_ALL_SIZE_FLOW_DETACH_TITLE                = "Detachment due to surface water flow, all size classes";
 int const     GIS_CUMUL_ALL_SIZE_FLOW_DETACH                = 30;
-string const  GIS_CUMUL_ALL_SIZE_FLOW_DETACH_TITLE          = "Cumulative detachment due to surface water, all size classes";
+string const  GIS_CUMUL_ALL_SIZE_FLOW_DETACH_TITLE          = "Cumulative detachment due to surface water flow, all size classes";
 int const     GIS_SEDIMENT_CONCENTRATION                    = 31;
 string const  GIS_SEDIMENT_CONCENTRATION_TITLE              = "Sediment concentration in surface water, all size classes";
 int const     GIS_SEDIMENT_LOAD                             = 32;
 string const  GIS_SEDIMENT_LOAD_TITLE                       = "Sediment load of surface water, all size classes";
 int const     GIS_AVG_SEDIMENT_LOAD                         = 33;
-string const  GIS_AVG_SEDIMENT_LOAD_TITLE                   = "Cumulative average sediment load of surface water, all size classes";
+string const  GIS_AVG_SEDIMENT_LOAD_TITLE                   = "Average sediment load of surface water, all size classes";
 int const     GIS_CUMUL_ALL_SIZE_FLOW_DEPOSIT               = 34;
-string const  GIS_CUMUL_ALL_SIZE_FLOW_DEPOSIT_TITLE         = "Cumulative deposition due to surface water, all size classes";
+string const  GIS_CUMUL_ALL_SIZE_FLOW_DEPOSIT_TITLE         = "Cumulative deposition from surface water flow, all size classes";
 int const     GIS_CUMUL_SLUMP_DETACH                        = 35;
 string const  GIS_CUMUL_SLUMP_DETACH_TITLE                  = "Cumulative detachment due to slumping, all size classes";
 int const     GIS_CUMUL_SLUMP_DEPOSIT                       = 36;
@@ -463,7 +488,7 @@ string const  GIS_CUMUL_BINARY_HEADCUT_RETREAT_TITLE        = "Cumulative binary
 int const     GIS_CUMUL_ALL_PROC_SURF_LOWER                 = 40;
 string const  GIS_CUMUL_ALL_PROC_SURF_LOWER_TITLE           = "Cumulative surface lowering, all processes";
 int const     GIS_AVG_SURFACE_WATER_FROM_EDGES              = 201;
-string const  GIS_AVG_SURFACE_WATER_FROM_EDGES_TITLE        = "Total lost from edges";
+string const  GIS_AVG_SURFACE_WATER_FROM_EDGES_TITLE        = "Total lost from grid edges";
 
 // Time series codes
 string const  ERROR_TIME_SERIES_NAME                        = "error";
@@ -542,7 +567,7 @@ int const   RTN_ERR_GISOUTPUTFORMAT                         = 15;
 int const   RTN_ERR_TEXTFILEWRITE                           = 16;
 int const   RTN_ERR_GISFILEWRITE                            = 17;
 int const   RTN_ERR_TSFILEWRITE                             = 18;
-int const   RTN_ERR_SPLASHEFF                               = 19;
+int const   RTN_ERR_SPLASH_ATTENUATION                      = 19;
 int const   RTN_ERR_FLOWDETACHMAX                           = 20;
 int const   RTN_ERR_SEDLOADDEPOSITMAX                       = 21;
 int const   RTN_ERR_SPLASHDETMAX                            = 22;
@@ -550,7 +575,11 @@ int const   RTN_ERR_SPLASHDEPMAX                            = 23;
 int const   RTN_ERR_SLUMPDETMAX                             = 24;
 int const   RTN_ERR_TOPPLEDETMAX                            = 25;
 
+//====================================================== debugging stuff ==================================================================
+//#define CLOCKCHECK          // uncomment to check CPU clock rollover settings
+//#define RANDCHECK           // uncomment to check randomness of random number generator
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 //===================================================== globally-available functions ======================================================
 template <class T> T tMax(T a, T b)
 {
@@ -593,27 +622,41 @@ template <typename T> string strNumToStr(const T& t)
    return os.str();
 }
 
-double dRound(double const);
-
-int nRound(double const);
-
-bool bFPIsEqual(double const, double const, double const);
-
-// bool bIsWhole(double);
-
-struct FillToWidth
+//==============================================================================================================================
+// For comparison of two floating-point numbers, with a specified accuracy. This is "essentiallyEqual" from https://stackoverflow.com/questions/17333/how-do-you-compare-float-and-double-while-accounting-for-precision-loss, which is derived from Knuth, D. E. The Art of Computer Programming. Volume 2. Seminumerical Algorithms (Third Edition). Reading MA: Addison-Wesley Longman, 1997.
+//==============================================================================================================================
+template <class T>
+bool bFpEQ(const T d1, const T d2, const T dEpsilon)
 {
-   FillToWidth(char f, int w) : chFill(f), nWidth(w)
-   {
-   }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+   return tAbs(d1 - d2) <= ( (tAbs(d1) > tAbs(d2) ? tAbs(d2) : tAbs(d2)) * dEpsilon);
+#pragma GCC diagnostic pop
+}
 
-   char chFill;
-   int nWidth;
-};
-ostream& operator<< (ostream&, const FillToWidth&);
+//==============================================================================================================================
+// For greater-than comparison of two floating-point numbers, with a specified accuracy. This is "definitelyGreaterThan" from https://stackoverflow.com/questions/17333/how-do-you-compare-float-and-double-while-accounting-for-precision-loss, which is derived from Knuth, D. E. The Art of Computer Programming. Volume 2. Seminumerical Algorithms (Third Edition). Reading MA: Addison-Wesley Longman, 1997.
+//==============================================================================================================================
+template <class T>
+bool bFpGT(const T d1, const T d2, const T dEpsilon)
+{
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+   return (d1 - d2) > ( (tAbs(d1) < tAbs(d2) ? tAbs(d2) : tAbs(d1)) * dEpsilon);
+#pragma GCC diagnostic pop
+}
 
-//====================================================== debugging stuff ==================================================================
-//#define CLOCKCHECK          // uncomment to check CPU clock rollover settings
-//#define RANDCHECK           // uncomment to check randomness of random number generator
+//==============================================================================================================================
+// For less-than comparison of two floating-point numbers, with a specified accuracy. This is "definitelyLessThan" from https://stackoverflow.com/questions/17333/how-do-you-compare-float-and-double-while-accounting-for-precision-loss, which is derived from Knuth, D. E. The Art of Computer Programming. Volume 2. Seminumerical Algorithms (Third Edition). Reading MA: Addison-Wesley Longman, 1997.
+//==============================================================================================================================
+template <class T>
+bool bFpLT(const T d1, const T d2, const T dEpsilon)
+{
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+   return (d2 - d1) > ( (tAbs(d1) < tAbs(d2) ? tAbs(d2) : tAbs(d1)) * dEpsilon);
+#pragma GCC diagnostic pop
+}
+#endif   // DOXYGEN_SHOULD_SKIP_THIS
 
 #endif // __RG_H__

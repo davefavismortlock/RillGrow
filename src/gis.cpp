@@ -1,19 +1,16 @@
 /*=========================================================================================================================================
 
- This is gis.cpp: these CSimulation member functions use GDAL to read and write GIS files in several formats.
+This is gis.cpp: these RillGrow CSimulation member functions use GDAL to read and write GIS files in several formats.
 
- Copyright (C) 2023 David Favis-Mortlock
+Copyright (C) 2025 David Favis-Mortlock
 
- ==========================================================================================================================================
+==========================================================================================================================================
 
- This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by
- the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
+This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
 
- This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
- You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation,
- Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 =========================================================================================================================================*/
 #include <sstream>
@@ -24,16 +21,13 @@ using std::stringstream;
 #include "cell.h"
 #include "2d_vec.h"
 
-
-/*========================================================================================================================================
-
- Reads the microtopgraphy DEM data to the cell array, also set each m_Cell's basement elevation
-
-=========================================================================================================================================*/
+//=========================================================================================================================================
+//! Reads the microtopgraphy DEM data to the cell array, also set each cell's basement elevation
+//=========================================================================================================================================
 int CSimulation::nReadMicrotopographyDEMData(void)
 {
    // Use GDAL to create a dataset object, which then opens the DEM file
-   GDALDataset* pGDALDataset = (GDALDataset *) GDALOpen(m_strDEMFile.c_str(), GA_ReadOnly);
+   GDALDataset* pGDALDataset = static_cast<GDALDataset*>(GDALOpen(m_strDEMFile.c_str(), GA_ReadOnly));
 
    if (NULL == pGDALDataset)
    {
@@ -47,20 +41,19 @@ int CSimulation::nReadMicrotopographyDEMData(void)
    m_strGDALDEMDriverDesc = pGDALDataset->GetDriver()->GetMetadataItem(GDAL_DMD_LONGNAME);
    m_strGDALDEMProjection = pGDALDataset->GetProjectionRef();
 
-//    // This does not work for ENGCRS (engineering CRS, a kind of Local CRS) TODO try with files having other CRS
-//    const OGRSpatialReference* pSpatialRef = pGDALDataset->GetSpatialRef();
-//    const_cast<OGRSpatialReference*>(pSpatialRef)->dumpReadable();
-//
-//    char** ppszName = NULL;
-//    double dMult = pSpatialRef->GetTargetLinearUnits("LOCAL_CS", ppszName);
-//    cout << ppszName << endl;
+   const OGRSpatialReference* pSpatialRef = pGDALDataset->GetSpatialRef();
+
+   // For debug purposes
+   // const_cast<OGRSpatialReference*>(pSpatialRef)->dumpReadable();
+
+   // dMult is "the value to multiply by linear distances to transform them to meters"
+   char const** ppszName = NULL;
+   double dMult = pSpatialRef->GetTargetLinearUnits("LOCAL_CS", ppszName);
 
    // Do we have a projection reference?
    if (! m_strGDALDEMProjection.empty())
    {
       string strTmp = strToLower(&m_strGDALDEMProjection);
-
-      // NOTE the code below is very crude, however I could not get the OGRSpatialReference-based methods in GDAL 3.0.2 (see code above) to work
 
       // Check whether the projection is plane
       if (strTmp.find("plane") == string::npos)
@@ -70,15 +63,6 @@ int CSimulation::nReadMicrotopographyDEMData(void)
 
          return RTN_ERR_DEMFILE;
       }
-
-//       // Check whether the X-Y units are in metres (note US spelling)
-//       if (strTmp.find("meter") == string::npos)
-//       {
-//          // error: x-y values must be in metres
-//          cerr << ERR << "microtopography  file x-y values (" << strTmp << ") in " << m_strDEMFile.c_str() << " must be in metres" << endl;
-//
-//          return RTN_ERR_DEMFILE;
-//       }
    }
 
    // Now get dataset size, and do some rudimentary checks
@@ -106,28 +90,28 @@ int CSimulation::nReadMicrotopographyDEMData(void)
       return RTN_ERR_DEMFILE;
    }
 
-   // Get Min X and Min Y
-   m_dMinX = m_dGeoTransform[0];
-   m_dMinY = m_dGeoTransform[3];
+   // Get Min X and Min Y, and transform to metres if necessary
+   m_dMinX = dMult * m_dGeoTransform[0];
+   m_dMinY = dMult * m_dGeoTransform[3];
 
-   // Get X and Y pixel resolutions
+   // Get X and Y pixel resolutions, and transform to metres if necessary
    double
-      dPixelResX = tAbs(m_dGeoTransform[1]),
-      dPixelResY = tAbs(m_dGeoTransform[5]);
+      dPixelResX = dMult * tAbs(m_dGeoTransform[1]),
+      dPixelResY = dMult * tAbs(m_dGeoTransform[5]);
 
    // Calculate Max X and Max Y
    m_dMaxX = m_dMinX + (dPixelResX * m_nXGridMax);
    m_dMaxY = m_dMinY + (dPixelResY * m_nYGridMax);
 
-   if (! bFPIsEqual(dPixelResX, dPixelResY, 1e-2))
+   if (! bFpEQ(dPixelResX, dPixelResY, 1e-2))
    {
-      // Error: m_Cell isn't square (enough): note that due to rounding errors in some GIS packages, must expect some discrepancies
-      cerr << ERR << "m_Cell not square (" << dPixelResX << " x " << dPixelResY << ") in " << m_strDEMFile << endl;
+      // Error: cell isn't square (enough): note that due to rounding errors in some GIS packages, must expect some discrepancies
+      cerr << ERR << "cell not square (" << dPixelResX << " x " << dPixelResY << ") in " << m_strDEMFile << endl;
       return RTN_ERR_DEMFILE;
    }
 
-   // To be on the safe side, average pixel resolutions, then use the result to convert m_dm_CellSide from m to mm
-   m_dm_CellSide = 1000 * (dPixelResX + dPixelResY) / 2;
+   // To be on the safe side, average pixel resolutions, then use the result to convert m_dCellSide from m to mm
+   m_dCellSide = 1000 * (dPixelResX + dPixelResY) / 2;
 
    // Now get GDAL raster band information
    GDALRasterBand* pGDALBand = pGDALDataset->GetRasterBand(1);
@@ -205,15 +189,15 @@ int CSimulation::nReadMicrotopographyDEMData(void)
    m_dMissingValue = pGDALBand->GetNoDataValue();              // Will fail for some formats
    CPLPopErrorHandler();
 
-   // Next allocate memory for two 2D arrays of soil m_Cell objects: tell the user what is happening
+   // Next allocate memory for two 2D arrays of soil cell objects: tell the user what is happening
    AnnounceAllocateMemory();
 
-   // The first array of m_Cells
+   // The first array of cells
    m_Cell = new CCell*[m_nXGridMax];
    if (NULL == m_Cell)
    {
       // Error, can't allocate memory
-      cerr << ERR << "cannot allocate memory for " << m_nXGridMax << " soil m_Cell objects" << endl;
+      cerr << ERR << "cannot allocate memory for " << m_nXGridMax << " soil cell objects" << endl;
       return (RTN_ERR_MEMALLOC);
    }
 
@@ -223,7 +207,7 @@ int CSimulation::nReadMicrotopographyDEMData(void)
       if (NULL == m_Cell[nX])
       {
          // Error, can't allocate memory
-         cerr << ERR << "cannot allocate memory for " << m_nYGridMax << " soil m_Cell objects" << endl;
+         cerr << ERR << "cannot allocate memory for " << m_nYGridMax << " soil cell objects" << endl;
          return (RTN_ERR_MEMALLOC);
       }
    }
@@ -253,12 +237,12 @@ int CSimulation::nReadMicrotopographyDEMData(void)
          return RTN_ERR_DEMFILE;
       }
 
-      // All OK, so read scanline into m_Cell elevations
+      // All OK, so read scanline into cell elevations
       for (int i = 0; i < m_nXGridMax; i++)
       {
          double dElev = pfScanline[i];
 
-         if (dElev != m_dMissingValue)
+         if (! bFpEQ(dElev, m_dMissingValue, TOLERANCE))
          {
             // The Z elevation must be in mm, so do some conversion if necessary
             if (m_nZUnits == Z_UNIT_M)
@@ -285,7 +269,7 @@ int CSimulation::nReadMicrotopographyDEMData(void)
          // Set the initial soil surface elevation (will impose an overall gradient on this later, if the user has specified one)
          m_Cell[i][j].SetInitialSoilSurfaceElevation(dElev);
 
-         // Also set the basement elevation (again will impose an overall gradient on this later, if the user has specified one)
+         // Also set the per-cell basement elevation. At this stage it is the same for every cell. But if the user has specified an overall gradient, then we will impose this overall gradient on the per-cell values
          m_Cell[i][j].SetBasementElevation(m_dBasementElevation);
       }
    }
@@ -300,22 +284,20 @@ int CSimulation::nReadMicrotopographyDEMData(void)
 }
 
 
-/*========================================================================================================================================
-
- Marks edge m_Cells
-
-========================================================================================================================================*/
-void CSimulation::MarkEdgem_Cells(void)
+//=========================================================================================================================================
+//! Marks edge cells
+//=========================================================================================================================================
+void CSimulation::MarkEdgeCells(void)
 {
-   // Set the planview top row of the grid as edge m_Cells
+   // Set the planview top row of the grid as edge cells
    for (int nX = 0; nX < m_nXGridMax; nX++)
    {
-      m_Cell[nX][0].SetEdgem_Cell(DIRECTION_TOP);
+      m_Cell[nX][0].SetEdgeCell(DIRECTION_TOP);
       if (m_Cell[nX][0].bIsMissingValue())
-         m_ulMissingValuem_Cells++;
+         m_ulMissingValueCells++;
    }
 
-   // Then search the rest of the grid, moving planview downwards, marking missing-value m_Cells as edge m_Cells. Keep going until we find a row with no missing-value m_Cells
+   // Then search the rest of the grid, moving planview downwards, marking missing-value cells as edge cells. Keep going until we find a row with no missing-value cells
    for (int nY = 1; nY < m_nYGridMax; nY++)
    {
       bool bFound = false;
@@ -323,24 +305,24 @@ void CSimulation::MarkEdgem_Cells(void)
       {
          if (m_Cell[nX][nY].bIsMissingValue())
          {
-            m_ulMissingValuem_Cells++;
+            m_ulMissingValueCells++;
             bFound = true;
-            m_Cell[nX][nY].SetEdgem_Cell(DIRECTION_TOP);
+            m_Cell[nX][nY].SetEdgeCell(DIRECTION_TOP);
          }
       }
       if (! bFound)
          break;
    }
 
-   // Set the planview bottom row of the grid as edge m_Cells
+   // Set the planview bottom row of the grid as edge cells
    for (int nX = 0; nX < m_nXGridMax; nX++)
    {
-      m_Cell[nX][m_nYGridMax-1].SetEdgem_Cell(DIRECTION_BOTTOM);
+      m_Cell[nX][m_nYGridMax-1].SetEdgeCell(DIRECTION_BOTTOM);
       if (m_Cell[nX][m_nYGridMax-1].bIsMissingValue())
-         m_ulMissingValuem_Cells++;
+         m_ulMissingValueCells++;
    }
 
-   // Then search the rest of the grid, moving planview upwards, marking missing-value m_Cells as edge m_Cells. Keep going until we find a row with no missing-value m_Cells
+   // Then search the rest of the grid, moving planview upwards, marking missing-value cells as edge cells. Keep going until we find a row with no missing-value cells
    for (int nY = m_nYGridMax-2; nY >= 0; nY--)
    {
       bool bFound = false;
@@ -348,24 +330,24 @@ void CSimulation::MarkEdgem_Cells(void)
       {
          if (m_Cell[nX][nY].bIsMissingValue())
          {
-            m_ulMissingValuem_Cells++;
+            m_ulMissingValueCells++;
             bFound = true;
-            m_Cell[nX][nY].SetEdgem_Cell(DIRECTION_BOTTOM);
+            m_Cell[nX][nY].SetEdgeCell(DIRECTION_BOTTOM);
          }
       }
       if (! bFound)
          break;
    }
 
-   // Set the planview left column  of the grid as edge m_Cells
+   // Set the planview left column  of the grid as edge cells
    for (int nY = 0; nY < m_nYGridMax; nY++)
    {
-      m_Cell[0][nY].SetEdgem_Cell(DIRECTION_LEFT);
+      m_Cell[0][nY].SetEdgeCell(DIRECTION_LEFT);
       if (m_Cell[0][nY].bIsMissingValue())
-         m_ulMissingValuem_Cells++;
+         m_ulMissingValueCells++;
    }
 
-   // Then search the rest of the grid, moving planview rightwards, marking missing-value m_Cells as edge m_Cells. Keep going until we find a row with no missing-value m_Cells
+   // Then search the rest of the grid, moving planview rightwards, marking missing-value cells as edge cells. Keep going until we find a row with no missing-value cells
    for (int nX = 1; nX < m_nXGridMax; nX++)
    {
       bool bFound = false;
@@ -373,24 +355,24 @@ void CSimulation::MarkEdgem_Cells(void)
       {
          if (m_Cell[nX][nY].bIsMissingValue())
          {
-            m_ulMissingValuem_Cells++;
+            m_ulMissingValueCells++;
             bFound = true;
-            m_Cell[nX][nY].SetEdgem_Cell(DIRECTION_LEFT);
+            m_Cell[nX][nY].SetEdgeCell(DIRECTION_LEFT);
          }
       }
       if (! bFound)
          break;
    }
 
-   // Set the planview right column  of the grid as edge m_Cells
+   // Set the planview right column  of the grid as edge cells
    for (int nY = 0; nY < m_nYGridMax; nY++)
    {
-      m_Cell[m_nXGridMax-1][nY].SetEdgem_Cell(DIRECTION_RIGHT);
+      m_Cell[m_nXGridMax-1][nY].SetEdgeCell(DIRECTION_RIGHT);
       if (m_Cell[m_nXGridMax-1][nY].bIsMissingValue())
-         m_ulMissingValuem_Cells++;
+         m_ulMissingValueCells++;
    }
 
-   // Then search the rest of the grid, moving planview rightwards, marking missing-value m_Cells as edge m_Cells. Keep going until we find a row with no missing-value m_Cells
+   // Then search the rest of the grid, moving planview rightwards, marking missing-value cells as edge cells. Keep going until we find a row with no missing-value cells
    for (int nX = m_nXGridMax-2; nX >= 0; nX--)
    {
       bool bFound = false;
@@ -398,9 +380,9 @@ void CSimulation::MarkEdgem_Cells(void)
       {
          if (m_Cell[nX][nY].bIsMissingValue())
          {
-            m_ulMissingValuem_Cells++;
+            m_ulMissingValueCells++;
             bFound = true;
-            m_Cell[nX][nY].SetEdgem_Cell(DIRECTION_RIGHT);
+            m_Cell[nX][nY].SetEdgeCell(DIRECTION_RIGHT);
          }
       }
       if (! bFound)
@@ -408,19 +390,16 @@ void CSimulation::MarkEdgem_Cells(void)
    }
 }
 
-
-/*========================================================================================================================================
-
- Reads the spatial rainfall variation data into the cell array
-
-=========================================================================================================================================*/
+//=========================================================================================================================================
+//! Reads the spatial rainfall variation data into the cell array
+//=========================================================================================================================================
 int CSimulation::nReadRainVarData(void)
 {
    // Tell the user what is happening
    AnnounceReadRainVar();
 
    // Use GDAL to create a dataset object, which then opens the rainfall variation file
-   GDALDataset* pGDALDataset = (GDALDataset *) GDALOpen(m_strRainVarMFile.c_str(), GA_ReadOnly);
+   GDALDataset* pGDALDataset = static_cast<GDALDataset*>(GDALOpen(m_strRainVarMFile.c_str(), GA_ReadOnly));
    if (NULL == pGDALDataset)
    {
       // Can't open file (note will already have sent GDAL error message to stdout)
@@ -488,7 +467,7 @@ int CSimulation::nReadRainVarData(void)
    }
 
    double dTmp = dGeoTransform[0];
-   if (! bFPIsEqual(dTmp, m_dMinX, TOLERANCE))
+   if (! bFpEQ(dTmp, m_dMinX, TOLERANCE))
    {
       // Error: different min x from microtopography file
       cerr << ERR << "different min x values in " << m_strRainVarMFile << " (" << dTmp << ") and " << m_strDEMFile << " (" << m_dMinX << ")" << endl;
@@ -496,7 +475,7 @@ int CSimulation::nReadRainVarData(void)
    }
 
    dTmp = dGeoTransform[3];
-   if (! bFPIsEqual(dTmp, m_dMinY, TOLERANCE))
+   if (! bFpEQ(dTmp, m_dMinY, TOLERANCE))
    {
       // Error: different min x from microtopography file
       cerr << ERR << "different min y values in " << m_strRainVarMFile << " (" << dTmp << ") and " << m_strDEMFile << " (" << m_dMinY << "(" << endl;
@@ -505,10 +484,10 @@ int CSimulation::nReadRainVarData(void)
 
    double dTmpResX = tAbs(dGeoTransform[1]);
    double dTmpResY = tAbs(dGeoTransform[5]);
-   if (! bFPIsEqual(dTmpResX, dTmpResY, 1e-2))
+   if (! bFpEQ(dTmpResX, dTmpResY, 1e-2))
    {
-      // Error: m_Cell isn't square (enough): note that due to rounding errors in some GIS packages, must expect some discrepancies
-      cerr << ERR << "m_Cell not square (" << dTmpResX << " x " << dTmpResY << ") in " << m_strRainVarMFile << endl;
+      // Error: cell isn't square (enough): note that due to rounding errors in some GIS packages, must expect some discrepancies
+      cerr << ERR << "cell not square (" << dTmpResX << " x " << dTmpResY << ") in " << m_strRainVarMFile << endl;
       return (RTN_ERR_RAIN_VARIATION_FILE);
    }
 
@@ -518,11 +497,11 @@ int CSimulation::nReadRainVarData(void)
    // Convert from m to mm
    dTmp *= 1000;
 
-   // Check m_Cell side length
-   if (! bFPIsEqual(dTmp, m_dm_CellSide, TOLERANCE))
+   // Check cell side length
+   if (! bFpEQ(dTmp, m_dCellSide, TOLERANCE))
    {
-      // Error: different m_Cell side length from microtopography file
-      cerr << ERR << "different m_Cell side lengths in " << m_strRainVarMFile << " (" << dTmp << ") and " << m_strDEMFile << " (" << m_dm_CellSide << ")" << endl;
+      // Error: different cell side length from microtopography file
+      cerr << ERR << "different cell side lengths in " << m_strRainVarMFile << " (" << dTmp << ") and " << m_strDEMFile << " (" << m_dCellSide << ")" << endl;
       return (RTN_ERR_RAIN_VARIATION_FILE);
    }
 
@@ -537,14 +516,14 @@ int CSimulation::nReadRainVarData(void)
    double dMissingValue = pGDALBand->GetNoDataValue();         // Note will fail for some formats
    CPLPopErrorHandler();
 
-   if (dMissingValue != m_dMissingValue)
+   if (! bFpEQ(dMissingValue, m_dMissingValue, TOLERANCE))
    {
       // Error: different missing value setting in this file and in DEM
       cerr << WARN << "different NODATA values in " << m_strRainVarMFile << " and " << m_strDEMFile  << endl;
    }
 
    // Needed to calculate mean value of rainfall variation multiplier
-   unsigned long ulNm_Cell = 0;
+   unsigned long ulNumCell = 0;
    m_dRainVarMFileMean = 0;
 
    // Allocate memory for a 1D array, to hold the scan line for GDAL
@@ -568,18 +547,18 @@ int CSimulation::nReadRainVarData(void)
          return (RTN_ERR_RAIN_VARIATION_FILE);
       }
 
-      // All OK, so read scanline into m_Cell elevations
+      // All OK, so read scanline into cell elevations
       for (int i = 0; i < m_nXGridMax; i++)
       {
          m_Cell[i][j].pGetRainAndRunon()->SetRainVarM (pfScanline[i]);
 
          m_dRainVarMFileMean += pfScanline[i];
-         ulNm_Cell++;
+         ulNumCell++;
       }
    }
 
    // Calculate mean value of rainfall variation multipliers
-   m_dRainVarMFileMean /= static_cast<double>(ulNm_Cell);
+   m_dRainVarMFileMean /= static_cast<double>(ulNumCell);
 
    // Get rid of memory allocated to this array
    delete[] pfScanline;
@@ -587,12 +566,9 @@ int CSimulation::nReadRainVarData(void)
    return (RTN_OK);
 }
 
-
-/*========================================================================================================================================
-
- Checks whether the selected GDAL driver supports file creation, 32-bit doubles, etc.
-
-=========================================================================================================================================*/
+//=========================================================================================================================================
+//! Checks whether the selected GDAL driver supports file creation, 32-bit doubles, etc.
+//=========================================================================================================================================
 bool CSimulation::bCheckGISOutputFormat(void)
 {
    // If user hasn't specified a GIS output format, assume that we will use the same GIS format as the input DEM
@@ -632,12 +608,9 @@ bool CSimulation::bCheckGISOutputFormat(void)
    return (true);
 }
 
-
-/*========================================================================================================================================
-
- Writes floating point GIS files using GDAL, using data from the cell array
-
-=========================================================================================================================================*/
+//=========================================================================================================================================
+//! Writes floating point GIS files using GDAL, using data from the cell array
+//=========================================================================================================================================
 bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlotTitle)
 {
    // Increment file number when soil loss file is written (this is done first, and is always saved)
@@ -804,7 +777,7 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
    // Append the 'save number' to the filename, and prepend zeros to the save number
    strFilDat.append("_");
    stringstream ststrTmp;
-   ststrTmp << FillToWidth('0', MAX_GIS_FILENAME_SAVE_DIGITS) << m_nGISSave;
+   ststrTmp << setfill('0') << setw(MAX_GIS_FILENAME_SAVE_DIGITS) << m_nGISSave;
    strFilDat.append(ststrTmp.str());
 
    // Maybe append the extension
@@ -819,9 +792,9 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
    GDALDataset* pOutDataSet;
    char** papszOptions = NULL;                                          // For driver-specific options
    // TODO Get error message here from GDAL 3.0.4 "ERROR 1: Too large for int: 126327496704.000000" when opening for GIS_FRICTION_FACTOR, no idea why. Pushing and popping the error handler hides this message. Try removing with later version of GDAL
-   CPLPushErrorHandler(CPLQuietErrorHandler);                  // needed to get next line to fail silently, if it fails
+   //CPLPushErrorHandler(CPLQuietErrorHandler);                  // needed to get next line to fail silently, if it fails
    pOutDataSet = pDriver->Create(strFilDat.c_str(), m_nXGridMax, m_nYGridMax, 1, GDT_Float32, papszOptions);
-   CPLPopErrorHandler();
+   //CPLPopErrorHandler();
    if (NULL == pOutDataSet)
    {
       // Couldn't create file
@@ -875,7 +848,7 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
 
             case (GIS_ELEVATION) :
                dTmp = m_Cell[nX][nY].pGetSoil()->dGetSoilSurfaceElevation();
-               if (dTmp != m_dMissingValue)
+               if (! bFpEQ(dTmp, m_dMissingValue, TOLERANCE))
                {
                   if (m_bOutDEMsUsingInputZUnits)
                   {
@@ -890,7 +863,7 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
 
             case (GIS_DETREND_ELEVATION) :
                dTmp = m_Cell[nX][nY].pGetSoil()->dGetSoilSurfaceElevation();
-               if (dTmp != m_dMissingValue)
+               if (! bFpEQ(dTmp, m_dMissingValue, TOLERANCE))
                {
                   if (m_bOutDEMsUsingInputZUnits)
                   {
@@ -910,11 +883,11 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
                break;
 
             case (GIS_ALL_SIZE_FLOW_DETACH) :
-               dTmp = m_Cell[nX][nY].pGetSoil()->dGetTotFlowDetach();
+               dTmp = m_Cell[nX][nY].pGetSoil()->dGetAllSizeFlowDetach();
                break;
 
             case (GIS_INFILT) :
-               dTmp = m_Cell[nX][nY].pGetSoilWater()->dGetInfiltration();
+               dTmp = m_Cell[nX][nY].pGetSoilWater()->dGetThisIterInfiltration();
                break;
 
             case (GIS_CUMUL_INFILT) :
@@ -926,16 +899,16 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
                break;
 
             case (GIS_INFILT_DEPOSIT) :
-               dTmp = m_Cell[nX][nY].pGetSoil()->dGetTotInfiltDeposit();
+               dTmp = m_Cell[nX][nY].pGetSoil()->dGetAllSizeInfiltDeposit();
                break;
 
             case (GIS_CUMUL_INFILT_DEPOSIT) :
-               dTmp = m_Cell[nX][nY].pGetSoil()->dGetCumulTotInfiltDeposit();
+               dTmp = m_Cell[nX][nY].pGetSoil()->dGetCumulAllSizeInfiltDeposit();
                break;
 
             case (GIS_TOP_SURFACE_DETREND):
                dTmp = m_Cell[nX][nY].dGetTopElevation();
-               if (dTmp != m_dMissingValue)
+               if (! bFpEQ(dTmp, m_dMissingValue, TOLERANCE))
                {
                   if (m_bOutDEMsUsingInputZUnits)
                   {
@@ -961,14 +934,16 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
 
             case (GIS_SURFACE_WATER_SPEED) :
                dTmp = m_Cell[nX][nY].pGetSurfaceWater()->dGetFlowSpd();
+               dTmp /= 1000;             // Convert from mm/s to m/s
                break;
 
             case (GIS_SURFACE_WATER_DW_SPEED) :
                dTmp = m_Cell[nX][nY].pGetSurfaceWater()->dGetDWFlowSpd();
+               dTmp /= 1000;             // Convert from mm/s to m/s
                break;
 
             case (GIS_AVG_SURFACE_WATER_FROM_EDGES) :
-               dTmp = m_Cell[nX][nY].pGetSurfaceWater()->dGetCumulSurfaceWaterLost() / m_dSimulatedTimeElapsed;
+               dTmp = m_Cell[nX][nY].pGetSurfaceWater()->dGetCumulSurfaceWaterLost() / static_cast<double>(m_ulIter);
                break;
 
             case (GIS_STREAMPOWER) :
@@ -1004,15 +979,15 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
                break;
 
             case (GIS_AVG_SURFACE_WATER_DEPTH) :
-               dTmp = m_Cell[nX][nY].pGetSurfaceWater()->dGetCumulSurfaceWater() / m_dSimulatedTimeElapsed;
+               dTmp = m_Cell[nX][nY].pGetSurfaceWater()->dGetCumulSurfaceWater() / static_cast<double>(m_ulIter);
                break;
 
             case (GIS_AVG_SURFACE_WATER_SPEED) :
-               dTmp = m_Cell[nX][nY].pGetSurfaceWater()->dCumulFlowSpeed() / m_dSimulatedTimeElapsed;
+               dTmp = m_Cell[nX][nY].pGetSurfaceWater()->dCumulFlowSpeed() / (m_dSimulatedTimeElapsed * 1000);       // Convert from mm/s to m/s
                break;
 
             case (GIS_AVG_SURFACE_WATER_DW_SPEED) :
-               dTmp = m_Cell[nX][nY].pGetSurfaceWater()->dGetCumulDWFlowSpd() / m_dSimulatedTimeElapsed;
+               dTmp = m_Cell[nX][nY].pGetSurfaceWater()->dGetCumulDWFlowSpd() / (m_dSimulatedTimeElapsed * 1000);    // Convert from mm/s to m/s
                break;
 
             case (GIS_CUMUL_ALL_SIZE_FLOW_DETACH) :
@@ -1024,15 +999,15 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
                break;
 
             case (GIS_SEDIMENT_CONCENTRATION) :
-               dTmp = m_Cell[nX][nY].pGetSedLoad()->dGetAllSizeSedConc();
+               dTmp = m_Cell[nX][nY].pGetSedLoad()->dGetAllSizeSedConcentration();
                break;
 
             case (GIS_SEDIMENT_LOAD) :
-               dTmp = m_Cell[nX][nY].pGetSedLoad()->dGetAllSizeSedLoad();
+               dTmp = m_Cell[nX][nY].pGetSedLoad()->dGetThisIterAllSizeSedLoad();
                break;
 
             case (GIS_AVG_SEDIMENT_LOAD) :
-               dTmp = m_Cell[nX][nY].pGetSedLoad()->dGetCumulAllSizeSedLoad() / m_dSimulatedTimeElapsed;
+               dTmp = m_Cell[nX][nY].pGetSedLoad()->dGetCumulAllSizeSedLoad() / static_cast<double>(m_ulIter);
                break;
 
             case (GIS_CUMUL_SLUMP_DETACH) :
@@ -1120,7 +1095,7 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
       case (GIS_AVG_SURFACE_WATER_SPEED) :
       case (GIS_SURFACE_WATER_DW_SPEED) :
       case (GIS_AVG_SURFACE_WATER_DW_SPEED) :
-         strUnits = "mm/sec";
+         strUnits = "m/s";
          break;
 
       case (GIS_STREAMPOWER) :
@@ -1169,12 +1144,9 @@ bool CSimulation::bWriteGISFileFloat(int const nDataItem, string const* pstrPlot
    return true;
 }
 
-
-/*========================================================================================================================================
-
- Writes integer GIS files using GDAL, using data from the cell array
-
-=========================================================================================================================================*/
+//=========================================================================================================================================
+//! Writes integer GIS files using GDAL, using data from the cell array
+//=========================================================================================================================================
 bool CSimulation::bWriteGISFileInt(int const nDataItem, string const* pstrPlotTitle)
 {
    // Begin constructing the file name for this save
@@ -1197,7 +1169,7 @@ bool CSimulation::bWriteGISFileInt(int const nDataItem, string const* pstrPlotTi
    // Append the 'save number' to the filename, and prepend zeros to the save number
    strFilDat.append("_");
    stringstream ststrTmp;
-   ststrTmp << FillToWidth('0', MAX_GIS_FILENAME_SAVE_DIGITS) << m_nGISSave;
+   ststrTmp << setfill('0') << setw(MAX_GIS_FILENAME_SAVE_DIGITS) << m_nGISSave;
    strFilDat.append(ststrTmp.str());
 
    // Finally, maybe append the extension
@@ -1350,415 +1322,9 @@ bool CSimulation::bWriteGISFileInt(int const nDataItem, string const* pstrPlotTi
    return true;
 }
 
-
-/*========================================================================================================================================
-
- This subroutine smooths the unbounded edges of the cell array of the DEM to prevent excessive deepening of the edge. For each of the N_LOW_POINTS m_Cells with the lowest elevation on each unbounded grid edge, a new elevation is calculated based on the elevations of nearby m_Cells. This new low-point elevation may be lower or higher than the original value
-
-========================================================================================================================================*/
-void CSimulation::AdjustUnboundedEdges(void)
-{
-   int const DIST_ACROSS = 4;                 // Arbitrary, but seems to work OK
-   int const DIST_IN     = 8;
-   int const N_LOW_POINTS = 5;
-   double const WEIGHT = 0.0;
-//   double const WEIGHT = 0.5;    // 0.8 works OK for x11
-
-   // Is the planview bottom edge open?
-   if (! m_bClosedThisEdge[EDGE_BOTTOM])
-   {
-      // We have flow off the planview bottom edge, we will look along this edge for N_LOW_POINTS low points
-      int nLowEdgePoint[N_LOW_POINTS];
-
-      for (int n = 0; n < N_LOW_POINTS; n++)
-      {
-         // Find the elevation of the nth lowest point on this edge
-         int nMinElevPos = 0;
-         double dMinElev = DBL_MAX;
-
-         for (int nX = 0; nX < m_nXGridMax; nX++)
-         {
-            double dElev = m_Cell[nX][m_nYGridMax-1].pGetSoil()->dGetSoilSurfaceElevation();
-            if (dElev < dMinElev)
-            {
-               // We have a low point, but have we found it previously?
-               bool bFoundPrev = false;
-               for (int m = 0; m < n; m++)
-               {
-                  if (nX == nLowEdgePoint[m])
-                  {
-                     bFoundPrev = true;
-                     break;
-                  }
-               }
-
-               if (! bFoundPrev)
-               {
-                  // No, we have not found this one before
-                  dMinElev = dElev;
-                  nMinElevPos = nX;
-               }
-            }
-         }
-
-         // Are we at or below base level, or have we hit the bottom of the lowest soil layer? If so, do nothing more with this low point
-         double dBasementElevation = m_Cell[nMinElevPos][m_nYGridMax-1].dGetBasementElevation();
-         if ((m_bHaveBaseLevel && dMinElev > m_dBaseLevel) || (dMinElev >= dBasementElevation))
-            continue;
-
-         // We have found a new local minimum, so store it
-         nLowEdgePoint[n] = nMinElevPos;
-
-         // Now find the average and minimum elevations from the DIST_ACROSS x DIST_IN m_Cells surrounding this m_Cell
-         int nRead = 0;
-         double
-            dAvgElevAround = 0,
-            dMinElevAround = DBL_MAX;
-
-         for (int j = m_nYGridMax-1; j >= (m_nYGridMax - DIST_IN); j--)
-         {
-            for (int i = (nMinElevPos - DIST_ACROSS); i <= (nMinElevPos + DIST_ACROSS); i++)
-            {
-               if ((i >= 0) && (i < m_nXGridMax))
-               {
-                  double dThisElev = m_Cell[i][j].pGetSoil()->dGetSoilSurfaceElevation();
-                  dAvgElevAround += dThisElev;
-                  nRead++;
-
-                  if (dThisElev < dMinElevAround)
-                     dMinElevAround = dThisElev;
-               }
-            }
-         }
-
-         // Calculate the local average
-         if (nRead > 0)
-            dAvgElevAround /= nRead;
-         else
-            dAvgElevAround = dMinElev;
-
-         // Calculate a new value, is a weighted mix of the local minimum and local average values
-         double dNewMinElev = (WEIGHT * dMinElevAround) + ((1 - WEIGHT) * dAvgElevAround);
-
-         // Make sure that we don't go below 'base level'
-         if (m_bHaveBaseLevel)
-            dNewMinElev = tMax(dNewMinElev, m_dBaseLevel);
-
-         // Make sure that we don't go below the bottom of the lowest soil layer
-         dNewMinElev = tMax(dNewMinElev, dBasementElevation);
-
-         // Is the new elevation value lower than the elevation of the low point?
-         if (dNewMinElev > dMinElev)
-         {
-            // It is, so replace the elevation of the lowest-point m_Cell with the new value
-            m_Cell[nMinElevPos][m_nYGridMax-1].SetSoilSurfaceElevation(dNewMinElev);
-
-//             m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << setprecision(6);
-//             m_ofsLog << m_ulIter << ": [" << nMinElevPos << "][" << m_nYGridMax-1 << "] from " << dMinElev << " to " << dNewMinElev;
-//             m_ofsLog << " (" << (dMinElev < dNewMinElev ? "GAIN" : "loss") << " = " << tAbs(dMinElev - dNewMinElev);
-//             m_ofsLog << " m_dPlotElevMin = " << m_dPlotElevMin << " m_dBaseLevel = " << m_dBaseLevel << " dMinElevAround = " << dMinElevAround << " dAvgElevAround = " << dAvgElevAround << ")" << endl;
-         }
-      }
-   }
-
-   // Is the planview top edge open?
-   if (! m_bClosedThisEdge[EDGE_TOP])
-   {
-      // We have flow off the planview top edge, we will look along this edge for N_LOW_POINTS low points
-      int nLowEdgePoint[N_LOW_POINTS];
-
-      for (int n = 0; n < N_LOW_POINTS; n++)
-      {
-         // Find the elevation of the nth lowest point on this edge
-         int nMinElevPos = 0;
-         double dMinElev = DBL_MAX;
-
-         for (int nX = 0; nX < m_nXGridMax; nX++)
-         {
-            double dElev = m_Cell[nX][0].pGetSoil()->dGetSoilSurfaceElevation();
-            if (dElev < dMinElev)
-            {
-               // We have a low point, but have we found it previously?
-               bool bFoundPrev = false;
-               for (int m = 0; m < n; m++)
-               {
-                  if (nX == nLowEdgePoint[m])
-                  {
-                     bFoundPrev = true;
-                     break;
-                  }
-               }
-
-               if (! bFoundPrev)
-               {
-                  // No, we have not found this one before
-                  dMinElev = dElev;
-                  nMinElevPos = nX;
-               }
-            }
-         }
-
-         // Are we at or below base level, or have we hit the bottom of the lowest soil layer? If so, do nothing more with this low point
-         double dBasementElevation = m_Cell[nMinElevPos][0].dGetBasementElevation();
-         if ((m_bHaveBaseLevel && dMinElev > m_dBaseLevel) || (dMinElev >= dBasementElevation))
-            continue;
-
-         // We have found a new local minimum, so store it
-         nLowEdgePoint[n] = nMinElevPos;
-
-         // Now find the average and minimum elevations from the DIST_ACROSS x DIST_IN m_Cells surrounding this m_Cell
-         int nRead = 0;
-         double
-            dAvgElevAround = 0,
-            dMinElevAround = DBL_MAX;
-
-         for (int j = 0; j < DIST_IN; j++)
-         {
-            for (int i = (nMinElevPos - DIST_ACROSS); i <= (nMinElevPos + DIST_ACROSS); i++)
-            {
-               if ((i >= 0) && (i < m_nXGridMax))
-               {
-                  double dThisElev = m_Cell[i][j].pGetSoil()->dGetSoilSurfaceElevation();
-                  dAvgElevAround += dThisElev;
-                  nRead++;
-
-                  if (dThisElev < dMinElevAround)
-                     dMinElevAround = dThisElev;
-               }
-            }
-         }
-
-         // Calculate the local average
-         if (nRead > 0)
-            dAvgElevAround /= nRead;
-         else
-            dAvgElevAround = dMinElev;
-
-         // Calculate a new value, is a weighted mix of the local minimum and local average values
-         double dNewMinElev = (WEIGHT * dMinElevAround) + ((1 - WEIGHT) * dAvgElevAround);
-
-         // Make sure that we don't go below 'base level'
-         if (m_bHaveBaseLevel)
-            dNewMinElev = tMax(dNewMinElev, m_dBaseLevel);
-
-         // Make sure that we don't go below the bottom of the lowest soil layer
-         dNewMinElev = tMax(dNewMinElev, dBasementElevation);
-
-         // Is the new elevation value lower than the elevation of the low point?
-         if (dNewMinElev > dMinElev)
-         {
-            // It is, so replace the elevation of the lowest-point m_Cell with the new value
-            m_Cell[nMinElevPos][0].SetSoilSurfaceElevation(dNewMinElev);
-
-//             m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << setprecision(6);
-//             m_ofsLog << m_ulIter << ": [" << nMinElevPos << "][" << 0 << "] from " << dMinElev << " to " << dNewMinElev;
-//             m_ofsLog << " (" << (dMinElev < dNewMinElev ? "GAIN" : "loss") << " = " << tAbs(dMinElev - dNewMinElev);
-//             m_ofsLog << " m_dPlotElevMin = " << m_dPlotElevMin << " m_dBaseLevel = " << m_dBaseLevel << " dMinElevAround = " << dMinElevAround << " dAvgElevAround = " << dAvgElevAround << ")" << endl;
-         }
-      }
-   }
-
-   // Is the planview left edge open?
-   if (! m_bClosedThisEdge[EDGE_LEFT])
-   {
-      // We have flow off the planview left edge, we will look along this edge for N_LOW_POINTS low points
-      int nLowEdgePoint[N_LOW_POINTS];
-
-      for (int n = 0; n < N_LOW_POINTS; n++)
-      {
-         // Find the elevation of the nth lowest point on this edge
-         int nMinElevPos = 0;
-         double dMinElev = DBL_MAX;
-
-         for (int nY = 0; nY < m_nYGridMax; nY++)
-         {
-            double dElev = m_Cell[0][nMinElevPos].pGetSoil()->dGetSoilSurfaceElevation();
-            if (dElev < dMinElev)
-            {
-               // We have a low point, but have we found it previously?
-               bool bFoundPrev = false;
-               for (int m = 0; m < n; m++)
-               {
-                  if (nY == nLowEdgePoint[m])
-                  {
-                     bFoundPrev = true;
-                     break;
-                  }
-               }
-
-               if (! bFoundPrev)
-               {
-                  // No, we have not found this one before
-                  dMinElev = dElev;
-                  nMinElevPos = nY;
-               }
-            }
-         }
-
-         // Are we at or below base level, or have we hit the bottom of the lowest soil layer? If so, do nothing more with this low point
-         double dBasementElevation = m_Cell[0][nMinElevPos].dGetBasementElevation();
-         if ((m_bHaveBaseLevel && dMinElev > m_dBaseLevel) || (dMinElev >= dBasementElevation))
-            continue;
-
-         // We have found a new local minimum, so store it
-         nLowEdgePoint[n] = nMinElevPos;
-
-         // Now find the average and minimum elevations from the DIST_ACROSS x DIST_IN m_Cells surrounding this m_Cell
-         int nRead = 0;
-         double
-            dAvgElevAround = 0,
-            dMinElevAround = DBL_MAX;
-
-         for (int j = 0; j < DIST_IN; j++)
-         {
-            for (int i = (nMinElevPos - DIST_ACROSS); i <= (nMinElevPos + DIST_ACROSS); i++)
-            {
-               if ((i >= 0) && (i < m_nYGridMax))
-               {
-                  double dThisElev = m_Cell[j][i].pGetSoil()->dGetSoilSurfaceElevation();
-                  dAvgElevAround += dThisElev;
-                  nRead++;
-
-                  if (dThisElev < dMinElevAround)
-                     dMinElevAround = dThisElev;
-               }
-            }
-         }
-
-         // Calculate the local average
-         if (nRead > 0)
-            dAvgElevAround /= nRead;
-         else
-            dAvgElevAround = dMinElev;
-
-         // Calculate a new value, is a weighted mix of the local minimum and local average values
-         double dNewMinElev = (WEIGHT * dMinElevAround) + ((1 - WEIGHT) * dAvgElevAround);
-
-         // Make sure that we don't go below 'base level'
-         if (m_bHaveBaseLevel)
-            dNewMinElev = tMax(dNewMinElev, m_dBaseLevel);
-
-         // Make sure that we don't go below the bottom of the lowest soil layer
-         dNewMinElev = tMax(dNewMinElev, dBasementElevation);
-
-         // Is the new elevation value lower than the elevation of the low point?
-         if (dNewMinElev > dMinElev)
-         {
-            // It is, so replace the elevation of the lowest-point m_Cell with the new value
-            m_Cell[0][nMinElevPos].SetSoilSurfaceElevation(dNewMinElev);
-
-//             m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << setprecision(6);
-//             m_ofsLog << m_ulIter << ": [" << 0 << "][" << nMinElevPos << "] from " << dMinElev << " to " << dNewMinElev;
-//             m_ofsLog << " (" << (dMinElev < dNewMinElev ? "GAIN" : "loss") << " = " << tAbs(dMinElev - dNewMinElev);
-//             m_ofsLog << " m_dPlotElevMin = " << m_dPlotElevMin << " m_dBaseLevel = " << m_dBaseLevel << " dMinElevAround = " << dMinElevAround << " dAvgElevAround = " << dAvgElevAround << ")" << endl;
-         }
-      }
-   }
-
-   // Is the planview right edge open?
-   if (! m_bClosedThisEdge[EDGE_RIGHT])
-   {
-      // We have flow off the planview right edge, we will look along this edge for N_LOW_POINTS low points
-      int nLowEdgePoint[N_LOW_POINTS];
-
-      for (int n = 0; n < N_LOW_POINTS; n++)
-      {
-         // Find the elevation of the nth lowest point on this edge
-         int nMinElevPos = 0;
-         double dMinElev = DBL_MAX;
-
-         for (int nY = 0; nY < m_nYGridMax; nY++)
-         {
-            double dElev = m_Cell[m_nXGridMax-1][nY].pGetSoil()->dGetSoilSurfaceElevation();
-            if (dElev < dMinElev)
-            {
-               // We have a low point, but have we found it previously?
-               bool bFoundPrev = false;
-               for (int m = 0; m < n; m++)
-               {
-                  if (nY == nLowEdgePoint[m])
-                  {
-                     bFoundPrev = true;
-                     break;
-                  }
-               }
-
-               if (! bFoundPrev)
-               {
-                  // No, we have not found this one before
-                  dMinElev = dElev;
-                  nMinElevPos = nY;
-               }
-            }
-         }
-
-         // Are we at or below base level, or have we hit the bottom of the lowest soil layer? If so, do nothing more with this low point
-         double dBasementElevation = m_Cell[m_nXGridMax-1][nMinElevPos].dGetBasementElevation();
-         if ((m_bHaveBaseLevel && dMinElev > m_dBaseLevel) || (dMinElev >= dBasementElevation))
-            continue;
-
-         // We have found a new local minimum, so store it
-         nLowEdgePoint[n] = nMinElevPos;
-
-         // Now find the average and minimum elevations from the DIST_ACROSS x DIST_IN m_Cells surrounding this m_Cell
-         int nRead = 0;
-         double
-            dAvgElevAround = 0,
-            dMinElevAround = DBL_MAX;
-
-         for (int j = m_nXGridMax-1; j >= (m_nXGridMax - DIST_IN); j--)
-         {
-            for (int i = (nMinElevPos - DIST_ACROSS); i <= (nMinElevPos + DIST_ACROSS); i++)
-            {
-               if ((i >= 0) && (i < m_nYGridMax))
-               {
-                  double dThisElev = m_Cell[j][i].pGetSoil()->dGetSoilSurfaceElevation();
-                  dAvgElevAround += dThisElev;
-                  nRead++;
-
-                  if (dThisElev < dMinElevAround)
-                     dMinElevAround = dThisElev;
-               }
-            }
-         }
-
-         // Calculate the local average
-         if (nRead > 0)
-            dAvgElevAround /= nRead;
-         else
-            dAvgElevAround = dMinElev;
-
-         // Calculate a new value, is a weighted mix of the local minimum and local average values
-         double dNewMinElev = (WEIGHT * dMinElevAround) + ((1 - WEIGHT) * dAvgElevAround);
-
-         // Make sure that we don't go below 'base level'
-         if (m_bHaveBaseLevel)
-            dNewMinElev = tMax(dNewMinElev, m_dBaseLevel);
-
-         // Make sure that we don't go below the bottom of the lowest soil layer
-         dNewMinElev = tMax(dNewMinElev, dBasementElevation);
-
-         // Is the new elevation value lower than the elevation of the low point?
-         if (dNewMinElev > dMinElev)
-         {
-            // It is, so replace the elevation of the lowest-point m_Cell with the new value
-            m_Cell[m_nXGridMax-1][nMinElevPos].SetSoilSurfaceElevation(dNewMinElev);
-
-//             m_ofsLog << resetiosflags(ios::floatfield) << setiosflags(ios::fixed) << setprecision(6);
-//             m_ofsLog << m_ulIter << ": [" << m_nXGridMax-1 << "][" << nMinElevPos << "] from " << dMinElev << " to " << dNewMinElev;
-//             m_ofsLog << " (" << (dMinElev < dNewMinElev ? "GAIN" : "loss") << " = " << tAbs(dMinElev - dNewMinElev);
-//             m_ofsLog << " m_dPlotElevMin = " << m_dPlotElevMin << " m_dBaseLevel = " << m_dBaseLevel << " dMinElevAround = " << dMinElevAround << " dAvgElevAround = " << dAvgElevAround << ")" << endl;
-         }
-      }
-   }
-}
-
-
-/*========================================================================================================================================
-
- The bSaveGISFiles member function saves the GIS files using values from the cell array
-
-========================================================================================================================================*/
+//=========================================================================================================================================
+//! The bSaveGISFiles member function saves the GIS files using values from the cell array
+//=========================================================================================================================================
 bool CSimulation::bSaveGISFiles(void)
 {
    // Set for next save
@@ -1994,12 +1560,9 @@ bool CSimulation::bSaveGISFiles(void)
    return (true);
 }
 
-
-/*========================================================================================================================================
-
- This routine imposes a user-specified overall gradient upon the microtopographic grid. If no overall gradient has been specified, it crudely estimates the grid's pre-existing gradient
-
-========================================================================================================================================*/
+//=========================================================================================================================================
+//! This routine imposes a user-specified overall gradient upon the microtopographic cell grid. If no overall gradient has been specified, it crudely estimates the grid's pre-existing gradient
+//=========================================================================================================================================
 void CSimulation::CalcGradient(void)
 {
    m_dPlotElevMin = DBL_MAX;
@@ -2008,30 +1571,30 @@ void CSimulation::CalcGradient(void)
    if (m_dGradient > 0)
    {
       // A slope was specified by the user, so impose this slope on the DEM. Do it by decrementing each row by dDiff (and increase dDiff each row, by m_dYInc). Note that we must decrement (not increment) because the grid used here has the origin at the top left
-      m_dYInc = m_dGradient * m_dm_CellSide / 100;         // mm
+      m_dYInc = m_dGradient * m_dCellSide / 100;         // mm
       double dDiff = 0;
       for (int nY = 0; nY < m_nYGridMax; nY++)
       {
          for (int nX = 0; nX < m_nXGridMax; nX++)
          {
-            double dElev = m_Cell[nX][nY].pGetSoil()->dGetSoilSurfaceElevation();
-            if (dElev == m_dMissingValue)
+            double dElev = m_Cell[nX][nY].dGetInitialSoilSurfaceElevation();
+            if (bFpEQ(dElev, m_dMissingValue, TOLERANCE))
                continue;
 
-            // Impose the gradient on the soil surface elevation
-            double dNewElev = dElev - dDiff;
-            m_Cell[nX][nY].SetInitialSoilSurfaceElevation(dNewElev);
-
-            // Find the lowest and highest elevations
-            if (dNewElev < m_dPlotElevMin)
-               m_dPlotElevMin = dNewElev;
-
-            if (dNewElev > m_dPlotElevMax)
-               m_dPlotElevMax = dNewElev;
-
-            // Now impose the same gradient on the basement elevation
+            // Impose the gradient on the basement elevation. This is no longer the same for every cell
             double dNewBasementElev = m_dBasementElevation - dDiff;
             m_Cell[nX][nY].SetBasementElevation(dNewBasementElev);
+
+            // Now impose the gradient on the initial soil surface elevation
+            double dNewInitElev = dElev - dDiff;
+            m_Cell[nX][nY].SetInitialSoilSurfaceElevation(dNewInitElev);
+
+            // And find the lowest and highest elevations
+            if (dNewInitElev < m_dPlotElevMin)
+               m_dPlotElevMin = dNewInitElev;
+
+            if (dNewInitElev > m_dPlotElevMax)
+               m_dPlotElevMax = dNewInitElev;
          }
 
          dDiff += m_dYInc;
@@ -2054,7 +1617,7 @@ void CSimulation::CalcGradient(void)
          for (int nX = 0; nX < m_nXGridMax; nX++)
          {
             double dElev = m_Cell[nX][nY].pGetSoil()->dGetSoilSurfaceElevation();
-            if (dElev == m_dMissingValue)
+            if (bFpEQ(dElev, m_dMissingValue, TOLERANCE))
                continue;
 
             dTot += dElev;
@@ -2090,13 +1653,11 @@ void CSimulation::CalcGradient(void)
       double dBottomAverage = dTot / nRead;
 
       // Finally estimate the overall gradient in per cent, as 100 * rise over run
-      m_dGradient = 100 * tAbs(dTopAverage - dBottomAverage) / (m_nYGridMax * m_dm_CellSide);
-      m_dYInc = m_dGradient * m_dm_CellSide / 100;         // mm
+      m_dGradient = 100 * tAbs(dTopAverage - dBottomAverage) / (m_nYGridMax * m_dCellSide);
+      m_dYInc = m_dGradient * m_dCellSide / 100;         // mm
    }
 
    // If the user has specified a difference in plot-end elevation, use this to calculate the lowest point that we can cut down to on any edge (this is a kind of plot-end baselevel)
    if (m_bHaveBaseLevel)
       m_dBaseLevel = m_dPlotElevMin - m_dPlotEndDiff;
 }
-
-
